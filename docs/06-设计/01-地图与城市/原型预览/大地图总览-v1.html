@@ -1,0 +1,156 @@
+<div id="gnz-map-v1" style="width:100%;font-family:var(--font-sans,system-ui,sans-serif);color:var(--foreground,#e8e6e0);">
+  <style>
+    #gnz-map-v1 .gnz-title{font-size:calc(var(--font-size-base,14px) + 4px);font-weight:500;margin:0 0 2px;}
+    #gnz-map-v1 .gnz-sub{font-size:12px;color:var(--muted-foreground,#9aa0a6);margin:0 0 10px;}
+    #gnz-map-v1 svg{width:100%;height:auto;display:block;border-radius:8px;background:rgba(127,140,160,0.08);}
+    #gnz-map-v1 .land{fill:rgba(160,168,180,0.20);stroke:rgba(180,188,200,0.32);stroke-width:0.5px;}
+    #gnz-map-v1 .link-land{fill:none;stroke:rgba(230,225,210,0.55);stroke-width:1.6;}
+    #gnz-map-v1 .link-sea{fill:none;stroke:rgba(140,190,235,0.75);stroke-width:1.4;stroke-dasharray:5 4;}
+    #gnz-map-v1 .link-ocean{fill:none;stroke:rgba(235,190,110,0.85);stroke-width:1.6;stroke-dasharray:2 5;stroke-linecap:round;}
+    #gnz-map-v1 .link-fake{fill:none;stroke:rgba(235,120,120,0.8);stroke-width:1.6;stroke-dasharray:7 3;}
+    #gnz-map-v1 .city{cursor:pointer;}
+    #gnz-map-v1 .city circle.halo{opacity:0.18;}
+    #gnz-map-v1 .city-label{font-size:11px;font-weight:500;paint-order:stroke;stroke:rgba(20,22,28,0.85);stroke-width:3px;stroke-linejoin:round;fill:var(--foreground,#e8e6e0);}
+    #gnz-map-v1 .city-capital{font-size:12px;font-weight:500;}
+    #gnz-map-v1 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:12px;color:var(--muted-foreground,#9aa0a6);}
+    #gnz-map-v1 .legend span{display:inline-flex;align-items:center;gap:6px;}
+    #gnz-map-v1 .swatch{width:11px;height:11px;border-radius:50%;display:inline-block;}
+    #gnz-map-v1 .line-sample{width:22px;height:0;border-top-width:2px;border-top-style:solid;display:inline-block;}
+    #gnz-map-v1 #gnz-tip{position:fixed;pointer-events:none;background:var(--popover,#20232b);color:var(--popover-foreground,#eee);border:1px solid var(--border,rgba(255,255,255,0.12));border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.5;max-width:230px;opacity:0;transition:opacity .12s;z-index:50;box-shadow:0 6px 20px rgba(0,0,0,.35);}
+    #gnz-map-v1 #gnz-tip b{font-weight:500;}
+  </style>
+
+  <h3 class="gnz-title">《国男志》大地图初步总览 v1（真实地理微缩投影）</h3>
+  <p class="gnz-sub">13 城按真实经纬度定位 · 四阵营配色 · 连线=可进攻邻接（仅邻接可攻）· 悬停城市看驻守 · 城市旁数字=驻守将数</p>
+
+  <svg id="gnz-svg" viewBox="0 0 760 640" role="img" aria-label="国男志大地图：中国、日本、韩国、澳大利亚四阵营十三城分布与连通线"></svg>
+
+  <div class="legend">
+    <span><i class="swatch" style="background:#e05a5a"></i>CN 中国（6城/11将）</span>
+    <span><i class="swatch" style="background:#e88a3c"></i>JP 日本（3城/4将）</span>
+    <span><i class="swatch" style="background:#4fa3e0"></i>KR 韩国（2城/3将）</span>
+    <span><i class="swatch" style="background:#5fbf7f"></i>AU 澳洲（2城/3将）</span>
+  </div>
+  <div class="legend">
+    <span><i class="line-sample" style="border-top-color:rgba(230,225,210,0.8)"></i>内陆邻接</span>
+    <span><i class="line-sample" style="border-top-color:rgba(140,190,235,0.9);border-top-style:dashed"></i>跨海（登陆战）</span>
+    <span><i class="line-sample" style="border-top-color:rgba(235,120,120,0.9);border-top-style:dashed"></i>微缩架空直连</span>
+    <span><i class="line-sample" style="border-top-color:rgba(235,190,110,0.95);border-top-style:dotted"></i>远洋航线（待定条数）</span>
+  </div>
+
+  <div id="gnz-tip"></div>
+
+  <script type="module">
+    import { feature } from "https://esm.sh/topojson-client@3.1.0";
+    const d3 = window.d3;
+    const svg = d3.select("#gnz-svg");
+    const W = 760, H = 640;
+    const g = svg.append("g");
+
+    const projection = d3.geoNaturalEarth1()
+      .center([127, -2])
+      .scale(430)
+      .translate([W/2 - 30, H/2 + 15]);
+    const path = d3.geoPath(projection);
+
+    const COLORS = { CN:"#e05a5a", JP:"#e88a3c", KR:"#4fa3e0", AU:"#5fbf7f" };
+
+    // dx/dy = 屏幕像素级错位（微缩地图近邻城允许）；lp = 标签方位
+    const cities = [
+      {id:"beijing", name:"北京", faction:"CN", lon:116.4, lat:39.9, dx:0,dy:0, lp:"tr", generals:["丘序明","陆城锟"], note:"大都市 · 沙尘暴(二期)", capital:false},
+      {id:"shanghai", name:"上海", faction:"CN", lon:121.5, lat:31.2, dx:0,dy:0, lp:"r", generals:["魏嘉豪"], note:"商业都市 · 沿海"},
+      {id:"shenzhen", name:"深圳", faction:"CN", lon:114.1, lat:22.5, dx:-9,dy:-8, lp:"tl", generals:["陈梓键(院长)","饶志锐","袁崇轩","朱宇涵"], note:"中央军团 · 远洋起点", capital:false},
+      {id:"xian", name:"西安", faction:"CN", lon:108.9, lat:34.3, dx:0,dy:0, lp:"l", generals:["陈俊杰"], note:"内陆边城 · 异族方向(二期)"},
+      {id:"hongkong", name:"香港", faction:"CN", lon:114.2, lat:22.3, dx:10,dy:9, lp:"br", generals:["汪煜坤","宁浩然"], note:"商业都市"},
+      {id:"taibei", name:"台北", faction:"CN", lon:121.5, lat:25.0, dx:12,dy:6, lp:"br", generals:["王乐添"], note:"富士康工业 · 低忠诚高自立风险"},
+      {id:"tokyo", name:"东京", faction:"JP", lon:139.7, lat:35.7, dx:0,dy:0, lp:"tr", generals:["陈睿","谌礼鹏"], note:"首都 · 秋叶原/银座/富士山", capital:true},
+      {id:"nagoya", name:"名古屋", faction:"JP", lon:136.9, lat:35.2, dx:0,dy:0, lp:"br", generals:["卢沐阳"], note:"丰田城 · 无人驾驶梗", capital:false},
+      {id:"nagasaki", name:"长崎", faction:"JP", lon:129.9, lat:32.8, dx:0,dy:0, lp:"bl", generals:["张迅"], note:"开港边港 · 对马岛属此"},
+      {id:"seoul", name:"首尔", faction:"KR", lon:127.0, lat:37.6, dx:-6,dy:-8, lp:"tl", generals:["徐浩森","陈楠"], note:"首都 · 直连北京/东京", capital:true},
+      {id:"incheon", name:"仁川", faction:"KR", lon:126.6, lat:37.5, dx:8,dy:10, lp:"bl", generals:["黄学远"], note:"登陆战代言城"},
+      {id:"sydney", name:"悉尼", faction:"AU", lon:151.2, lat:-33.9, dx:0,dy:0, lp:"r", generals:["马逸杰"], note:"沿海 · 远洋终点"},
+      {id:"melbourne", name:"墨尔本", faction:"AU", lon:144.96, lat:-37.8, dx:0,dy:0, lp:"r", generals:["邹志华","庞楷垒"], note:"沿海"}
+    ];
+
+    const links = [
+      {a:"beijing", b:"seoul", type:"fake"},
+      {a:"beijing", b:"incheon", type:"fake"},
+      {a:"seoul", b:"tokyo", type:"sea"},
+      {a:"beijing", b:"xian", type:"land"},
+      {a:"beijing", b:"shanghai", type:"land"},
+      {a:"shanghai", b:"shenzhen", type:"land"},
+      {a:"shenzhen", b:"hongkong", type:"land"},
+      {a:"shanghai", b:"taibei", type:"sea"},
+      {a:"shenzhen", b:"taibei", type:"sea"},
+      {a:"tokyo", b:"nagoya", type:"land"},
+      {a:"nagoya", b:"nagasaki", type:"land"},
+      {a:"seoul", b:"incheon", type:"land"},
+      {a:"sydney", b:"melbourne", type:"land"},
+      {a:"shenzhen", b:"sydney", type:"ocean"},
+      {a:"tokyo", b:"sydney", type:"ocean"}
+    ];
+
+    const byId = Object.fromEntries(cities.map(c=>[c.id,c]));
+    const xy = c => { const [x,y]=projection([c.lon, c.lat]); return [x+(c.dx||0), y+(c.dy||0)]; };
+
+    fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
+      .then(r=>r.json())
+      .then(world=>{
+        const countries = feature(world, world.objects.countries).features;
+        g.append("g").selectAll("path")
+          .data(countries).join("path")
+          .attr("d", path).attr("class","land");
+        drawLinks();
+        drawCities();
+        window.__gnzReady = true;
+      })
+      .catch(err=>{ window.__gnzError = String(err); drawLinks(); drawCities(); });
+
+    function drawLinks(){
+      const lg = g.append("g");
+      links.forEach(l=>{
+        const A = byId[l.a], B = byId[l.b];
+        const [x1,y1]=xy(A), [x2,y2]=xy(B);
+        const mx=(x1+x2)/2, my=(y1+y2)/2;
+        const dx=x2-x1, dy=y2-y1, L=Math.hypot(dx,dy)||1;
+        const bend = l.type==="land" ? 0 : Math.min(L*0.18, 46);
+        const cx = mx + (-dy/L)*bend, cy = my + (dx/L)*bend;
+        lg.append("path")
+          .attr("d",`M${x1},${y1} Q${cx},${cy} ${x2},${y2}`)
+          .attr("class", "link-"+l.type);
+      });
+    }
+
+    function drawCities(){
+      const tip = document.getElementById("gnz-tip");
+      const cg = g.append("g");
+      cities.forEach(c=>{
+        const [x,y]=xy(c);
+        const n=c.generals.length;
+        const r = n>=4 ? 9 : n===2 ? 7 : 5.5;
+        const grp = cg.append("g").attr("class","city")
+          .attr("transform",`translate(${x},${y})`);
+        grp.append("circle").attr("class","halo").attr("r",r+5).attr("fill",COLORS[c.faction]);
+        grp.append("circle").attr("r",r).attr("fill",COLORS[c.faction])
+          .attr("stroke","rgba(255,255,255,0.85)").attr("stroke-width",1.4);
+        if(c.capital) grp.append("circle").attr("r",2.2).attr("fill","#fff");
+        const lp = c.lp || "r";
+        const anchor = lp.startsWith("l") ? "end" : "start";
+        const lx = anchor==="end" ? -r-5 : r+5;
+        const ly = lp==="tr"||lp==="tl" ? -r-3 : (lp==="br"||lp==="bl" ? r+8 : 3.5);
+        grp.append("text")
+          .attr("class","city-label"+(c.capital?" city-capital":""))
+          .attr("x",lx).attr("y",ly)
+          .attr("text-anchor",anchor)
+          .text(c.name + (n>=2?` ${n}`:""));
+        grp.on("mousemove",(ev)=>{
+          tip.style.opacity=1;
+          tip.style.left=(ev.clientX+14)+"px";
+          tip.style.top=(ev.clientY+14)+"px";
+          tip.innerHTML=`<b style="color:${COLORS[c.faction]}">${c.name}</b> · ${c.faction}<br>${c.note}<br>驻守：${c.generals.join("、")}`;
+        }).on("mouseleave",()=>{ tip.style.opacity=0; });
+      });
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+</div>
