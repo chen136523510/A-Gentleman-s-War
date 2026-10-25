@@ -25,8 +25,9 @@
 
 - **双机分工（R24i 院长定）**：**黑机=全部内容**（工程/美术/出图/构建/场景，RTX 4070 + Unity 所在机）；**白机=仅文档**（`docs/`、`.ai/handoff.md`、CHANGELOG/AGENTS 等文档），**完全不接触代码**——`Assets/`、`Packages/`、`ProjectSettings/`、`Builds/`、`tools/` 一律不动，不装 Unity、不跑 LFS 大件。白机 clone 用 sparse-checkout 只拉 docs（见 `docs/04-技术笔记/GitHub建仓与双机协作.md`）。每次会话起手读 `.ai/handoff.md` 恢复状态
 - **三段式协作（长期有效）**：主会话（满血）出规划/施工单 → 院长切 flash 窗口执行 → 回主会话验收。flash 工兵定义在 `.zcode/agents/flash-executor.md`；**代码/美术/构建只允许黑机执行，白机只接文档任务**
-- **GitHub 纯文档仓（R24j 院长定）**：<https://github.com/chen136523510/A-Gentleman-s-War> **只放文档**（`docs/`、`.ai/`、`AGENTS.md`、`CHANGELOG.md`、`README.md`）；`Assets/`/`Packages/`/`ProjectSettings/`/`Builds/`/`tools/`/`local/`/`tmp/`/`.zcode/` 等代码/工程/美术/构建**一律不入库**。本地 `G:\A Gentleman's War-docs` = 文档仓 `main`（origin=GitHub，权威）；`G:\A Gentleman's War` = 全量代码仓 `master`，**不配 remote**，代码只留黑机。黑机用 `tools/sync-docs-repo.ps1 pull` 把文档仓镜像进全量仓；白机只 clone 文档仓
-- 每次会话结束：代码提交到本地 `master`（**不 push**）；文档在本仓/文档仓提交并 push；更新 handoff/changelog。白机提交前缀 `[docs]`
+- **GitHub 纯文档仓（R24j/k 院长定）**：<https://github.com/chen136523510/A-Gentleman-s-War> **只放文档**（`docs/`、`.ai/`、`AGENTS.md`、`CHANGELOG.md`、`README.md`）；`Assets/`/`Packages/`/`ProjectSettings/`/`Builds/`/`tools/`/`local/`/`tmp/`/`.zcode/` 等代码/工程/美术/构建**一律不入库**。本地 `G:\A Gentleman's War` = 黑机全量工作仓 `master`（**不配 remote**）；`G:\A Gentleman's War-docs` = 纯文档仓 `main`（origin=GitHub，白机工作区/发布副本）
+- **双仓节奏**：黑机开工先 `sync-docs-repo.ps1 pull`（文本仓→本仓，拿白机改动）；收尾先 commit 本仓，再 `sync-docs-repo.ps1 push`（本仓→文本仓→GitHub）。白机只在文本仓改文档、push。禁止给全量仓加这个 remote
+- 每次会话结束：代码提交到本地 `master`（**不 push**）；文档 commit 后同步推文本仓；更新 handoff/changelog。白机提交前缀 `[docs]`
 
 ## 四、目录纪律
 
@@ -42,7 +43,7 @@
 - **美术**：`docs/07-美术/`（美术纪律全文迁入 + 资产登记表——凡入 Assets 的图必须登记实际内容）；ComfyUI 出图管线见登记文档 §二
 - **CHANGELOG** 根目录倒序（接口/架构变更必落档）；commit 格式 `[feat|fix|refactor|chore|docs](模块): 动作及意图`，禁模糊词
 - **LFS 大件**：GitHub **纯文档仓不走 LFS**；全量代码仓若日后配私有远程，贴图/音视频/模型仍走 LFS（免费 1GB+1GB/月，超限请示院长）；push 前 fetch 防覆盖
-- 主仓（nandexueyuan）关系：设计文档历史版本+Web 验证资产仍在主仓归档（只读）；**设计文档以纯文档仓（GitHub）为唯一权威**；黑机全量仓 `docs/` 是工作镜像（`tools/sync-docs-repo.ps1 pull`）；改设计优先改文档仓
+- 主仓（nandexueyuan）关系：设计文档历史版本+Web 验证资产仍在主仓归档（只读）；**设计文档以黑机全量仓与纯文档仓同步后的内容为准**——黑机在全量仓编辑、收尾 `push` 到文本仓；白机只在文本仓编辑；开工先 `pull`
 
 ## 六、红线
 

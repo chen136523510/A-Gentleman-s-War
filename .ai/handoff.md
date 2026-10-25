@@ -1,18 +1,29 @@
 # AI 交接单 — A Gentleman's War（国男志）
 
-> 最后更新：2026-10-25 **R24j**（黑机——GitHub 纯文档仓已推送；代码/美术/构建不入库，白机只 clone 文档仓）
+> 最后更新：2026-10-25 **R24k**（黑机——双仓节奏定稿：黑机在全量仓工作，收尾同步文本仓；白机只在文本仓）
 > 所在设备：黑机（RTX 4070，Unity 编辑器所在机；本项目仅黑机参与代码/美术/构建）
 > R23 设计轮工作日志（上下文恢复锚点）：`.ai/worklog-R23.md`
 > 城位/投影/烘焙唯一配方：`docs/04-技术笔记/L1投影与城位校准.md`
+
+## ⭐ R24k（2026-10-25 深夜，双仓节奏定稿）
+
+- 院长澄清：**黑机继续在 `G:\A Gentleman's War` 全量仓工作；每轮收尾把文档同步到隔壁 `G:\A Gentleman's War-docs` 并 push；白机只在文本仓工作**
+- `tools/sync-docs-repo.ps1` 升级：
+  - `pull` = 文本仓(origin)→全量仓（开工前拿白机改动；要求全量仓文档已 commit）
+  - `push` = 全量仓→文本仓→GitHub（收尾；要求全量仓文档已 commit；文本仓有白机新提交则中止，先 pull）
+  - 同步 `docs/`、`.ai/`、`AGENTS.md`、`CHANGELOG.md`；`README.md` 两仓各自维护不参与；基线 `tmp/docs-sync-base.txt`
+- 文本仓 README 改为“白机工作区/发布副本”口径（已推 `c91f010`）；R24k 文档随后 push
+- 文档：`AGENTS.md` §三/§五、`docs/04-技术笔记/GitHub建仓与双机协作.md`、双仓 README 更新
+- **风险不变**：代码/美术无远程备份；建议黑机定期备份全量仓。**不要给全量仓加 remote**
 
 ## ⭐ R24j（2026-10-25 深夜，GitHub 纯文档仓）
 
 - 院长建仓：<https://github.com/chen136523510/A-Gentleman-s-War>
 - **决策：GitHub 只放文档**——`docs/`、`.ai/`、`AGENTS.md`、`CHANGELOG.md`、`README.md`；代码/Unity 工程/贴图/构建/工具/local/tmp/.zcode **一律不入库**。白机 clone 后看不到任何代码
 - **本地双仓**：
-  - `G:\A Gentleman's War` = 全量代码仓 `master`，**不配 remote**（代码只留黑机，防误推）
-  - `G:\A Gentleman's War-docs` = 纯文档仓 `main`，`origin`=GitHub，**文档权威**
-- 已首推文档仓；日常黑机先 `git -C G:\A Gentleman's War-docs pull --rebase`，再跑 `tools/sync-docs-repo.ps1 pull` 镜像 docs/.ai/AGENTS/CHANGELOG/README；文档编辑统一在文档仓
+  - `G:\A Gentleman's War` = 黑机全量工作仓 `master`，**不配 remote**（代码只留黑机，防误推）
+  - `G:\A Gentleman's War-docs` = 纯文档仓 `main`，`origin`=GitHub，白机工作区/发布副本
+- 已首推文档仓；**R24k 定稿**：黑机在全量仓工作，开工 `sync-docs-repo.ps1 pull`、收尾 commit 后 `push`；白机只在文本仓
 - **风险**：代码/美术无远程备份；建议黑机定期备份全量仓（移动硬盘/私有位置）。**不要给全量仓加这个 remote**
 - 文档：`AGENTS.md` §三/§五、`docs/04-技术笔记/GitHub建仓与双机协作.md` 已重写为纯文档仓流程；根 `README.md` 说明双仓边界
 

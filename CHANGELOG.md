@@ -8,6 +8,17 @@
 ---
 ---
 ---
+---
+
+## 2026-10-25 R24k · 双仓节奏定稿（黑机全量仓工作，收尾同步文本仓）
+
+- 院长澄清：**黑机继续在 `G:\A Gentleman's War` 全量仓工作；每轮收尾把 `docs/.ai/AGENTS/CHANGELOG` 同步到隔壁 `G:\A Gentleman's War-docs` 并 push；白机只在文本仓工作**
+- `tools/sync-docs-repo.ps1` 升级 `pull|push`：
+  - `pull` = 文本仓(origin)→全量仓（开工前拿白机改动）
+  - `push` = 全量仓→文本仓→GitHub（收尾；基线 `tmp/docs-sync-base.txt`；文本仓有白机新提交时中止，要求先 pull）
+  - `README.md` 两仓各自维护，不参与同步
+- `AGENTS.md` §三/§五、`docs/04-技术笔记/GitHub建仓与双机协作.md`、双仓 README 更新；文本仓 README 已推 `c91f010`
+- 文档仓本轮同步推 R24k 文档
 
 ## 2026-10-25 R24j · GitHub 纯文档仓（代码不入库）
 
