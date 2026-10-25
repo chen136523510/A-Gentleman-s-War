@@ -42,7 +42,7 @@
 - **美术**：`docs/07-美术/`（美术纪律全文迁入 + 资产登记表——凡入 Assets 的图必须登记实际内容）；ComfyUI 出图管线见登记文档 §二
 - **CHANGELOG** 根目录倒序（接口/架构变更必落档）；commit 格式 `[feat|fix|refactor|chore|docs](模块): 动作及意图`，禁模糊词
 - **LFS 大件**：GitHub **纯文档仓不走 LFS**；全量代码仓若日后配私有远程，贴图/音视频/模型仍走 LFS（免费 1GB+1GB/月，超限请示院长）；push 前 fetch 防覆盖
-- 主仓（nandexueyuan）关系：设计文档历史版本+Web 验证资产仍在主仓归档（只读）；**设计文档以纯文档仓（GitHub）为唯一权威**，本仓 `docs/` 是黑机工作镜像（`tools/sync-docs-repo.ps1 pull`）；改设计优先改文档仓，再镜像回本仓
+- 主仓（nandexueyuan）关系：设计文档历史版本+Web 验证资产仍在主仓归档（只读）；**设计文档以纯文档仓（GitHub）为唯一权威**；黑机全量仓 `docs/` 是工作镜像（`tools/sync-docs-repo.ps1 pull`）；改设计优先改文档仓
 
 ## 六、红线
 
