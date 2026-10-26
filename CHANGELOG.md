@@ -10,6 +10,15 @@
 ---
 ---
 
+## 2026-10-26 R37c · L1 战略层首版实装（黑机）
+
+- 类型：交付（界面/数据/存档/构建）
+- **范围**：真实数据 + 回合结算 + 城市面板真数据 + 存档 v2；简版出兵/行军/最小 AI 按院长裁决后置（无内政基础数值）。
+- **已实装**：开局选阵营+难度（CN 丘序明主席 / JP 陈睿君主 / KR 陈楠总统 / AU 马逸杰总统）；主 HUD 六项资源（财/粮/军力/生产力/科技值/民生）；**军力=服役×战力×军备**；城市面板城防/民生/财/首长；初始全迷雾+每回合 1 次探索；疆域柔光试作（顶部 `疆` 开关）；存档 v2（GameState+相机，auto/turn 槽）；CanvasScaler 1920×1080。
+- **验收**：`AgwMenu.BuildOnly` 成功；`Builds/Win64/agw-shot-start.png` / `agw-shot.png` / `agw-shot-explore.png` / `agw-shot-hover.png` / `agw-shot-au.png` / `agw-shot-turn.png` / `agw-shot-load.png`；auto.agw.json 第 2 回合 财 5,040 / 粮 3,150 / 科技 21 校验通过。
+- **待院长评价**：疆域色块大小/透明度、迷雾样式、开局界面、六项 HUD/军力分项、CN 默认城、探索 1 次/回合节奏。
+- 影响：`Scripts/L1/GameState.cs`（新）/`L1MapBuilder.cs`/`L1World.cs`/`L1CameraRig.cs`/`Data/cities.json`；文档 `L1大地图HUD布局.md`、`资源体系.md`、`数值设计总纲.md`、`武将名册.md`、`L1战略层开发讨论单.md`、07 changelog。
+
 ## 2026-10-26 R35~R37 · L3 战斗场景专题三连（院长设计，白机落档）
 
 - 类型：设计决策（L3 战役规则从立项到闭环）
