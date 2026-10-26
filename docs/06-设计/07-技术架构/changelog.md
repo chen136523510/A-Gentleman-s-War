@@ -30,14 +30,14 @@
 
 - 类型：决策/交付/提案
 - 依据：院长走查主站 L1 后三点反馈：①「网络连接失败」报障 ②「感觉还是走unity吧，别走网页了，也方便后续直接打包给朋友玩」③要一个有味道的国男志英文名（不要拼音）
-- 变更：①**服务修复**：「网络连接失败」根因=主站 axios 拦截器在 :3000/:2567 未启动时触发——两后端已起并 netstat 实证监听，:4396/:3000/:2567 三服务全绿；②**ADR-009 已接受**（[链接](../../../02-决策/ADR-009-国男志引擎选型Web转Unity.md)）：Unity 2022.3.62f3c1（本机 `F:\Unity\unityEditor1.0` 实证可执行）+ Unity 2D URP + 独立仓（对齐 nono 先例，仓名/英文名定后建）+ 主仓 Web 资产转归档、设计文档全部继续有效；迁移清单五项已写入 ADR（geo-data→JSON、map-data→ScriptableObject、13 城贴图直接进 Assets、L1 底图离线烘焙、L2 照文档重做）；③**英文名提案三案**：Romance of the Four Kingdoms（主推：戏仿《三国志》官译 Romance of the Three Kingdoms，"四"=四阵营，战略玩家秒懂）/ A Gentleman's War（字面优雅×内核鸡飞狗跳的反差幽默）/ Total Men: Modern Kingdoms（Total War 梗，更痞）——待院长拍板后随仓名落 ADR 附注
+- 变更：①**服务修复**：「网络连接失败」根因=主站 axios 拦截器在 :3000/:2567 未启动时触发——两后端已起并 netstat 实证监听，:4396/:3000/:2567 三服务全绿；②**ADR-009 已接受**（[链接](../../02-决策/ADR-009-国男志引擎选型Web转Unity.md)）：Unity 2022.3.62f3c1（本机 `F:\Unity\unityEditor1.0` 实证可执行）+ Unity 2D URP + 独立仓（对齐 nono 先例，仓名/英文名定后建）+ 主仓 Web 资产转归档、设计文档全部继续有效；迁移清单五项已写入 ADR（geo-data→JSON、map-data→ScriptableObject、13 城贴图直接进 Assets、L1 底图离线烘焙、L2 照文档重做）；③**英文名提案三案**：Romance of the Four Kingdoms（主推：戏仿《三国志》官译 Romance of the Three Kingdoms，"四"=四阵营，战略玩家秒懂）/ A Gentleman's War（字面优雅×内核鸡飞狗跳的反差幽默）/ Total Men: Modern Kingdoms（Total War 梗，更痞）——待院长拍板后随仓名落 ADR 附注
 - 影响：需求池 R-059、08-国男志 README、根 CHANGELOG（架构级）、handoff
 
 ## 2026-10-24 R17 · L1 接入主站 + 13 城 ComfyUI 贴图 + 八点反馈落地
 
 - 类型：交付/决策
 - 依据：院长走查 R16 独立页后八点反馈：①陈梓键平级无特殊标注 ②澳洲城市坐标没跟板块走 ③地图要更精细/立体感、空白用美术填充 ④城市用 ComfyUI 本地模型生成、每城差异化 ⑤删「中央军团/远洋起点」类介绍 ⑥游戏不是 PPT、用表现形式展示 ⑦不写 html、直接进网站+起本地服务+收资源数据 ⑧看 hi3d 调研
-- 变更：①**引擎正式迁入主站**：`src/guonanzhi/l1/`（noise/map-data/paint-map/main 四模块 + l1.css）+ `src/views/GuonanzhiView.vue`（mountL1/dispose 生命周期壳）+ 路由 `/guonanzhi`（雏形阶段不挂 auth，L2 接入时加回）；poc/guonanzhi-ui 的 l1.html 降级为归档参考；②**ComfyUI 本地出图管线**：`gen_city_l1.py`（FLUX.1-dev-fp8，13 城差异性地标提示词）→ `key_city_l1.py`（两遍泛洪抠图：固定容差保绿树 + 亮绿渍清理 + 去溢色，512 透明 PNG）→ `public/guonanzhi/l1/cities/`（13/13 成功，已按美术纪律在 [05-美术设计/国男志/README.md](../../05-美术设计/国男志/README.md) 登记实际内容）；引擎 `loadCityImages` 预载贴图（降采样 512 持有省 40MB），缺图回退程序化小景；③**立体感升级**：手绘山体精灵沿 36 条山脊成群（受光/背光双面+雪顶限高山）、树精灵高光、远洋航线+南海帆船、光影对比增强、近邻城错位重调（深港/京仁/东名贴图不重叠）；④快改：陈梓键平级、澳洲城市 oc 标记随板块平移、tooltip/面板删 note 文案；⑤资源实测（playwright，dev 热载）：**JS 堆 15.1MB、底图画布 49MB、城贴图 13MB、FPS 146（vsync 满）、页面就绪 0.43s**、网络传输 0.03MB/48 请求；冷载增量=13 张贴图 3.2MB 首拉
+- 变更：①**引擎正式迁入主站**：`src/guonanzhi/l1/`（noise/map-data/paint-map/main 四模块 + l1.css）+ `src/views/GuonanzhiView.vue`（mountL1/dispose 生命周期壳）+ 路由 `/guonanzhi`（雏形阶段不挂 auth，L2 接入时加回）；poc/guonanzhi-ui 的 l1.html 降级为归档参考；②**ComfyUI 本地出图管线**：`gen_city_l1.py`（FLUX.1-dev-fp8，13 城差异性地标提示词）→ `key_city_l1.py`（两遍泛洪抠图：固定容差保绿树 + 亮绿渍清理 + 去溢色，512 透明 PNG）→ `public/guonanzhi/l1/cities/`（13/13 成功，已按美术纪律在 [美术资产登记](../../07-美术/美术资产登记-L1城市贴图.md) 登记实际内容）；引擎 `loadCityImages` 预载贴图（降采样 512 持有省 40MB），缺图回退程序化小景；③**立体感升级**：手绘山体精灵沿 36 条山脊成群（受光/背光双面+雪顶限高山）、树精灵高光、远洋航线+南海帆船、光影对比增强、近邻城错位重调（深港/京仁/东名贴图不重叠）；④快改：陈梓键平级、澳洲城市 oc 标记随板块平移、tooltip/面板删 note 文案；⑤资源实测（playwright，dev 热载）：**JS 堆 15.1MB、底图画布 49MB、城贴图 13MB、FPS 146（vsync 满）、页面就绪 0.43s**、网络传输 0.03MB/48 请求；冷载增量=13 张贴图 3.2MB 首拉
 - 影响：路由 /guonanzhi、美术资产 README（新档）、黑机协作-地图美术、poc README、handoff
 
 ## 2026-10-24 R16 · L1 战略大地图手绘雏形交付（风格重定向：三国群英传7 参考写实）
