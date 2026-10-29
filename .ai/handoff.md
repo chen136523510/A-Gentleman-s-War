@@ -21,7 +21,7 @@
 - **结算引擎**：`CitySettlement.cs` 纯函数 CalcXxx（住房 H/宜居/治安/民生/忠诚流量积分/全国粮池/人口增长/同化/产出/占领惩罚/文化错位）；`GameState` schema 3，回合流水线=全国粮池→目标→缓动→人口/同化→忠诚→起义/叛乱→产出；v2 旧档自动迁移（Food/Troops/中文建筑名/人口补齐）。
 - **粮食**：单国粮池 Q/D/K/F；**不做自动进口**（R49b 修正）；缺粮需建农田/牧场或走外交/外贸。WLT 事件给台北一块农田，保证自立政权不立即饥荒。
 - **事件系统**：`EventRunner` 数据解释器（turn/cityOwner/relation 触发；Lock/Unlock/SpawnFaction/TransferCity/ModifyRelation/AddBuilding/SetFactionResources）；王乐添第 1 回合锁定、第 2 回合自立 WLT、台北改属/接管农田、CN−WLT −20，全部在 `events.json`，无 C# 剧情分支。旧档迁移会补跑已过期 turn 事件。
-- **WLT 完整阵营**：数据/颜色/领袖/初始视口/关系/城市/人口齐全；地图标签与城市面板按运行时归属染色；外交面板列出 5 阵营 + 无主，未登场显示“未登场”，登场后显示关系值。
+- **WLT 完整阵营**：数据/颜色/领袖/初始视口/关系/城市/人口齐全；地图标签与城市面板按运行时归属染色；外交面板只列阵营名与关系（5 阵营 + 无主），未登场显示“未登场”。
 - **UI**：城市面板加人口/忠诚/宜居/治安/民生/粮安/驻军；HUD 粮安；新增底部战报面板；开局卡只显示阵营名；城市标签偏移从 `cities.json.labelOffset` 读取；地图参数不再写死在 L1World。
 - **自检命令**：
   - Unity 菜单 `AGW/数值自检 · 200 回合模拟` → `tmp/sim-report.txt`
