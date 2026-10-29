@@ -1,30 +1,39 @@
 # AI 交接单 — A Gentleman's War（国男志）
 
-> 最后更新：2026-10-29 **R49 黑机代码施工**（数据驱动数据层 + 城市结算骨架 + WLT 完整阵营；sim/smoke/exe 全过）
+> 最后更新：2026-10-29 **R49b 口径修正**（院长 5 条：忠诚 70 基线/取消自动进口/起义叛乱 75% 分类/开局去国体/L3 后续；代码+文档同步）
 > 所在设备：白机纯文档仓 `D:\product\AGW`（origin=GitHub，无代码）；黑机全量工程仓 `G:\A Gentleman's War`（master，无 remote）
 > R23 设计轮工作日志（上下文恢复锚点）：`.ai/worklog-R23.md`
 > 城位/投影/烘焙唯一配方：`docs/04-技术笔记/L1投影与城位校准.md`
 
-## ⭐ 2026-10-29 黑机 · R49 代码施工（本轮，已提交）
+## ⭐ 2026-10-29 黑机 · R49b 口径修正（院长 5 条，已实装）
+
+- **忠诚 70 调查结论**：R49《人口数值表》§十一 的“忠诚 70”在 25/50/100/150/200 每个检查点都固定 70，是**聚合模拟的固定基线**（初始人口加权均值），不是 v1.3 忠诚流量模型的输出；按 v1.3，和平核心城 25 年升到 100 合理。已在 `人口数值表.md §十一` 加口径注，不改代码。
+- **粮食**：**取消自动进口**（进口必须走外交/外贸，后续贸易协定接）；`balance.food.importPrice` 保留为未来单价。89% 是 **14 城总量口径** `100×425/(1.2×398)`；分国粮池下 CN 6 城 Q=140/D≈190 → F≈61%、KR≈62%、AU≈100%；CN/KR 是粮食缺口国，需建农田/牧场或外交进口。200 回合复算：人口 483,891，CN 粮安 61.3→53.6%（不饥荒，F>50；压力来自人口增长）。
+- **起义/叛乱**：**触发只看忠诚**（普通城 `<30` 连续 3 回；占领城 `<20` 连续 10 回）；**外籍比例只决定类别，75% 分界**（`f≥75%` 叛乱、`f<75%` 起义）；删除“50%/65%/占领城 50~75% 稳定/占领城 o≥75% 才可起义”等旧口径。代码 `GameState.SettleUprising` + `balance.uprising.rebellionForeignShare=0.75` 已同步；`数值公式总纲`/`起义与叛乱`/`人口算法`/`人口体系架构` 已同步。
+- **开局界面**：不再展示各国国体（政体），阵营卡改为展示 `factions.json` 的特色词条（traits[0]）；势力一览面板仍保留政体/领袖详情。
+- **L3 战争**：按院长指示后续开发，本轮不接（战争/围城/征募 UI 仍未做）。
+- **复核**：200 回合模拟（无自动进口）人口 483,891 / 承载 489,000；WLT 存活 1 城 29,802 人；3 城 3 阵营烟雾测试 `SMOKE OK`；exe 重建；截图 `agw-shot-start/city/wlt/factions/turn/load/au/restart` 已刷新。
+
+## ⭐ 2026-10-29 黑机 · R49 代码施工（已并入 R49b 口径）
 
 - **数据层（全部数据驱动）**：`Assets/_Project/Data/` 新增 `maps/east-asia.json`（投影/可玩区/初始视口/地形掩码/澳洲变换）、`factions.json`（含 WLT/NONE、政体/领袖/初始军力/开局视口）、`buildings.json`（18 建筑，字段含产出/承载/宜居/治安/粮食/维护/造价）、`balance.json`（数值公式总纲 v1.3 §七 + 人口数值表 v1.0）、`events.json`、`scenario.json`；`cities.json` 扩展 `populationOwn/Foreign/capacity/housingQuality/baseFood/motherNation/labelOffset`，初始建筑改稳定 id。构建前置 `AgwDataBuild` 自动把 Data 同步到 StreamingAssets/Data（该副本 git 忽略）。
 - **结算引擎**：`CitySettlement.cs` 纯函数 CalcXxx（住房 H/宜居/治安/民生/忠诚流量积分/全国粮池/人口增长/同化/产出/占领惩罚/文化错位）；`GameState` schema 3，回合流水线=全国粮池→目标→缓动→人口/同化→忠诚→起义/叛乱→产出；v2 旧档自动迁移（Food/Troops/中文建筑名/人口补齐）。
-- **粮食**：单国粮池 Q/D/K/F；A4 缺粮自动进口 v0（3 财/粮，`balance.food.autoImport`，贸易协定接入后改开关）。
+- **粮食**：单国粮池 Q/D/K/F；**不做自动进口**（R49b 修正）；缺粮需建农田/牧场或走外交/外贸。WLT 事件给台北一块农田，保证自立政权不立即饥荒。
 - **事件系统**：`EventRunner` 数据解释器（turn/cityOwner/relation 触发；Lock/Unlock/SpawnFaction/TransferCity/ModifyRelation/AddBuilding/SetFactionResources）；王乐添第 1 回合锁定、第 2 回合自立 WLT、台北改属/接管农田、CN−WLT −20，全部在 `events.json`，无 C# 剧情分支。旧档迁移会补跑已过期 turn 事件。
 - **WLT 完整阵营**：数据/颜色/政体/领袖/初始视口/关系/城市/人口齐全；地图标签与城市面板按运行时归属染色；势力一览面板列出 5 阵营 + 无主，未登场显示“未登场”，登场后显示关系值。
-- **UI**：城市面板加人口/忠诚/宜居/治安/民生/粮安/驻军；HUD 加粮安/进口；新增底部战报面板；开局卡从 `playable` 数据生成；城市标签偏移从 `cities.json.labelOffset` 读取；地图参数不再写死在 L1World。
+- **UI**：城市面板加人口/忠诚/宜居/治安/民生/粮安/驻军；HUD 加粮安；新增底部战报面板；开局卡从 `playable` 数据生成（不显示国体，显示特色词条）；城市标签偏移从 `cities.json.labelOffset` 读取；地图参数不再写死在 L1World。
 - **自检命令**：
   - Unity 菜单 `AGW/数值自检 · 200 回合模拟` → `tmp/sim-report.txt`
   - Unity 菜单 `AGW/烟雾测试 · 3城3阵营20回合` → `tmp/smoke-result.txt`（含 v2 旧档迁移断言）
   - 构建：`Unity.exe -batchmode -quit -projectPath "G:/A Gentleman's War" -executeMethod AGW.EditorTools.AgwMenu.BuildOnly`
-- **本轮结果**：200 回合人口 485,870 / 承载 489,000；CN 粮安 83.3%（进口兜底）；WLT 存活 1 城 29,802 人；烟雾 `SMOKE OK`；exe 重建 + `agw-shot-start/city/wlt/factions/turn/load/au/restart` 截图。
+- **R49b 复算结果**：200 回合人口 483,891 / 承载 489,000；CN 粮安 61.3→53.6%（无自动进口）；WLT 存活 1 城 29,802 人；烟雾 `SMOKE OK`；exe 重建 + `agw-shot-start/city/wlt/factions/turn/load/au/restart` 截图。
 - **已知/待白机确认**：
-  1. 按 v1.3 流量模型，和平核心城忠诚 25 年升到 100；R49 聚合表写“忠诚 70 稳定”——需确认是基线假设，还是要下调治理/武将/驻军正流系数（当前参数在 `balance.loyalty`）。
-  2. 单国粮池下 CN 初始 F=61%（文档 89% 是 14 城总量口径）；v0 自动进口补到 83%。是否保留自动进口，等 B12 财政/贸易协定定稿。WLT 事件在 `events.json` 里额外给台北一块农田（保证自立政权不立即饥荒）；如不合设计，删该 `AddBuilding` 效果即可。
-  3. B1 建筑全量/B12 财政/B2 城市成长仍未定；当前产出/科技/维护用 `buildings.json` v0 值。
-  4. 起义/叛乱 v0 只做触发与易主（无战斗结算）；战争/围城/征募 UI 未接。
-  5. 探索常数仍在 `L1Tuning.cs`（已集中，未搬 balance.json），等 B10 探索专题。
-- **下一批建议**：①B1 建筑全量数值 → 替换 buildings.json；②B12 财政/税收 → 接产出公式；③B2 城市成长/城防；④回合结算引擎（按阵营逐个+事件队列+战报回溯）；⑤战争/围城最小闭环。
+  1. ~~忠诚 100 vs 70~~ → 已查明 R49 的 70 是聚合固定基线，v1.3 下 100 合理；文档已加注。
+  2. ~~自动进口~~ → 已取消；分国粮池下 CN/KR 缺口是设计压力，等 B12 财政/贸易协定接外交进口。
+  3. 起义/叛乱 v0 只做触发与易主（无战斗结算）；触发只看忠诚，75% 外籍只定类别（R49b 院长口径）。
+  4. B1 建筑全量/B12 财政/B2 城市成长仍未定；当前产出/科技/维护用 `buildings.json` v0 值。
+  5. 战争/围城/征募 UI 未接（L3 战争按院长指示后续开发）；探索常数仍在 `L1Tuning.cs`（已集中，未搬 balance.json），等 B10 探索专题。
+- **下一批建议**：①B1 建筑全量数值 → 替换 buildings.json；②B12 财政/税收 → 接产出公式；③B2 城市成长/城防；④回合结算引擎（按阵营逐个+事件队列+战报回溯）；⑤L3 战争/围城最小闭环。
 
 ## ⭐ R49（2026-10-29，文档轮 · 人口数值表 + 开发规范）
 
