@@ -4,6 +4,14 @@
 > 所在设备：白机纯文档仓 `D:\product\AGW`（origin=GitHub，无代码）；黑机全量工程仓 `G:\A Gentleman's War`（master，无 remote）
 > R23 设计轮工作日志（上下文恢复锚点）：`.ai/worklog-R23.md`
 > 城位/投影/烘焙唯一配方：`docs/04-技术笔记/L1投影与城位校准.md`
+> 📋 **白机待处理**：`docs/06-设计/07-技术架构/L1界面与交互收集-2026-10-29.md`（当前界面/功能/入口/交互 as-is + 待补规格 + 院长已确认口径）。
+
+## 下机状态（2026-10-29 20:35）
+
+- 全量仓 `G:\A Gentleman's War` master 干净；文本仓 `G:\A Gentleman's War-docs` 已 push。
+- exe：`Builds/Win64/AGW.exe`（最新构建）；截图 `agw-shot-start/city/wlt/factions/turn/load/au/restart` 已刷新。
+- 自检：200 回合模拟（无自动进口）人口 483,891 / 承载 489,000；CN 粮安 61.3→53.6%；WLT 存活 1 城；烟雾测试 `SMOKE OK`。
+- 白机下一步：按 `L1界面与交互收集-2026-10-29.md` 出 UI/交互规格（先 P0 粮食/建造/征募）。
 
 ## ⭐ 2026-10-29 黑机 · R49b 口径修正（院长 5 条，已实装）
 
