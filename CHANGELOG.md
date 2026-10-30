@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-10-30 黑机 · B1-A/B1-F 实装（粮食 v4 城级账本 + 农业区数据）
+
+- 类型：代码（数据驱动 + 结算引擎 + UI）
+- 依据：`03-内政/农业区数值.md` v1.1（定稿）、`03-内政/粮食与人口算法.md` v4.0（定稿）。
+- 数据：`buildings.json` 拆 5 粮作/5 经济作物/4 牧场/渔场/食品加工厂（固定 45、工业区），新增 `foodConsume/feedBonus/welfare/livability/farmland/coastalOnly` 字段；`cities.json` 按 §九 重算 14 城 `baseFood` + 耕地容量 1/2/3 + 初始农业件；`balance.json` 改库存制参数（驻军 1.5 粮/千人、8×D 上限、3×D 初始、饥荒 min(5%,10%×d)、W 粮项 11−30×min(d,1)、f_F=0.4+0.3×min(K/D,2)）；`factions.json` 加 `initialFoodStockYears`（CN/JP/KR 3、AU/NONE 8、WLT 3）；`events.json` 删台北重复 `AddBuilding`（初始已有渔场）。
+- 引擎：`CityCalc.CalcFoodLedger` 城级 Q_i/D_i/net → 余粮进池 → 按缺口比例分配 → 库存兜底 → K 耗尽才饥荒；`FoodOutput` 支持牧场净产/饲料联动/渔场/食品工业；`CalcGrowth` 缺粮死亡与 f_F 库存年数；`CalcWelfare/CalcLivability` 用缺口率；新增 `FoodProduced/FoodDemand/FoodShort`、`FoodStockYears`；人口下限 1,000；存档 schema 4（v2/v3 旧档重算 BaseFood、`farmland→farmWheat` / `pasture→cattle`、空库存补初始年数）。
+- UI：HUD 粮行改为“库存 + 红/绿箭头”、状态行加库存年数；城市面板“粮安 F%”改为“余粮 ±N（缺口）”，绿/红 rich text；对应 Text 开 `supportRichText`。
+- 验收：第 1 回合城级账本与文档 §9.1 对齐（CN Q176/D190.8/净 −14.8、JP 73/94.5/−21.5、KR 44/60.2/−16.2、AU 106/48.2/+58、台北 48/25.1/+23、达尔文 40/6/+34）；库存缓冲断言 OK（有库存时无城缺粮）；`SMOKE OK`；exe 重建（92MB）+ 截图 `agw-shot-city/turn/wlt/load`。
+- **关键依赖**：建造系统尚未实装（白机 UI 规格在途），当前 exe 无法建农田/居民楼；无建造/无贸易时 200 回合 KR t12、JP t14、CN t16 起库存耗尽，人口回落到本国粮产承载（CN ~128k）。文档 641k 锚点依赖建住宅 + AI 贸易，本批不能复现。下一步必须先接建造（或临时给 AI 建/进口兜底）。
+- 未做：8 种加工建筑与挂地块/改种（需要 L1 地块模型）、进出口外交定价、出征带粮、维护 1%/税基/建造方案 B 的引擎效果（数据字段已留）。
+
 ## 2026-10-30 白机 · B1-F 粮食与人口算法 v3（库存制，院长 17 条）
 
 - 类型：设计（机制简化 + 重写）

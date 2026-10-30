@@ -1,10 +1,20 @@
 # AI 交接单 — A Gentleman's War（国男志）
 
-> 最后更新：2026-10-30 **✅ 农业区专题 v1.1 定稿**（24 项内容 + 无损改种 + 加工建筑挂地块 + 维护 1% + 建造方案 B）
+> 最后更新：2026-10-30 **黑机 B1-A/B1-F 实装**（粮食 v4 城级账本 + 农业区数据 + 最小 UI；exe 已重建）
 > 所在设备：白机纯文档仓 `D:\product\AGW`（origin=GitHub，无代码）；黑机全量工程仓 `G:\A Gentleman's War`（master，无 remote）
 > R23 设计轮工作日志（上下文恢复锚点）：`.ai/worklog-R23.md`
 > 城位/投影/烘焙唯一配方：`docs/04-技术笔记/L1投影与城位校准.md`
 > 📋 **白机在途**：①B1 其余五区（工业/商业/学院/军事/娱乐）待定值；②`docs/06-设计/07-技术架构/L1界面与交互收集-2026-10-29.md`（P0 粮食/外贸/建造、征募/军队、回合结算演出的 UI 规格）。
+
+## ⭐ 2026-10-30 黑机 · B1-A/B1-F 实装（粮食 v4 城级账本 + 农业区数据）
+
+- **数据**：`buildings.json` 拆 5 粮作/5 经济作物/4 牧场/渔场/食品加工厂（45 固定、工业区），新增 `foodConsume/feedBonus/welfare/livability/farmland/coastalOnly`；`cities.json` 按 §九 重算 14 城 `baseFood`（CN 176/JP 73/KR 44/AU 106）+ 耕地 1/2/3 + 初始农业；`balance.json` 库存制参数；`factions.json` 初始库存年数（CN/JP/KR 3、AU/NONE 8、WLT 3）；`events.json` 删台北重复农田。
+- **引擎**：城级 Q_i/D_i/net → 余粮进池 → 按缺口比例分配 → 库存 K 兜底 → K 耗尽才饥荒；牧场净产/饲料联动、渔场、食品工业 45；缺粮死亡 + f_F 库存年数；人口下限 1,000；存档 schema 4（旧档重算 BaseFood、farmland→farmWheat/pasture→cattle、空库存补初始）。
+- **UI**：HUD 粮行 = 库存 + 红/绿箭头；状态行库存年数；城市面板“余粮 ±N（缺口）”绿/红；删粮安 F。
+- **验收**：t1 账本与文档 §9.1 对齐（CN −14.8 / JP −21.5 / KR −16.2 / AU +58 / 台北 +23 / 达尔文 +34）；库存缓冲断言 OK；`SMOKE OK`；exe 重建 + `agw-shot-city/turn/wlt/load`。
+- **关键依赖**：**建造系统未实装**（白机 UI 规格在途），玩家无法建农田/居民楼；无建造/无贸易时 KR t12、JP t14、CN t16 起库存耗尽，人口回落到本国粮产承载（CN ~128k）。文档 641k 锚点依赖建住宅+AI 贸易，本批不能复现——**下一步优先接建造**。
+- **未做**：8 加工建筑/挂地块改种（需 L1 地块模型）、进出口外交定价、出征带粮、维护 1%/税基/方案 B 引擎效果（字段已留）。
+- **自检**：`tmp/sim-report.txt`（t1 账本 + 200 回合 + 缓冲断言）、`tmp/smoke-result.txt`（SMOKE OK）、`Builds/Win64/AGW.exe`、截图 `agw-shot-city/turn/wlt/load`。
 
 ## 🛑 下机状态（2026-10-30，换机前）
 
