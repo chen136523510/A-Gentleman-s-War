@@ -99,5 +99,6 @@
 - L2：tools/l2planner（plan.js + bake_art.py）；数据 Assets/_Project/Data/L2/{city}/map.json；档案 docs/06-设计/L2地图档案/；**新方向=整图 base + 格子 shader + 建筑 sprite**。
 - 建造：Scripts/L1/ConstructionSystem.cs（城级多队列，槽位 balance.build.buildQueueSlots=2）；兵营初始 5 城=深圳/长崎/首尔/悉尼/台北。
 - 模拟：`tmp/sim-full-v17a.js`（过程件，不入库）；v17a 报告在 docs；v17b 以军事专题 v0.6 为准。
+- **11-10 旧口径清理（黑机）**：`balance.output.officerBonusDiv`（原 `governorDiv`）=建筑级加成除数 150；城市面板“首长”→**驻城武将全名单**；BuildOnly 编译通过。
 
-**防踩坑**：①商业/文化数值草案——buildings.json 里 `status:"draft"` 不参与结算，接入须翻状态+全量盘；②升级不变占地=铁律；③模拟必须同算粮+战争；④changelog/bug-log 只读顶部索引；⑤commit 格式 `[feat|fix|refactor|chore|docs](模块): 动作及意图`；⑥参数纪律：常数入 balance.json 禁内联；⑦数值自治：数值不列待裁，模拟闭环；⑧**ComfyUI 生图 GPU 必须独占**；FLUX 纹理上限 768²；⑨样张验收走"截全图→视觉自评→修→复验"；⑩Unity 编译有锁，多 agent 不得并行 batchmode；⑪**v17a 是武将加成前基线**，加成/间谍/文化池入模后必须重跑；⑫**L2 整图烘焙**按 32 px/tile≈3072² 预算，建筑不进底图。
+**防踩坑**：①商业/文化数值草案——buildings.json 里 `status:"draft"` 不参与结算，接入须翻状态+全量盘；②升级不变占地=铁律；③模拟必须同算粮+战争；④changelog/bug-log 只读顶部索引；⑤commit 格式 `[feat|fix|refactor|chore|docs](模块): 动作及意图`；⑥参数纪律：常数入 balance.json 禁内联；⑦数值自治：数值不列待裁，模拟闭环；⑧**ComfyUI 生图 GPU 必须独占**；FLUX 纹理上限 768²；⑨样张验收走"截全图→视觉自评→修→复验"；⑩Unity 编译有锁，多 agent 不得并行 batchmode；⑪**v17a 是武将加成前基线**，加成/间谍/文化池入模后必须重跑；⑫**L2 整图烘焙**按 32 px/tile≈3072² 预算，建筑不进底图；⑬**武将加成按建筑级结算（Q1）**，禁止再写“城市轴聚合/同轴取最高”。
