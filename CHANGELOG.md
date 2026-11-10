@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-11-11 黑机 · L2 渲染底座 v4（空地制 + 红警式建造）+ 红警调研
+
+- **ADR-012 拍板**：L2 base=纯地形整图（3072²），建筑全走 sprite 层；v2 照片平铺 / v3 卫星复刻废弃（院长口径：L2=空地+初始建筑+自然地形，画风参照三国志12，机制参照红警）。
+- **红警调研落档**（[00-调研/红警式建筑建造与地图调研.md](docs/06-设计/00-调研/红警式建筑建造与地图调研.md)）：OpenRA 源码核验——脚印字符集/`make` 动画/放置预览 `build-valid|invalid`/tileset 结构；RA2"落位即 make 动画"改造成**回合制工地期 4 阶段 + 完工 make 动画**。
+- **数据底座**：buildings.json 33 个 active 建筑回填 `size`（复用既有施工单 schema `Size` 字段；权威值 cityHall 3×3/militaryBase 4×3/农田 4×4，其余暂定随各区 L2 化修正）。
+- **渲染底座**（tools/l2planner）：`bake_terrain.py`（纯地形 base，可选 ComfyUI 油画 img2img 增强）+ `bake_buildings.py`（33 建筑 × stage0~3+idle + overlay-valid/invalid + contact sheet）+ `bake_city.py`（base+初始建筑+工地+放置预览样张）。
+- **Unity 底座**：`Scripts/L2/` 新增 L2MapData/L2CityView/L2ConstructionSite + 编辑器菜单 `AGW/L2 预览（深圳）`；BuildOnly 编译 0 error。预览直读 tmp/（构建迁移后置）。
+- **踩坑**：ComfyUI FLUX 被后台应用挤占显存 → 200s/步级卡死；生图必须独占 GPU（含壁纸引擎/Steam 等后台）。
+- 样张待验收：`tmp/baked-l2/shenzhen-city-sample*.png`、`buildings-sheet.png`。
+
+---
+
 ## 2026-11-10 黑机 · 旧口径清理（Q1 建筑级加成落地）
 
 - **设计文档**：`驻守与城态`/`武将数值基线 §七` 删除“同轴取最高”旧口径，统一为 **Q1 建筑级加成**——每建筑派驻武将→该建筑加成，城市产出=各建筑之和，取消城市轴聚合；`武将专题` 负伤/间谍态改为 **8 回合单一状态**；`间谍专题` 刺杀目标、`术语表`、`事件 README`、`市政盘点` 的太守/暴露残留同步清理。
