@@ -12,6 +12,7 @@
 - **渲染底座**（tools/l2planner）：`bake_terrain.py`（纯地形 base，可选 ComfyUI 油画 img2img 增强）+ `bake_buildings.py`（33 建筑 × stage0~3+idle + overlay-valid/invalid + contact sheet）+ `bake_city.py`（base+初始建筑+工地+放置预览样张）。
 - **Unity 底座**：`Scripts/L2/` 新增 L2MapData/L2CityView/L2ConstructionSite + 编辑器菜单 `AGW/L2 预览（深圳）`；BuildOnly 编译 0 error。预览直读 tmp/（构建迁移后置）。
 - **踩坑**：ComfyUI FLUX 被后台应用挤占显存 → 200s/步级卡死；生图必须独占 GPU（含壁纸引擎/Steam 等后台）。
+- **Unity 底座续作（同日）**：`L2CityController`（选建筑→点图落位→`TryEnqueue` 带 `At`→工地 sprite 随进度切阶段→完工 make 动画）；`ConstructionJob.At`/`BuildingState.At` schema 扩展（存档可缺省）；城市面板新增「城内」按钮接 L1↔L2 切换；菜单 `AGW/L2 城内可玩沙盒（深圳）`；**自检 PASS**（AGW/L2 自检·建造链路：入队→3 回合→完工 At 落档，batchmode 可跑）。
 - 样张待验收：`tmp/baked-l2/shenzhen-city-sample*.png`、`buildings-sheet.png`。
 
 ---
