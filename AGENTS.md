@@ -25,7 +25,7 @@
 
 - **双机分工（R24i 院长定）**：**黑机=全部内容**（工程/美术/出图/构建/场景，RTX 4070 + Unity 所在机）；**白机=仅文档**（`docs/`、`.ai/handoff.md`、CHANGELOG/AGENTS 等文档），**完全不接触代码**——`Assets/`、`Packages/`、`ProjectSettings/`、`Builds/`、`tools/` 一律不动，不装 Unity、不跑 LFS 大件。白机 clone 用 sparse-checkout 只拉 docs（见 `docs/04-技术笔记/GitHub建仓与双机协作.md`）。每次会话起手读 `.ai/handoff.md` 恢复状态
 - **三段式协作（长期有效）**：主会话（满血）出规划/施工单 → 院长切 flash 窗口执行 → 回主会话验收。flash 工兵定义在 `.zcode/agents/flash-executor.md`；**代码/美术/构建只允许黑机执行，白机只接文档任务**
-- **GitHub 纯文档仓（R24j/k 院长定）**：<https://github.com/chen136523510/A-Gentleman-s-War> **只放文档**（`docs/`、`.ai/`、`AGENTS.md`、`CHANGELOG.md`、`README.md`）；`Assets/`/`Packages/`/`ProjectSettings/`/`Builds/`/`tools/`/`local/`/`tmp/`/`.zcode/` 等代码/工程/美术/构建**一律不入库**。本地 `G:\A Gentleman's War` = 黑机全量工作仓 `master`（**不配 remote**）；`G:\A Gentleman's War-docs` = 纯文档仓 `main`（origin=GitHub，白机工作区/发布副本）
+- **GitHub 纯文档仓（R24j/k 院长定）**：<https://github.com/chen136523510/A-Gentleman-s-War> **只放文档**（`docs/`、`.ai/`、`AGENTS.md`、`CHANGELOG.md`、`README.md`、**`sim/`**）；`Assets/`/`Packages/`/`ProjectSettings/`/`Builds/`/`tools/`/`local/`/`tmp/`/`.zcode/` 等代码/工程/美术/构建**一律不入库**。**`sim/` 例外（院长 2026-11-12 令）**：纯 JS、node 可跑、无第三方依赖的**成品模拟盘脚本**入库共享，**黑白机都要能跑模拟**——每次全量盘跑完把成品脚本提交到 `sim/v<n>/`，规范见 `sim/README.md`。本地 `G:\A Gentleman's War` = 黑机全量工作仓 `master`（**不配 remote**）；`G:\A Gentleman's War-docs` = 纯文档仓 `main`（origin=GitHub，白机工作区/发布副本）
 - **双仓节奏**：黑机开工先 `sync-docs-repo.ps1 pull`（文本仓→本仓，拿白机改动）；收尾先 commit 本仓，再 `sync-docs-repo.ps1 push`（本仓→文本仓→GitHub）。白机只在文本仓改文档、push。禁止给全量仓加这个 remote
 - 每次会话结束：代码提交到本地 `master`（**不 push**）；文档 commit 后同步推文本仓；更新 handoff/changelog。白机提交前缀 `[docs]`
 
@@ -34,6 +34,7 @@
 - **Assets/_Project/** = 自有资产唯一根（Art/Scripts/Scenes/Prefabs/Data/Audio）；第三方走 UPM/Packages，不散落 Assets
 - **meta 文件必须随资产一起提交**；Assets 内英文命名，docs/ 用中文
 - 新建文件先查后建；**过程/调试产物一律进根 `tmp/`**（git 忽略；勿用 temp——Windows 不分大小写撞 Unity 的 Temp/）
+- **`sim/` = 成品模拟盘脚本共享区**（入库，唯一代码例外）：纯 JS/node、无依赖、参数集中；黑白机跑完都提交成品脚本，交接规范见 `sim/README.md`
 - **`local/` = 美术源文件本地专区**（git 忽略）；定版资产才进 `Assets/_Project/` 走 LFS
 - 场景 .unity 归黑机单人管
 
