@@ -33,7 +33,7 @@
 - **✅ v2 屋顶三方案基础版已交付（11-13 执行模型，待院长选型）**：A 中央塔冠+平顶（推荐）/ B 三段式坡屋顶 / C 折板翼形+脊线——`tmp/blender/cityhall_v2.py`（`-- A|B|C`）、12 张渲染、三份 model.json（19.0k/20.7k/21.1k tris 达标）、**对比页 `tools/3d-viewer/compare.html`**（55°/60° 同步）；登记与偏差披露见 [美术资产登记-3D建筑](../docs/07-美术/美术资产登记-3D建筑.md)。
 - **✅ 市政区 11 座批量基础版已交付（11-13 院长令，待院长审）**：医疗 4（药店/诊所/医院/三甲）+ 警察 3（派出所/警察署/警察厅）+ 情报 3（情报站/情报局/国安局）+ 信号基站，全部 2×2=40×40m——`tmp/blender/municipal_v1.py`、44 张渲染、11 份 model.json、**画廊 `tools/3d-viewer/municipal.html`**（链式并排）；hospitalLv2/policeStationLv2 为旧链遗留未立模；市政府 Lv2/3 视觉待屋顶选型后补。
 - **✅ 院长 11-13 选定 v2 A 方案**（中央塔冠+平顶）；B/C 备档。A 物料语言=通用套件基调。
-- **🏗️ 其余全区批量（院长 11-13 令）**：**10 区 122 座，总清单 [通用建筑批量建模清单](../docs/07-美术/通用建筑批量建模清单.md)**。**✅ 已出 5 区 83 座（11-13）：居民 8 / 商业 6 / 工业 22 / 农业 23 / 学院 24**（residential/commerce/industry/agriculture/science 五个 .html 画廊）；框架 `tmp/blender/buildings_v1.py`（`-- <zone|id>`，runner 有场景 purge）+ `export_buildings.py`（新 zone 要同步加 ITEMS）。剩余：文化 6/娱乐 19/军事 9/文旅 3/公用 2——画廊用缩略卡（>16 iframe 会超 WebGL 上下文上限）。
+- **🏗️→✅ 其余全区批量完成（院长 11-13 令）**：**10 区 122 座基础版全部交付**，总清单 [通用建筑批量建模清单](../docs/07-美术/通用建筑批量建模清单.md)；9 张画廊 residential/commerce/industry/agriculture/science/culture/military/entertainment .html；框架 `tmp/blender/buildings_v1.py`（`-- <zone|id>`，runner 有场景 purge，id 可与助手撞名需别名）+ `export_buildings.py`（新 zone 同步加 ITEMS）；画廊>16 格用缩略卡（WebGL 上下文上限）。⚠ 大场地 draft 无尺寸按链位暂定（清单标注，进阶版前回填 buildings.json）。**待院长逐区审→点名改→精修→进阶版。**
 - **执行分工（11-13）**：院长换窗口让执行模型干活；主会话只出方案/范式/验收，不直接施工。
 - **差异化口径（院长 11-12）**：城市地形/底图每城差异化；**通用建筑 33 类不做差异化**，全城共用；特色建筑后续点单。
 - **Hi3D**：暂不接主线（硬表面建筑手搓更可控）；留作装饰件/雕塑/废墟/树石加速器或 A/B 备选。
