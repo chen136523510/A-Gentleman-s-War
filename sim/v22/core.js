@@ -13,12 +13,10 @@ const fmt = (n) => Math.round(n).toLocaleString('en-US');
 const P = {
   S: 8,                          // 全局尺度
   turns: 200,
-  // 人口（生育率公式，人口算法 §7.2）
-  fertilityBase: 0.008,
-  hospitalH: [0, 0.0004, 0.0008, 0.0016, 0.0024], // 药店/诊所/医院/三甲（base 0.8% 的 5/10/20/30%）
-  mortalityBase: 0.004,
-  mortalityOverload: 0.60,
-  mortalityPollution: 0.20,
+  // 人口（单一自然增长公式，人口算法 §7.2；平衡点=1.5 倍承载）
+  growthBase: 0.008,             // 每回自然增长基准
+  growthBalance: 1.5,            // 平衡点：r=P/C=1.5 时 g=0
+  growthHospital: [1, 1.05, 1.10, 1.20, 1.30], // 药店/诊所/医院/三甲（乘区）
   // 粮（全国池；单位=千人份）
   farmYield: 320,                // 农田 ×8
   farmLand: 3,                   // 每城耕地上限
@@ -51,7 +49,7 @@ const P = {
   warService: 0.10,              // 战时动员率
   // AI
   maxBuildPerTurn: 1,
-  caps: { residence: 4, farm: 3, street: 6, mall: 2, office: 8, cinema: 2, resort: 2, academy: 2, hosp: 1, factory: 4 },
+  caps: { residence: 4, farm: 3, street: 6, mall: 2, office: 8, cinema: 6, resort: 2, academy: 2, hosp: 1, factory: 4 },
   totalBuildCap: 35,           // 每城建筑总数上限（简化 L2 地块）
   // 战争（简化：t80 后每 15 回判定，强弱差>1.3 开战）
   warStart: 100,
@@ -104,14 +102,12 @@ function cityStats(c, facs, F, desire) {
   const crowd = clamp(1.10 - 0.60 * r, 0, 1);
   const H = 100 * (0.5 * c.q / 100 + 0.5 * crowd);
   const L = clamp(50 + 0.40 * (H - 50) + 0.15 * (B.hosp > 0 ? 60 : 0) + 2 * (B.cinema + B.resort), 0, 100);
-  // 人口（生育率公式）
+  // 人口（单一自然增长公式 · 平衡 1.5 倍承载；不暴露出生/死亡）
   const fL = clamp(L / 60, 0.5, 1.5);
   const fF = clamp(F / 70, 0, 1);
-  const h = B.hosp > 0 ? P.hospitalH[4] : (c.init ? P.hospitalH[2] : 0);
-  const o = Math.max(0, c.P / c.C - 1);
-  const birth = (P.fertilityBase + h) * fL * fF;
-  const death = P.mortalityBase * (1 + P.mortalityOverload * o * o);
-  const dP = c.P * (birth - death);
+  const h = B.hosp > 0 ? P.growthHospital[4] : (c.init ? P.growthHospital[2] : 1);
+  const g = P.growthBase * h * fL * fF * (P.growthBalance - r);
+  const dP = c.P * clamp(g, -0.03, 0.03);
   // 税与消费
   const tax = P.taxConst + c.P * P.taxPerPop;
   const civilian = c.P * (1 - (facs[c.fac] ? facs[c.fac].service : 0));
@@ -142,7 +138,7 @@ function cityStats(c, facs, F, desire) {
     + B.hosp * P.B.hosp.cost * P.B.hosp.upkeep
     + B.factory * P.B.factory.cost * P.B.factory.upkeep;
   const income = B.office * P.B.office.income * employmentRate + retail + ent + tour;
-  return { jobs, employed, employmentRate, L, H, r, birth, death, dP, tax, pool, retail, ent, tour, upkeep, income, heat };
+  return { jobs, employed, employmentRate, L, H, r, g, dP, tax, pool, retail, ent, tour, upkeep, income, heat };
 }
 
 // ============ AI 建造（缺口驱动，简化） ============
@@ -246,7 +242,9 @@ function run(turns, seed) {
       // 军费
       f.soldiers = Math.min(citiesOf.reduce((a, c) => a + c.P, 0) * f.service, 999999);
       const salary = f.soldiers * P.salary;
-      f.treasury += taxSum + incomeSum - upkeepSum - salary;
+      // 财出口（回归既有 19 项口径的简化：行政/俸禄/文化维护合并为固定项）
+      const adm = citiesOf.length * 200 + 2000;
+      f.treasury += taxSum + incomeSum - upkeepSum - salary - adm;
       // 科技
       f.tech = Math.min(38, f.tech + citiesOf.reduce((a, c) => a + c.b.academy * P.B.academy.tech, 0) / 400);
       // 记录
@@ -255,10 +253,12 @@ function run(turns, seed) {
         log.push({ t, fac: f.id, pop: Math.round(popTotal), soldiers: Math.round(f.soldiers), treasury: Math.round(f.treasury), F: r2(F), tech: Math.floor(f.tech), L: r2(avgL), desire: r2(desire), service: f.service });
       }
     }
-    // 战争判定（简化：每 warEvery 回，强弱差>ratio 开战；胜者占一城）
+    // 战争判定（简化：t100 起每 20 回、全图每回合最多 1 场；强弱差>1.3；胜者占一城，败国城市归零才灭国）
     if (t >= P.warStart && t % P.warEvery === 0) {
       const ids = Object.keys(facs);
+      let warDone = false;
       for (const a of ids) {
+        if (warDone) break;
         if (facs[a].atWar || facs[a].wars >= P.maxWars || facs[a].cities.length === 0) continue;
         for (const b of ids) {
           if (a === b) continue;
@@ -278,6 +278,7 @@ function run(turns, seed) {
               }
             }
             A.atWar = false; A.warTarget = null;
+            warDone = true;
             break;
           }
         }
