@@ -11,6 +11,7 @@
 - **批量框架**：`tmp/blender/buildings_v1.py`（`-- <zone|id>`，注册表+场景 purge）+ `tmp/blender/export_buildings.py`（矩形 footprint grid_w/grid_h）；批量渲染规格 50/55/60°·1280×960·64smp；查看器网格参数化支持 1×1/2×2/3×2/4×2/3×3。
 - **✅ 居民区 8 座**（1×1：鸽子笼/筒子楼/唐楼/人才公寓/高级公寓；2×2：密集公寓/小区/别墅）——2.6k~11.7k tris；画廊 `tools/3d-viewer/residential.html`。
 - **✅ 商业区 6 座**（商业中心/商业街/写字楼/商场/银行/港口物流园）——1.8k~10.6k tris；画廊 `tools/3d-viewer/commerce.html`。
+- **✅ 工业区 22 座**（active 5：铁匠铺/食品厂/高新园/重工业/装备厂；draft 17：四大矿业/钢铁/化工/火电/水电/核电/光伏风电/垃圾发电/互联网园/半导体/AI 算力/纺织/家电/油田）——0.7k~8.7k tris；画廊 `tools/3d-viewer/industry.html`（>16 格页改缩略卡避 WebGL 上下文上限）。
 - **修复**：批量 runner 场景未清空导致多座叠加污染 blend（已加 purge）；阳台栏杆整条深金属带改立柱浅色；龙门吊补纵梁。登记详见 [美术资产登记-3D建筑](docs/07-美术/美术资产登记-3D建筑.md)。
 
 ---
