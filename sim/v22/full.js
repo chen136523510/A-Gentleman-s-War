@@ -9,7 +9,11 @@ const fmt = (n) => Math.round(n).toLocaleString('en-US');
 const P = {
   turns: 200,
   // 人口（单一自然增长公式，人口算法 §7.2）
-  growthBase: 0.008, growthBalance: 1.5,
+  growthBase: 0.006, growthBalance: 1.5, growthLivExp: 1.5,
+  growthCap: 0.02, // 院长 11-13 第 7 条：限速但不过度（-2%~+2%）
+  // 科技胜利（院长 11-13 "科技拉力你来收束"）：率先建成任一终极工程 = 科技胜利
+  // 文档口径 2,000 财 + 2,500 生产；模拟器按 60 回合工程周期折算
+  projectTurns: 60,
   growthHospital: [0, 1.05, 1.10, 1.20, 1.30],
   // 粮
   farmYield: 320, foodPerPop: 1.0, foodPerSoldier: 1.5, importPrice: 8, importCap: 800,
@@ -143,8 +147,8 @@ function cityStats(c, facs, F, desire, powerRatio) {
   // 人口（单一式）
   const fL = clamp(L / 60, 0.5, 1.5), fF = clamp(F / 70, 0, 1);
   const h = b.hosp ? P.growthHospital[4] : P.growthHospital[2];
-  const g = P.growthBase * h * fL * fF * (P.growthBalance - r);
-  const dP = c.P * clamp(g, -0.03, 0.03);
+  const g = P.growthBase * h * Math.pow(fL, P.growthLivExp) * fF * (P.growthBalance - r); // 宜居权重 1.5 次方（院长第 7 条）
+  const dP = c.P * clamp(g, -P.growthCap, P.growthCap);
   // 税/消费
   const fac = facs[c.fac];
   const tax = P.taxConst + c.P * P.taxPerPop;
@@ -440,14 +444,17 @@ function councilCheck(t, facs, diplo, dipPower, ids, rand, log) {
       else if (R < D.sanctionAbstainR) { abstain++; absIds.push(Y); votes.push(`${Y}:弃权(随大流)`); }
       else votes.push(`${Y}:反对(不参与)`);
     }
-    const need = Math.max(2, Math.ceil((alive.length - 1) / 2)); // 半数且至少 2 票（四国局=2、三国局=2 全员）
-    const passed = yes + abstain >= need;
+    // 院长 11-13 第 3 条：弃权不算同意，同意票严格过半（5→3/4→3/3→2/2→2）
+    const need = Math.floor(alive.length / 2) + 1;
+    const passed = yes >= need; // 弃权/反对不计入同意
     diplo.lastSanction[key] = t + D.leadCooldown;
     if (passed) {
-      diplo.sanctions.push({ target: cs.target, type: cs.type, label: cs.label, expire: t + D.sanctionTerm, by: initiator, support: yesIds.concat(absIds) });
-      log.push({ t, event: `制裁会议：${initiator} 发起「${cs.label} ${cs.target}」——${votes.join(' ')} → 通过（同意${yes}+弃权${abstain}/需${need}，参与国生效）` });
+      // 参与范围：战争制裁=安全型全员参与（强制力）；经济/裁军=同意+弃权参与
+      const support = cs.type === 'cb' ? alive.filter((x) => x !== cs.target) : yesIds.concat(absIds);
+      diplo.sanctions.push({ target: cs.target, type: cs.type, label: cs.label, expire: t + D.sanctionTerm, by: initiator, support });
+      log.push({ t, event: `制裁会议：${initiator} 发起「${cs.label} ${cs.target}」——${votes.join(' ')} → 通过（同意${yes}/需${need}，弃权${abstain}不计入；${cs.type === 'cb' ? '全员参与' : '同意+弃权参与'}）` });
     } else {
-      log.push({ t, event: `制裁会议：${initiator} 发起「${cs.label} ${cs.target}」——${votes.join(' ')} → 否决（同意${yes}+弃权${abstain}/需${need}）` });
+      log.push({ t, event: `制裁会议：${initiator} 发起「${cs.label} ${cs.target}」——${votes.join(' ')} → 否决（同意${yes}/需${need}，弃权${abstain}不计入）` });
     }
     return; // 一次会议 1 个事由
   }
@@ -709,6 +716,7 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
   let rng = seed;
   const rand = () => { rng = (rng * 1103515245 + 12345) & 0x7fffffff; return rng / 0x7fffffff; };
   const cities = makeCities();
+  let winner = null; // 科技胜利者（A1.3 收束）
   const facs = makeFactions(cities);
   for (const c of cities) {
     if (c.fac === 'NONE') { c.b.farm = 1; continue; }
@@ -771,7 +779,7 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
         let gg = s.g;
         if (f.policy === 'subsidy') gg *= P.policy.subsidyMult;
         if (f.policy === 'limit') gg *= P.policy.limitMult;
-        c.P = Math.max(1000, c.P + c.P * clamp(gg, -0.03, 0.03));
+        c.P = Math.max(1000, c.P + c.P * clamp(gg, -P.growthCap, P.growthCap));
         c.builtThisTurn = 0;
         aiBuild(c, s, F, f, devMode);
       }
@@ -826,6 +834,14 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       f.treasury += taxSum + incomeSum - upkeepSum - salary - salaryOfficers - policyCost;
       // 学院链科技产出（Lv1/2/3 = 10/16/24）；经济制裁 → 科技增速 ×0.7
       f.tech = Math.min(40, f.tech + f.cities.reduce((a, c) => a + (B.academy.tech[c.b.academy] || 0), 0) / 800 * (econHit ? 0.7 : 1));
+      // 科技胜利收束（院长 11-13）：科技 40/40 后启动终极工程，60 回合建成者胜
+      if (f.tech >= 40) {
+        f.project = (f.project || 0) + 1;
+        if (f.project >= P.projectTurns && !winner) {
+          winner = f.id;
+          log.push({ t, event: `${f.id} 率先建成终极工程——科技胜利（t${t}）` });
+        }
+      }
       factionPower[f.id] = compositionPower(f, null);
       totalPower += factionPower[f.id];
       if (t % 50 === 0 || t === 1) {
@@ -840,14 +856,14 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       diploTick(t, facs, diplo, factionPower, Object.keys(facs), rand, log);
     }
   }
-  return { log, cities, facs, diplo };
+  return { log, cities, facs, diplo, winner };
 }
 
 const turns = Number(process.argv[2] || 200);
 const seed = Number(process.argv[3] || 1);
 const stress = process.argv[4] === 'stress';
 const stressService = Number(process.argv[5] || P.stressService);
-const { log, cities, facs, diplo } = run(turns, seed, stress, stressService);
+const { log, cities, facs, diplo, winner } = run(turns, seed, stress, stressService);
 console.log(`\n===== v22 FULL 盘 seed=${seed} turns=${turns}${stress ? ` 模式=战时压力(${(stressService * 100).toFixed(1)}%)` : ''} =====`);
 console.log('\n[阵营] t | 人口 | 兵 | 国库 | 粮安F | 科技 | 宜居 | 欲望 | 政策 | 油 | 兵工厂');
 for (const r of log) {
@@ -865,6 +881,7 @@ const survivors = Object.values(facs).filter((f) => f.cities.length > 0).length;
 console.log('\n[验收]');
 console.log(`CN 人口=${fmt(cnPop)}（初始1,520,000）| 5% 动员=${fmt(cnPop * 0.05)} | 10%=${fmt(cnPop * 0.1)}`);
 console.log(`CN 兵=${fmt(cn ? cn.soldiers : 0)} | 存活=${survivors}/4 | 国库=${fmt(cn ? cn.treasury : 0)} | 科技=${cn ? cn.tech.toFixed(0) : 0}/40`);
+console.log(`科技胜利=${winner || '无'}${winner ? `（t${log.find((r) => r.event && r.event.includes('科技胜利'))?.t || '?'}）` : ''}`);
 console.log('\n[兵种构成 t200] 阵营 | 普通 | 突击 | 特种 | 坦克 | 武直 | 机动炮 | 重炮 | 铁 | 煤 | 油 | 兵工厂');
 for (const f of Object.values(facs)) {
   if (!f.cities.length) continue;
