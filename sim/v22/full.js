@@ -227,6 +227,11 @@ function aiBuild(c, s, F, fac) {
 const D = {
   actionPerTurn: 2, warCooldown: 30, peaceCooldown: 10, allyTerm: 24, peaceTerm: 12,
   acceptThreshold: 0.10, warMinTurns: 2, allyMinRelation: 20,
+  // A1.1 制衡层（外交AI决策规范 §十五）
+  coalitionRepHard: 20, coalitionThreat: 1.6, coalitionRepSoft: 35, coalitionCooldown: 60,
+  coalitionAbstainU: 0.25, coalitionMinMembers: 2, coalitionJoinRelDrop: 20, coalitionFailCd: 3,
+  sanctionRep: 20, sanctionVotes: 3, sanctionVoteR: 40, sanctionTerm: 12, sanctionCooldown: 10, sanctionAllyCut: 15,
+  napMinRelation: -10, napStart: 40, napTerm: 12,
   // 大统领人格（officers.json aiPersonality；模拟器内联）
   leaders: {
     CN: { aggression: 0.35, caution: 0.70, loyalty: 0.80, greed: 0.45, culture: 0.85, tech: 0.80, economy: 0.75, temperature: 0.45, governance: 'culture', affinity: { JP: 0.25, KR: 0.75, AU: 0.60 }, seekProtection: null },
@@ -242,7 +247,18 @@ function makeDiplo(ids) {
     rel[a] = {}; cooldown[a] = { war: 0, peace: 0 };
     for (const b of ids) if (a !== b) rel[a][b] = 0;
   }
-  return { rel, repos: 0, rep: Object.fromEntries(ids.map((x) => [x, 50])), treaties: [], cooldown, memory: [], contracts: [], war: null };
+  return { rel, repos: 0, rep: Object.fromEntries(ids.map((x) => [x, 50])), treaties: [], cooldown, memory: [], contracts: [], war: null,
+    sanctions: [], coalitionCd: {}, sanctionCd: 0, napCd: {} };
+}
+
+// 条约查询（A1.1 起 nap 与 peace 共用禁战语义）
+function hasTreaty(diplo, type, x, y, t) {
+  return diplo.treaties.some((tr) => tr.type === type && !tr.dead && tr.expire > t
+    && ((tr.a === x && tr.b === y) || (tr.a === y && tr.b === x)));
+}
+// 对 x 生效的合法战争 CB（制裁）
+function sanctionCb(diplo, x, t) {
+  return diplo.sanctions.some((s) => s.target === x && s.expire > t);
 }
 
 function rankNorm(id, ids, val) {
@@ -274,53 +290,203 @@ function softmaxPick(items, T, rand) {
   return items[items.length - 1];
 }
 
+function signPeace(t, facs, diplo, x, y) {
+  if (!facs[x] || !facs[y] || x === y) return;
+  diplo.treaties.push({ type: 'peace', a: x, b: y, expire: t + D.peaceTerm });
+  diplo.rel[x][y] = clamp(diplo.rel[x][y] + 5, -100, 100);
+  diplo.rel[y][x] = clamp(diplo.rel[y][x] + 5, -100, 100);
+  diplo.cooldown[x].peace = t + D.peaceCooldown;
+}
+
+// A1.1 §15.1 包围网：强者触发红线 → 其余国家按人格掷骰决定是否联合围殴
+function coalitionCheck(t, facs, diplo, dipPower, ids, rand, log) {
+  if (t < P.warStart) return;
+  for (const X of ids) {
+    if (!facs[X] || facs[X].cities.length === 0) continue;
+    const others = ids.filter((x) => x !== X && facs[x] && facs[x].cities.length > 0);
+    if (others.length < 2) continue;
+    const maxOther = Math.max(...others.map((x) => dipPower[x] || 0));
+    const threat = (dipPower[X] || 0) / Math.max(1, maxOther);
+    const rep = diplo.rep[X];
+    const triggered = rep < D.coalitionRepHard || (threat >= D.coalitionThreat && rep < D.coalitionRepSoft);
+    if (!triggered) continue;
+    if ((diplo.coalitionCd[X] || 0) > t) continue;
+    // 参与判定（逐国二选一 softmax：围殴 vs 旁观）
+    const joiners = [];
+    for (const Y of others) {
+      const L = D.leaders[Y];
+      if (!L) continue;
+      const R = diplo.rel[Y][X];
+      const allied = hasTreaty(diplo, 'ally', Y, X, t);
+      let U = 0.45 * clamp((threat - 1.2) / 0.8, 0, 1)
+        + 0.20 * (1 - clamp(R / 100, -1, 1)) / 2
+        + 0.20 * (1 - L.loyalty)
+        + 0.30 * (rep < D.coalitionRepHard ? 1 : 0.5)
+        - 0.25 * L.caution * clamp((dipPower[X] || 0) / Math.max(1, dipPower[Y] || 0) - 1, 0, 1);
+      if (allied) U -= 0.15; // 背刺成本
+      const pick = softmaxPick([{ type: 'join', U }, { type: 'stay', U: D.coalitionAbstainU }], L.temperature, rand);
+      if (pick.type === 'join') joiners.push(Y);
+    }
+    if (!joiners.length) continue;
+    if (joiners.length < D.coalitionMinMembers) {
+      for (const Y of joiners) diplo.rel[Y][X] = clamp(diplo.rel[Y][X] - D.coalitionJoinRelDrop, -100, 100);
+      diplo.coalitionCd[X] = t + D.coalitionFailCd;
+      log.push({ t, event: `包围网未成军：${joiners.join('/')} 对 ${X} 关系 −${D.coalitionJoinRelDrop}（threat ${threat.toFixed(2)} rep ${rep.toFixed(0)}）` });
+      continue;
+    }
+    // 盟友参与 = 背刺：先破盟
+    for (const Y of joiners) {
+      if (!hasTreaty(diplo, 'ally', Y, X, t)) continue;
+      for (const tr of diplo.treaties) {
+        if (tr.type === 'ally' && !tr.dead && ((tr.a === Y && tr.b === X) || (tr.a === X && tr.b === Y))) tr.dead = true;
+      }
+      diplo.rep[Y] = clamp(diplo.rep[Y] - 10, 0, 100);
+      diplo.rel[Y][X] = clamp(diplo.rel[Y][X] - 50, -100, 100);
+      diplo.rel[X][Y] = clamp(diplo.rel[X][Y] - 50, -100, 100);
+      log.push({ t, event: `${Y} 撕毁与 ${X} 的同盟（参与包围网）` });
+    }
+    // 国际干预：打断目标正在进行的战争；受害国与仇视 X 的弱势国纳入反法西斯同盟（防灭国/防劝降）
+    const victims = new Set();
+    if (diplo.war && (diplo.war.b === X || (diplo.war.sideB || []).includes(X))) {
+      const w = diplo.war;
+      victims.add(w.b);
+      signPeace(t, facs, diplo, w.a, w.b);
+      log.push({ t, event: `${w.a} 与 ${w.b} 停战（国际干预：${joiners.join('/')} 包围 ${X}）` });
+      diplo.war = null;
+    }
+    for (const Y of ids) {
+      if (Y === X || joiners.includes(Y) || !facs[Y] || facs[Y].cities.length === 0) continue;
+      if (diplo.rel[Y][X] < -50) victims.add(Y); // 被 X 打残/深度仇视的弱势国
+    }
+    const leader = joiners.slice().sort((a, b) => (dipPower[b] || 0) - (dipPower[a] || 0))[0];
+    diplo.war = { a: leader, b: X, start: t, sideA: joiners, sideB: [X], coalition: true };
+    diplo.coalitionCd[X] = t + D.coalitionCooldown;
+    for (const Y of joiners) diplo.rel[Y][X] = clamp(diplo.rel[Y][X] - 40, -100, 100);
+    log.push({ t, event: `包围网成型：${joiners.join('+')} 联合宣战 ${X}（threat ${threat.toFixed(2)} rep ${rep.toFixed(0)}）` });
+    // 联军成员互相结盟（反法西斯同盟）：阻止"无盟友保护"劝降与各个击破
+    for (let i = 0; i < joiners.length; i++) for (let j = i + 1; j < joiners.length; j++) {
+      const Y = joiners[i], Z = joiners[j];
+      if (hasTreaty(diplo, 'ally', Y, Z, t)) continue;
+      diplo.treaties.push({ type: 'ally', a: Y, b: Z, expire: t + D.allyTerm });
+      diplo.rel[Y][Z] = clamp(diplo.rel[Y][Z] + 20, -100, 100);
+      diplo.rel[Z][Y] = clamp(diplo.rel[Z][Y] + 20, -100, 100);
+    }
+    if (joiners.length >= 2) log.push({ t, event: `${joiners.join('/')} 结成反法西斯同盟（互相防御 ${D.allyTerm} 回合）` });
+    for (const V of victims) {
+      if (!facs[V] || facs[V].cities.length === 0) continue;
+      for (const Y of joiners) {
+        if (Y === V) continue;
+        if (!hasTreaty(diplo, 'ally', Y, V, t)) diplo.treaties.push({ type: 'ally', a: Y, b: V, expire: t + D.allyTerm });
+        diplo.rel[Y][V] = clamp(diplo.rel[Y][V] + 30, -100, 100);
+        diplo.rel[V][Y] = clamp(diplo.rel[V][Y] + 30, -100, 100);
+      }
+      log.push({ t, event: `${joiners.filter((y) => y !== V).join('/')} 与 ${V} 结成反法西斯同盟（保护 ${D.allyTerm} 回合，阻断劝降）` });
+    }
+    return; // 一次只成一场
+  }
+}
+
+// A1.1 §15.2 军事制裁：rep<20 的目标可被发起"战争制裁"会议，通过=全阵营合法 CB
+function sanctionCheck(t, facs, diplo, dipPower, ids, rand, log) {
+  if (t < P.warStart) return;
+  diplo.sanctions = diplo.sanctions.filter((s) => s.expire > t);
+  if (diplo.sanctionCd > t) return;
+  const alive = ids.filter((x) => facs[x] && facs[x].cities.length > 0);
+  if (alive.length < 3) return;
+  const target = alive.filter((x) => diplo.rep[x] < D.sanctionRep && !diplo.sanctions.some((s) => s.target === x))
+    .sort((a, b) => diplo.rep[a] - diplo.rep[b])[0];
+  if (!target) return;
+  const initiator = alive.filter((x) => x !== target).sort((a, b) => (dipPower[b] || 0) - (dipPower[a] || 0))[0];
+  // 通过门槛 = 参与国（除目标外）过半数，且至少 2 票（四国=2、三国=2；目标灭国越多不至于反而无法制裁）
+  const need = Math.max(2, Math.ceil((alive.length - 1) / 2));
+  let yes = 1;
+  const votes = [`${initiator}:同意`];
+  for (const Y of alive) {
+    if (Y === target || Y === initiator) continue;
+    const allied = hasTreaty(diplo, 'ally', Y, target, t);
+    // 盟友保护：目标声誉破产（rep<15）时盟友也切割投票，否则弃权（盟约不背刺）
+    if (allied && diplo.rep[target] >= D.sanctionAllyCut) { votes.push(`${Y}:弃权(盟约)`); continue; }
+    if (diplo.rel[Y][target] < D.sanctionVoteR) { yes++; votes.push(`${Y}:同意${allied ? '(切割)' : ''}`); }
+    else votes.push(`${Y}:反对`);
+  }
+  const passed = yes >= need;
+  diplo.sanctionCd = t + D.sanctionCooldown;
+  if (passed) diplo.sanctions.push({ target, expire: t + D.sanctionTerm, by: initiator });
+  log.push({ t, event: `制裁会议：${initiator} 发起「战争制裁 ${target}」——${votes.join(' ')} → ${passed ? `通过（合法 CB ${D.sanctionTerm} 回合）` : `否决（同意 ${yes}/${need}）`}` });
+}
+
 function diploTick(t, facs, diplo, fpower, ids, rand, log) {
   ids = ids.filter((x) => facs[x].cities.length > 0);
-  for (const f of Object.values(facs)) f.atWar = diplo.war ? (f.id === diplo.war.a || f.id === diplo.war.b) : false;
+  // 战争状态：交战成员 + 守方盟友（防御性参战，动员潜力直接计入守方）
+  for (const f of Object.values(facs)) {
+    if (!diplo.war) { f.atWar = false; continue; }
+    const wA = diplo.war.sideA || [diplo.war.a], wB = diplo.war.sideB || [diplo.war.b];
+    let at = wA.includes(f.id) || wB.includes(f.id);
+    if (!at) for (const x of wB) if (hasTreaty(diplo, 'ally', f.id, x, t)) { at = true; break; }
+    f.atWar = at;
+  }
   // 外交决策用"动员潜力"（人口×10%）而非当前士兵——避免战争动员 10% vs 和平 0.5% 的 20 倍误判
   const dipPower = {};
   for (const x of ids) dipPower[x] = facs[x].cities.reduce((a, c) => a + c.P, 0) * 0.10;
 
-  // ---- 战争结算（开战后 warMinTurns 判定一次：占城 or 停战）----
+  // ---- 战争结算（A1.1：支持多国联军 sideA/sideB；开战后 warMinTurns 判定一次）----
   if (diplo.war) {
     const { a, b, start } = diplo.war;
+    const sideA = diplo.war.sideA || [a], sideB = diplo.war.sideB || [b];
     if (t - start >= D.warMinTurns) {
-      const A = facs[a], Bf = facs[b];
-      // 同盟参战（军事同盟防御性自动参战）：盟友潜力折算为守方有效战力
-      const alliesOfB = diplo.treaties.filter((x) => x.type === 'ally' && !x.dead && x.expire > t && (x.a === b || x.b === b));
-      const allyBonus = alliesOfB.reduce((s, x) => {
-        const aid = x.a === b ? x.b : x.a;
-        return s + 0.5 * ((dipPower[aid] || 0) / Math.max(1, dipPower[b] || 0));
-      }, 0);
-      const pr = warRatio(facs[a], facs[b]) / (1 + allyBonus);
-      if (pr > 1.3) {
+      const Bf = facs[b];
+      // 同盟参战（防御性，A1.1）：盟友按动员潜力（人口×10%）直接计入守方战力
+      const alliesOfB = diplo.treaties.filter((x) => x.type === 'ally' && !x.dead && x.expire > t && sideB.some((y) => x.a === y || x.b === y))
+        .map((x) => (sideB.includes(x.a) ? x.b : x.a))
+        .filter((x) => !sideB.includes(x) && facs[x] && facs[x].cities.length > 0);
+      const brA = dominantBranch(facs[b]);
+      const brB = dominantBranch(facs[sideA[0]]);
+      const atk = sideA.reduce((s, x) => s + compositionPower(facs[x], brA), 0);
+      const def = sideB.reduce((s, x) => s + compositionPower(facs[x], brB), 0)
+        + alliesOfB.reduce((s, x) => s + (dipPower[x] || 0), 0);
+      const pr = atk / Math.max(1, def);
+      // 最后一城死守（A1.1）：占领最后一城需 pr>2.2，否则守方守住（防"一口气灭国"）
+      const lastCity = Bf.cities.length <= 1;
+      const occupyReady = lastCity ? pr > 2.2 : pr > 1.3;
+      if (occupyReady) {
         const target = Bf.cities.reduce((x, c) => (!x || c.P < x.P ? c : x), null); // 占最小城（不一次打崩）
         if (target) {
           Bf.cities = Bf.cities.filter((c) => c !== target);
-          target.fac = a; target.P *= 0.8; A.cities.push(target);
+          target.fac = a; target.P *= 0.8; facs[a].cities.push(target);
           diplo.rep[a] = clamp(diplo.rep[a] - 5, 0, 100);
           diplo.rel[b][a] = clamp(diplo.rel[b][a] - 40, -100, 100);
-          for (const x of ids) if (x !== a && x !== b) diplo.rel[x][a] = clamp(diplo.rel[x][a] - 10, -100, 100);
-          log.push({ t, event: `${a} 攻 ${b}：占领 ${target.name}（战力比 ${pr.toFixed(2)}）` });
-          if (Bf.cities.length === 0) log.push({ t, event: `${b} 被 ${a} 灭国` });
+          for (const x of ids) if (!sideA.includes(x) && x !== b) diplo.rel[x][a] = clamp(diplo.rel[x][a] - 10, -100, 100);
+          log.push({ t, event: `${sideA.join('+')} 攻 ${b}：占领 ${target.name}（战力比 ${pr.toFixed(2)}）` });
+          if (Bf.cities.length === 0) log.push({ t, event: `${b} 被 ${sideA.join('+')} 灭国` });
         }
       } else {
-        diplo.treaties.push({ type: 'peace', a, b, expire: t + D.peaceTerm });
-        diplo.rel[a][b] = clamp(diplo.rel[a][b] + 5, -100, 100);
-        diplo.rel[b][a] = clamp(diplo.rel[b][a] + 5, -100, 100);
-        log.push({ t, event: `${a} 与 ${b} 停战（战力比 ${pr.toFixed(2)}）` });
+        for (const x of sideA) signPeace(t, facs, diplo, x, b);
+        log.push({ t, event: `${sideA.join('+')} 与 ${b} 停战（战力比 ${pr.toFixed(2)}${lastCity ? '，最后一城死守成功' : ''}）` });
       }
       diplo.war = null;
       diplo.cooldown[a].peace = t + D.peaceCooldown;
     }
-    return;
   }
+
+  // ---- A1.1 包围网（自动事件，不占行动槽；可打断进行中的战争）----
+  coalitionCheck(t, facs, diplo, dipPower, ids, rand, log);
+  if (diplo.war) return; // 处于战争（含刚成型的包围网）：本轮不做常规外交行动
+
+  // ---- A1.1 军事制裁会议（全球安全型简化）----
+  sanctionCheck(t, facs, diplo, dipPower, ids, rand, log);
 
   // ---- 同盟到期：关系≥0 自动续约（静默）；关系破裂或一方灭国则解散 ----
   for (const tr of diplo.treaties.filter((x) => x.type === 'ally' && !x.dead && x.expire <= t)) {
     const alive = facs[tr.a] && facs[tr.a].cities.length > 0 && facs[tr.b] && facs[tr.b].cities.length > 0;
     if (alive && diplo.rel[tr.a][tr.b] >= -50) tr.expire = t + D.allyTerm;
     else { tr.dead = true; log.push({ t, event: `${tr.a}-${tr.b} 同盟解散` }); }
+  }
+
+  // ---- A1.1 互不侵犯（NAP）到期：关系≥0 静默续约，否则失效 ----
+  for (const tr of diplo.treaties.filter((x) => x.type === 'nap' && !x.dead && x.expire <= t)) {
+    const alive = facs[tr.a] && facs[tr.a].cities.length > 0 && facs[tr.b] && facs[tr.b].cities.length > 0;
+    if (alive && diplo.rel[tr.a][tr.b] >= 0) tr.expire = t + D.napTerm;
+    else tr.dead = true;
   }
 
   // ---- 关系自然回归（和平期缓慢回中并小幅上升）----
@@ -338,24 +504,29 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log) {
     if (!L) continue;
     const prog = victoryProgress(a, ids, facs, dipPower);
     const cands = [];
+    const maxDipOther = Math.max(...ids.filter((x) => x !== a).map((x) => dipPower[x] || 0));
+    const commonThreat = clamp(maxDipOther / Math.max(1, dipPower[a] || 0) - 1, 0, 1);
     for (const b of ids) {
       if (b === a) continue;
       const R = diplo.rel[a][b];
-      const ally = diplo.treaties.some((x) => x.type === 'ally' && !x.dead && x.expire > t && ((x.a === a && x.b === b) || (x.a === b && x.b === a)));
-      const peace = diplo.treaties.some((x) => x.type === 'peace' && x.expire > t && ((x.a === a && x.b === b) || (x.a === b && x.b === a)));
+      const ally = hasTreaty(diplo, 'ally', a, b, t);
+      const peace = hasTreaty(diplo, 'peace', a, b, t);
+      const nap = hasTreaty(diplo, 'nap', a, b, t);
+      const cb = sanctionCb(diplo, b, t); // A1.1：对制裁对象有合法战争 CB
       const pr = (dipPower[a] || 0) / Math.max(1, dipPower[b] || 0);
       const adj = (ADJ[a] || []).includes(b);
-      // 宣战 U（A1 §6.1；2026-11-12 修：可胜门槛 pr≥1.3、跨海≥1.6、低声誉目标门槛 −20%）
-      if (!ally && !peace && t >= P.warStart && t >= (diplo.cooldown[a].war || 0)) {
+      // 宣战 U（A1 §6.1；A1.1：制裁 CB 门槛 0.8、U+0.3、无声誉代价）
+      if (!ally && !peace && !nap && t >= P.warStart && t >= (diplo.cooldown[a].war || 0)) {
         const repFactor = diplo.rep[b] < 30 ? 0.80 : 1; // 声誉低 → 更容易被宣战（A1 §九）
-        if (pr < (adj ? 1.30 : 1.60) * repFactor) continue;
+        if (pr < (cb ? 0.80 : (adj ? 1.30 : 1.60) * repFactor)) continue;
         const feasibility = clamp(pr * 0.8, 0, 1.5) / 1.5;
         const threat = clamp((dipPower[b] / Math.max(1, dipPower[a])) * 0.4, 0, 1);
         const intervene = diplo.treaties.filter((x) => x.type === 'ally' && !x.dead && x.expire > t && (x.a === b || x.b === b)).length * 0.35;
         let U = 0.30 * 0.6 + 0.15 * 0.5 + 0.25 * feasibility + 0.20 * threat
           - 0.30 * (1 - Math.min(pr, 1.5) / 1.5) * L.caution
-          - 0.25 * intervene * L.caution - 0.15 * 0.5
+          - 0.25 * intervene * L.caution - (cb ? 0 : 0.15 * 0.5)
           + 0.20 * L.aggression + (adj ? 0.10 : -0.15);
+        if (cb) U += 0.30;
         // 胜利路径修正（A1 §五）
         const milPath = prog.military * L.aggression;
         const culPath = prog.culture * L.culture;
@@ -365,7 +536,7 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log) {
       // 结盟 U（A1 §6.2；军事同盟可多成员，边际效用递减；相性高可在低关系下结盟）
       const allyCount = diplo.treaties.filter((x) => x.type === 'ally' && !x.dead && x.expire > t && (x.a === a || x.b === a)).length;
       const allyOpen = R >= D.allyMinRelation * (diplo.rep[b] < 30 ? 1.20 : 1) || ((L.affinity[b] || 0) >= 0.70 && R >= -20) || (L.seekProtection && L.seekProtection.target === b);
-      if (!ally && !peace && allyOpen) {
+      if (!ally && !peace && !cb && allyOpen) {
         const seek = L.seekProtection && L.seekProtection.target === b ? L.seekProtection.weight * 0.25 : 0;
         let U = 0.35 * 0.5 + 0.30 * (L.affinity[b] || 0.3) + 0.20 * (1 - Math.min(pr, 1)) - 0.25 * 0.3 * L.caution + seek;
         U /= (1 + allyCount); // 已有盟友越多，再结盟的边际效用越低
@@ -377,6 +548,14 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log) {
         const U = 0.45 * Math.min(pr / 3, 1) + 0.25 * 0.5 + 0.15 * (R / 100) + 0.15 * L.greed;
         cands.push({ type: 'annex', b, U, pr, label: `劝降${b}` });
       }
+      // A1.1 §15.3 互不侵犯（NAP）：仅对非邻接（远洋）对象开放——JP 的和平出口，不冻结大陆战场
+      if (!adj && !ally && !peace && !nap && t >= D.napStart && R >= D.napMinRelation) {
+        const napCount = diplo.treaties.filter((x) => x.type === 'nap' && !x.dead && x.expire > t && (x.a === a || x.b === a)).length;
+        let Un = 0.25 * commonThreat + 0.20 * (L.affinity[b] || 0.3) + 0.20 * (1 - Math.min(pr, 1))
+          + 0.15 * (adj ? 0 : 1) - 0.20 * L.caution * 0.3;
+        Un /= (1 + napCount * 0.5);
+        cands.push({ type: 'nap', b, U: Un, label: `互不侵犯${b}` });
+      }
     }
     cands.push({ type: 'none', U: 0.15, label: '观望' });
     const pick = softmaxPick(cands, L.temperature, rand);
@@ -384,17 +563,25 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log) {
     actions++;
     const b = pick.b;
     if (pick.type === 'war') {
-      diplo.war = { a, b, start: t };
+      const cb = sanctionCb(diplo, b, t);
+      diplo.war = { a, b, start: t, sideA: [a], sideB: [b] };
       diplo.cooldown[a].war = t + D.warCooldown;
-      diplo.rep[a] = clamp(diplo.rep[a] - 5, 0, 100);
-      for (const x of ids) if (x !== a && x !== b) diplo.rel[x][a] = clamp(diplo.rel[x][a] - 10, -100, 100);
-      log.push({ t, event: `${a} 宣战 ${b}（U=${pick.U.toFixed(2)} 军力比 ${(pick.pr || 0).toFixed(2)}）` });
+      if (!cb) {
+        diplo.rep[a] = clamp(diplo.rep[a] - 5, 0, 100);
+        for (const x of ids) if (x !== a && x !== b) diplo.rel[x][a] = clamp(diplo.rel[x][a] - 10, -100, 100);
+      }
+      log.push({ t, event: `${a} 宣战 ${b}（U=${pick.U.toFixed(2)} 军力比 ${(pick.pr || 0).toFixed(2)}${cb ? ' 制裁CB' : ''}）` });
     } else if (pick.type === 'ally') {
       diplo.treaties.push({ type: 'ally', a, b, expire: t + D.allyTerm });
       diplo.rel[a][b] = clamp(diplo.rel[a][b] + 10, -100, 100);
       diplo.rel[b][a] = clamp(diplo.rel[b][a] + 10, -100, 100);
       diplo.rep[a] = clamp(diplo.rep[a] + 2, 0, 100);
       log.push({ t, event: `${a} 与 ${b} 结盟（${D.allyTerm} 回合，U=${pick.U.toFixed(2)}）` });
+    } else if (pick.type === 'nap') {
+      diplo.treaties.push({ type: 'nap', a, b, expire: t + D.napTerm });
+      diplo.rel[a][b] = clamp(diplo.rel[a][b] + 5, -100, 100);
+      diplo.rel[b][a] = clamp(diplo.rel[b][a] + 5, -100, 100);
+      log.push({ t, event: `${a} 与 ${b} 签订互不侵犯（${D.napTerm} 回合，U=${pick.U.toFixed(2)}）` });
     } else if (pick.type === 'annex') {
       // 目标接受判定（A1 §8.1：关系/声誉/战力综合；弱势+低声誉的劝降方易被拒）
       const accept = clamp(0.15 + (pick.pr - 2.5) * 0.25 + (50 - diplo.rep[a]) * 0.003, 0.05, 0.90);
