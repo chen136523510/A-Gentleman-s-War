@@ -14,6 +14,8 @@ const P = {
   // 科技胜利（院长 11-13 "科技拉力你来收束"）：率先建成任一终极工程 = 科技胜利
   // 文档口径 2,000 财 + 2,500 生产；模拟器按 60 回合工程周期折算
   projectTurns: 60,
+  recruitFee: 1, // A1.4 征募费（财/兵，自定；文档 8 财/兵为基准口径）
+  buyPrice: { iron: 1.2, coal: 1.0, oil: 2.0 }, // A1.4 外交采购价
   growthHospital: [0, 1.05, 1.10, 1.20, 1.30],
   // 粮
   farmYield: 320, foodPerPop: 1.0, foodPerSoldier: 1.5, importPrice: 8, importCap: 800,
@@ -61,7 +63,12 @@ const B = {
   hydro:     { name: '水电', cost: 3200, prod: 640, upkeep: 0.01, jobs: 1600, power: 30, max: 1 },
   solar:     { name: '光伏', cost: 2400, prod: 480, upkeep: 0.01, jobs: 800, power: 20, max: 3 },
   factory:   { name: '工业', cost: 2400, prod: 480, upkeep: 0.01, jobs: 8000, prodOut: 64, poll: 2, max: 4 },
-  arsenal:   { name: '兵工厂', cost: 24000, prod: 4800, upkeep: 0.01, jobs: 0, max: 1 },
+  arsenal:   { name: '兵工厂', cost: 24000, prod: 4800, upkeep: 0.01, jobs: 0, max: 3 }, // A1.4：Lv1~3 = 1/2/3 产线（升级不占地）
+  airport:   { name: '机场', cost: 4800, prod: 960, upkeep: 0.01, jobs: 0, max: 1 },      // 驻机 8（Lv1）
+  aaGun:     { name: '防空炮', cost: 960, prod: 160, upkeep: 0.01, jobs: 0, max: 2 },     // 射程 4 格
+  // B1 战斗层（2026-11-13 方案，数值自定）
+  bomber:    { name: '轰炸机', wealth: 4800, iron: 240, oil: 160, turns: 2, qAir: 22, qGroundTroops: 11, ammoWealth: 800, ammoOil: 80, cd: 3 },
+  drone:     { name: '无人机', wealth: 960, oil: 40, turns: 1, qGround: 8, maxPerCity: 10 },
   street:    { name: '商业街', cap: 96, jobs: 4800, cost: 800, prod: 160, upkeep: 0.03, max: 6 },
   mall:      { name: '商场', cap: 480, jobs: 12000, cost: 2400, prod: 480, upkeep: 0.03, gate: 240000, max: 2 },
   office:    { name: '写字楼', income: 280, jobs: 24000, cost: 1600, prod: 320, upkeep: 0.03, max: 8 },
@@ -97,7 +104,7 @@ const ADJ = { CN: ['KR', 'JP'], KR: ['CN', 'JP'], JP: ['CN', 'KR'], AU: [] }; //
 function makeCities() {
   return CITY_INIT.map(([name, fac, pop, q]) => ({
     name, fac, P: pop, C: pop * 1.5, q,
-    b: { residence: 0, farm: 0, coal: 0, plant: 0, hydro: 0, solar: 0, factory: 0, arsenal: 0, street: 0, mall: 0, office: 0, academy: 0, hosp: 0, police: 0 },
+    b: { residence: 0, farm: 0, coal: 0, plant: 0, hydro: 0, solar: 0, factory: 0, arsenal: 0, airport: 0, aaGun: 0, street: 0, mall: 0, office: 0, academy: 0, hosp: 0, police: 0 },
     ent: { park: 0, sport: 0, play: 0, movie: 0, esport: 0, nature: 0 },
     tour: 0, pub: 0, prodBank: 0, builtThisTurn: 0, corr: 0,
     arsenalJob: null, arsenalProgress: 0,
@@ -109,6 +116,7 @@ function makeFactions(cities) {
     if (c.fac === 'NONE') continue;
     f[c.fac] = f[c.fac] || { id: c.fac, cities: [], treasury: 12000, soldiers: 0, service: 0, tech: 0, wars: 0, allies: [], warTarget: null, policy: 'none', loyalty: 60,
       units: { inf: 0, assault: 0, special: 0, tank: 0, heli: 0, mobile: 0, heavy: 0 },
+      bombers: 0, drones: 0, airQueue: null, airProgress: 0, // A1.4 空军（机场独立队列）
       resources: { iron: 0, coal: 0, oil: 0 } };
     f[c.fac].cities.push(c);
   }
@@ -173,6 +181,7 @@ function cityStats(c, facs, F, desire, powerRatio) {
   // 维护
   const upkeep = b.residence * B.residence.cost + b.farm * B.farm.cost + b.coal * B.coal.cost + b.plant * B.plant.cost
     + b.hydro * B.hydro.cost + b.solar * B.solar.cost + b.factory * B.factory.cost + b.arsenal * B.arsenal.cost
+    + b.airport * B.airport.cost + b.aaGun * B.aaGun.cost
     + b.street * B.street.cost * 3 + b.mall * B.mall.cost * 3 + b.office * B.office.cost * 3
     + b.academy * B.academy.cost + b.hosp * B.hosp.cost + b.police * B.police.cost
     + Object.keys(c.ent).reduce((a, k) => a + (c.ent[k] ? ENT[k].costs[c.ent[k] - 1] : 0), 0)
@@ -224,8 +233,12 @@ function aiBuild(c, s, F, fac, devMode) {
   // 市政
   if (!c.b.hosp) want.push(['hosp', B.hosp.cost]);
   if (!c.b.police) want.push(['police', B.police.cost]);
-  // 兵工厂（非军事模式也补建：科技 5 后逐城 1 座）
-  if (fac.tech > 5 && c.b.arsenal < 1) want.push(['arsenal', B.arsenal.cost]);
+  // 兵工厂（A1.4：Lv1/2/3 按科技 5/15/25 逐级补；升级不占地）
+  const arsenalNeed = fac.tech > 25 ? 3 : fac.tech > 15 ? 2 : fac.tech > 5 ? 1 : 0;
+  if (c.b.arsenal < arsenalNeed) want.push(['arsenal', B.arsenal.cost * (c.b.arsenal + 1)]);
+  // 机场（科技 10 后每城 1 座）与防空（战时补到 2）
+  if (fac.tech > 10 && c.b.airport < 1) want.push(['airport', B.airport.cost]);
+  if (fac.atWar && c.b.aaGun < 2) want.push(['aaGun', B.aaGun.cost]);
   for (const [key, cost] of want) {
     if (c.prodBank < cost / 5 || fac.treasury < cost * 0.1) continue;
     if (key.startsWith('ent:')) c.ent[key.slice(4)] += 1; else if (key === 'tour') c.tour += 1; else if (key === 'pub') c.pub += 1; else c.b[key] += 1;
@@ -318,6 +331,16 @@ function signPeace(t, facs, diplo, x, y) {
   diplo.rel[x][y] = clamp(diplo.rel[x][y] + 5, -100, 100);
   diplo.rel[y][x] = clamp(diplo.rel[y][x] + 5, -100, 100);
   diplo.cooldown[x].peace = t + D.peaceCooldown;
+}
+
+// A1.4 战损（按比例减兵种，从步兵起）
+function applyLoss(f, ratio) {
+  if (!f || ratio <= 0) return;
+  let cut = Math.floor(totalUnits(f) * ratio);
+  for (const k of ['inf', 'assault', 'special', 'mobile', 'heavy', 'heli', 'tank']) {
+    const d = Math.min(cut, f.units[k]); f.units[k] -= d; cut -= d;
+    if (cut <= 0) break;
+  }
 }
 
 // A1.2 §15.1 包围网：侵略者触发红线 → 其余国家按人格掷骰决定是否联合围殴（不背刺条约对象）
@@ -478,6 +501,44 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log) {
   if (diplo.war) {
     const { a, b, start } = diplo.war;
     const sideA = diplo.war.sideA || [a], sideB = diplo.war.sideB || [b];
+    // A1.4 轰炸阶段（开战后第 1 回合、之后每 3 回合；战争 2 回合即可触发一次）
+    if (t - start >= 1 && (t - start - 1) % B.bomber.cd === 0) {
+      const Bf = facs[b];
+      const A = facs[sideA[0]];
+      if (A && A.bombers > 0) {
+        let alive = A.bombers;
+        const aa = Bf.cities.reduce((s, c) => s + (c.b.aaGun || 0), 0);
+        if (aa > 0) {
+          let shot = 0;
+          for (let i = 0; i < A.bombers; i++) if (rand() < 0.75) shot++;
+          alive -= shot; A.bombers -= shot;
+          log.push({ t, event: `${A.id} 轰炸 ${b}：防空击落 ${shot}/${shot + alive} 架（防空×${aa}）` });
+        }
+        if (alive > 0 && A.treasury >= B.bomber.ammoWealth && A.resources.oil >= B.bomber.ammoOil) {
+          A.treasury -= B.bomber.ammoWealth; A.resources.oil -= B.bomber.ammoOil;
+          // 每架摧毁 1 座建筑（直接摧毁；建筑内驻军同吃伤害）
+          const city = Bf.cities.reduce((x, c) => (!x || c.P > x.P ? c : x), null);
+          let destroyed = 0;
+          for (let i = 0; i < alive && city; i++) {
+            const keys = Object.keys(city.b).filter((k) => city.b[k] > 0);
+            if (!keys.length) break;
+            const k = keys[Math.floor(rand() * keys.length)];
+            city.b[k] -= 1; destroyed++;
+          }
+          // 驻军杀伤（攻防数值：q_对地 22×0.5=11/架 vs 守军 S_def）
+          const killRatio = clamp((alive * B.bomber.qGroundTroops) / Math.max(1, totalUnits(Bf)), 0, 0.5);
+          applyLoss(Bf, killRatio);
+          log.push({ t, event: `${A.id} 轰炸 ${b}：${alive} 架投弹，摧毁 ${destroyed} 座建筑、驻军损 ${(killRatio * 100).toFixed(0)}%` });
+        }
+        // 无人机（消耗品，一次全派）
+        if (A.drones > 0) {
+          const n = A.drones;
+          const killRatio = clamp((n * B.drone.qGround) / Math.max(1, totalUnits(Bf)), 0, 0.3);
+          applyLoss(Bf, killRatio); A.drones = 0;
+          log.push({ t, event: `${A.id} 无人机 ${n} 架打击 ${b}：驻军损 ${(killRatio * 100).toFixed(0)}%` });
+        }
+      }
+    }
     if (t - start >= D.warMinTurns) {
       const Bf = facs[b];
       // 同盟参战（防御性，A1.1）：盟友按动员潜力（人口×10%）直接计入守方战力
@@ -507,6 +568,9 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log) {
         for (const x of sideA) signPeace(t, facs, diplo, x, b);
         log.push({ t, event: `${sideA.join('+')} 与 ${b} 停战（战力比 ${pr.toFixed(2)}）` });
       }
+      // A1.4 战争消耗（代理值，L3 成型后按真实战损替换）：攻 8%（胜）/12%（未果）、守 15%
+      applyLoss(facs[sideA[0]], pr > 1.3 ? 0.08 : 0.12);
+      applyLoss(Bf, 0.15);
       diplo.war = null;
       diplo.cooldown[a].peace = t + D.peaceCooldown;
     }
@@ -725,7 +789,7 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
     if (c.P >= 300000) { c.b.mall = 1; c.b.plant = 1; }
     c.ent.park = 1; c.ent.movie = 1;
     // B1 v1.2 初始兵工厂：深圳(CN)/长崎(JP)/首尔(KR)/悉尼(AU)
-    if (['深圳', '长崎', '首尔', '悉尼'].includes(c.name)) c.b.arsenal = 1;
+    if (['深圳', '长崎', '首尔', '悉尼'].includes(c.name)) { c.b.arsenal = 1; c.b.airport = 1; } // A1.4 初始机场
   }
   const log = [];
   const diplo = makeDiplo(['CN', 'JP', 'KR', 'AU']);
@@ -788,11 +852,29 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       const inc = P.resources[f.id] || { iron: 0, coal: 0, oil: 0 };
       for (const k of ['iron', 'coal', 'oil'])
         f.resources[k] = Math.min(f.resources[k] + inc[k], inc[k] * P.resourceCapTurns);
+      // ==== 外交采购（A1.4 P0 出口）：国库 >50 万时按缺口买入（和平期消化国库）====
+      if (f.treasury > 500000) {
+        for (const k of ['iron', 'coal', 'oil']) {
+          const cap = inc[k] * P.resourceCapTurns;
+          if (f.resources[k] < cap * 0.5) {
+            const buy = Math.min((cap * 0.5 - f.resources[k]), (f.treasury - 500000) * 0.2 / P.buyPrice[k]);
+            if (buy > 0) { f.resources[k] += buy; f.treasury -= buy * P.buyPrice[k]; }
+          }
+        }
+      }
       // ==== 征募（普通步兵）====
       const popTotal = f.cities.reduce((a, c) => a + c.P, 0);
       const target = Math.min(popTotal * (f.atWar ? (stress ? stressService : P.warService) : P.peaceService) * (disarmHit ? 0.5 : 1), 2000000);
       let total = totalUnits(f);
-      if (target > total) f.units.inf += target - total;
+      // A1.4 征募费（P0 出口，自定 1 财/兵；v22 兵员 ×8 与国库口径折中）
+      if (target > total) {
+        const add = target - total;
+        const fee = add * P.recruitFee;
+        const afford = Math.max(0, Math.min(add, Math.floor(Math.max(0, f.treasury) / P.recruitFee)));
+        f.treasury -= afford * P.recruitFee;
+        f.units.inf += afford;
+        if (afford < add) log.push({ t, event: `${f.id} 征募受限：国库不足（需 ${Math.round(fee)}，仅征 ${afford}/${add}）` });
+      }
       else if (target < total) {
         let cut = total - target;
         for (const k of ['inf', 'assault', 'special', 'mobile', 'heavy', 'heli', 'tank']) {
@@ -824,6 +906,24 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
             c.arsenalProgress = 0;
           }
         }
+      }
+      // ==== 空军生产（A1.4：机场独立队列；轰炸机 2 回/架、无人机 1 回/架）====
+      const airBase = f.cities.filter((c) => c.b.airport > 0).length;
+      const bomberCap = airBase * 8; // Lv1 机场驻机 8（简化）
+      if (f.bombers < bomberCap && f.treasury > 100000) { // 富裕后才产空军（避免小国破产）
+        if (!f.airQueue) {
+          if (f.treasury >= B.bomber.wealth && f.resources.iron >= B.bomber.iron && f.resources.oil >= B.bomber.oil) {
+            f.treasury -= B.bomber.wealth; f.resources.iron -= B.bomber.iron; f.resources.oil -= B.bomber.oil;
+            f.airQueue = 'bomber'; f.airProgress = 0;
+          }
+        } else {
+          f.airProgress += 1;
+          if (f.airProgress >= B.bomber.turns) { f.bombers += 1; f.airQueue = null; f.airProgress = 0; }
+        }
+      }
+      const droneCap = f.cities.length * B.drone.maxPerCity; // 每城上限 10
+      if (f.drones < droneCap && f.treasury > 50000 && f.treasury >= B.drone.wealth && f.resources.oil >= B.drone.oil) {
+        f.drones += 1; f.treasury -= B.drone.wealth; f.resources.oil -= B.drone.oil;
       }
       f.soldiers = totalUnits(f);
       const salary = f.soldiers * P.soldierSalary * (disarmHit ? 1.2 : 1); // 裁军制裁：军饷 +20%
@@ -882,11 +982,12 @@ console.log('\n[验收]');
 console.log(`CN 人口=${fmt(cnPop)}（初始1,520,000）| 5% 动员=${fmt(cnPop * 0.05)} | 10%=${fmt(cnPop * 0.1)}`);
 console.log(`CN 兵=${fmt(cn ? cn.soldiers : 0)} | 存活=${survivors}/4 | 国库=${fmt(cn ? cn.treasury : 0)} | 科技=${cn ? cn.tech.toFixed(0) : 0}/40`);
 console.log(`科技胜利=${winner || '无'}${winner ? `（t${log.find((r) => r.event && r.event.includes('科技胜利'))?.t || '?'}）` : ''}`);
-console.log('\n[兵种构成 t200] 阵营 | 普通 | 突击 | 特种 | 坦克 | 武直 | 机动炮 | 重炮 | 铁 | 煤 | 油 | 兵工厂');
+console.log('\n[兵种构成 t200] 阵营 | 普通 | 突击 | 特种 | 坦克 | 武直 | 机动炮 | 重炮 | 轰炸机 | 无人机 | 防空 | 铁 | 煤 | 油 | 兵工厂');
 for (const f of Object.values(facs)) {
   if (!f.cities.length) continue;
   const u = f.units, facN = f.cities.reduce((a, c) => a + (c.b.arsenal ? 1 : 0), 0);
-  console.log(`${f.id} | ${fmt(u.inf)} | ${fmt(u.assault)} | ${fmt(u.special)} | ${fmt(u.tank)} | ${fmt(u.heli)} | ${fmt(u.mobile)} | ${fmt(u.heavy)} | ${fmt(f.resources.iron)} | ${fmt(f.resources.coal)} | ${fmt(f.resources.oil)} | ${facN}`);
+  const aaN = f.cities.reduce((a, c) => a + (c.b.aaGun || 0), 0);
+  console.log(`${f.id} | ${fmt(u.inf)} | ${fmt(u.assault)} | ${fmt(u.special)} | ${fmt(u.tank)} | ${fmt(u.heli)} | ${fmt(u.mobile)} | ${fmt(u.heavy)} | ${fmt(f.bombers)} | ${fmt(f.drones)} | ${aaN} | ${fmt(f.resources.iron)} | ${fmt(f.resources.coal)} | ${fmt(f.resources.oil)} | ${facN}`);
 }
 
 // 胜利路径（A1 §五）
