@@ -53,6 +53,34 @@ const P = {
   policy: { subsidyCostPer1000: 1, subsidyMult: 1.12, limitMult: 0.85 },
   // 外交
   warStart: 100, warEvery: 20, maxWarsPerFaction: 2, allyRatio: 0.6, joinWarRatio: 2.0, allyDefense: 1.5,
+  // 文化输出（文化输出算法 v1 份额收敛式；2026-11-05 院长定稿；院长 11-13 第 4 条：文化胜利=文化入侵全球并维持）
+  culture: {
+    convergeR: 0.05,        // 收敛速率 r（balance 留 0.03/0.05/0.08 三档）
+    resistCap: 0.5,         // 抵抗总上限 +50%（cultureResistanceCap）
+    resistPub: 0.03, resistTour: 0.05, resistEnt: 0.02, // 文化建筑抵抗（博物馆 3%/会展 5%/娱乐 2% 每座级）
+    gapExp: 0.5, gapCap: 2.0, // 势差乘区 clamp((Ca/Cb)^0.5, 1.0, 2.0)；门槛=攻击方有文化建筑
+    invadeThreshold: 0.6, invadeRelease: 0.5, invadeHold: 5, // 完全入侵 60% 入 / 50% 出 / 持续 5 回
+    victoryHold: 10,        // 文化胜利：对所有国完全入侵维持 10 回合
+    contactTech: 10,        // AU 联系门槛（双方科技 ≥10 才可跨海文化输出）
+    distAdj: 1.0, distSea: 0.6, // 距离系数（邻接/远洋；v0 系数表）
+    peaceDecay: 0.3,        // 停战期输出 0.3（恢复期简化）
+    lostSelf: 0.4, lostRelease: 0.45, // 文化失所：本国认同 <40% 且无单极 → 解除 ≥45%
+    lostRecruit: 0.85, lostWar: 0.9,  // 失所效果：征兵 ×0.85 / 战争能力 ×0.9
+  },
+  // 环境（环境系统 §十一/§12 碳回收/§四 碳额度；R42 院长定稿）
+  env: {
+    emit: { factory: 8, plant: 6, coal: 2 }, // 钢铁冶炼/火电/矿业（碳/回）
+    tempK: 50000,           // 温度指数 = 累计碳 / 50000 × 100（§11.3 标定）
+    recycle: { park: 1, nature: [0, 3, 3, 5], ccs: 20 }, // 绿化带 −1/级；自然线 1/2/3 级=国家公园/生态保护区；CCS −20
+    seaRates: [[30, 3], [60, 6], [80, 10], [101, 14]], // 温度带速率 mm/回（§11.4）
+    netZeroHold: 20,        // 净负碳持续 20 回 → 海平面停涨（气候恢复）
+    level1: 0.5, level2: 1.0, level3: 1.5, // 海平面三级：产出损/淹没/全局失败
+    coastPenalty: 0.2,      // 一级沿海产出损 20%（文档未给数值，模拟器自定，报告标注）
+    quotaRatio: 0.8,        // 配额法案：上限=签约时排放×0.8（§四）
+    quotaBuyPrice: 10,      // 超排自动购买额度 10 财/碳（§四）
+    quotaFine: 20,          // 无钱超排罚 20 财/回 + rep −2
+    quotaTerm: 20,          // 法案任期
+  },
 };
 // ================= 建筑谱系（×8；上限/成本/岗位/产出） =================
 const B = {
@@ -66,6 +94,7 @@ const B = {
   arsenal:   { name: '兵工厂', cost: 24000, prod: 4800, upkeep: 0.01, jobs: 0, max: 3 }, // A1.4：Lv1~3 = 1/2/3 产线（升级不占地）
   airport:   { name: '机场', cost: 4800, prod: 960, upkeep: 0.01, jobs: 0, max: 1 },      // 驻机 8（Lv1）
   aaGun:     { name: '防空炮', cost: 960, prod: 160, upkeep: 0.01, jobs: 0, max: 2 },     // 射程 4 格
+  ccs:       { name: '碳捕集站', cost: 12000, prod: 2400, upkeep: 0.01, jobs: 0, power: 8, max: 1 }, // 环境 §12.3：市政区，−20 碳/回（科技 20 解锁）
   // B1 战斗层（2026-11-13 方案，数值自定）
   bomber:    { name: '轰炸机', wealth: 4800, iron: 240, oil: 160, turns: 2, qAir: 22, qGroundTroops: 11, ammoWealth: 800, ammoOil: 80, cd: 3 },
   drone:     { name: '无人机', wealth: 960, oil: 40, turns: 1, qGround: 8, maxPerCity: 10 },
@@ -91,20 +120,22 @@ const TOUR = { name: '文旅线', caps: [64, 160, 320], costs: [1200, 2800, 4800
 const PUB = { name: '公共文化(博物馆线)', caps: [0, 120, 320], costs: [2000, 3600, 5600], jobs: [3200, 8000, 16000], cul: [32, 48, 80], max: 3 };
 const POWERIN = { factory: 6, academy: 3, hosp: 3, police: 3, ent: 2, tour: 2, pub: 2, office: 1 };
 const CITY_INIT = [
-  ['北京', 'CN', 256000, 55], ['上海', 'CN', 360000, 55], ['深圳', 'CN', 320000, 50],
-  ['香港', 'CN', 224000, 35], ['台北', 'CN', 200000, 50], ['西安', 'CN', 160000, 55],
-  ['东京', 'JP', 400000, 60], ['名古屋', 'JP', 208000, 55], ['长崎', 'JP', 144000, 50],
-  ['首尔', 'KR', 304000, 55], ['仁川', 'KR', 176000, 50],
-  ['悉尼', 'AU', 208000, 65], ['墨尔本', 'AU', 176000, 70],
-  ['达尔文', 'NONE', 48000, 40],
+  ['北京', 'CN', 256000, 55, 5], ['上海', 'CN', 360000, 55, 6], ['深圳', 'CN', 320000, 50, 3],
+  ['香港', 'CN', 224000, 35, 4], ['台北', 'CN', 200000, 50, 3], ['西安', 'CN', 160000, 55, 5],
+  ['东京', 'JP', 400000, 60, 7], ['名古屋', 'JP', 208000, 55, 3], ['长崎', 'JP', 144000, 50, 3],
+  ['首尔', 'KR', 304000, 55, 4], ['仁川', 'KR', 176000, 50, 2],
+  ['悉尼', 'AU', 208000, 65, 5], ['墨尔本', 'AU', 176000, 70, 5],
+  ['达尔文', 'NONE', 48000, 40, 1],
 ];
 const ADJ = { CN: ['KR', 'JP'], KR: ['CN', 'JP'], JP: ['CN', 'KR'], AU: [] }; // AU 远洋：仅强者可跨海
+const COASTAL = ['上海', '深圳', '香港', '台北', '东京', '名古屋', '长崎', '首尔', '仁川', '悉尼', '墨尔本', '达尔文']; // 沿海城（海平面三级受影响；北京/西安内陆）
 
 // ================= 生成 =================
 function makeCities() {
-  return CITY_INIT.map(([name, fac, pop, q]) => ({
-    name, fac, P: pop, C: pop * 1.5, q,
-    b: { residence: 0, farm: 0, coal: 0, plant: 0, hydro: 0, solar: 0, factory: 0, arsenal: 0, airport: 0, aaGun: 0, street: 0, mall: 0, office: 0, academy: 0, hosp: 0, police: 0 },
+  return CITY_INIT.map(([name, fac, pop, q, cul]) => ({
+    name, fac, P: pop, C: pop * 1.5, q, baseCulture: cul, // 城市基础文化值（文化区数值 v1.0 压低档）
+    coastal: COASTAL.includes(name),
+    b: { residence: 0, farm: 0, coal: 0, plant: 0, hydro: 0, solar: 0, factory: 0, arsenal: 0, airport: 0, aaGun: 0, street: 0, mall: 0, office: 0, academy: 0, hosp: 0, police: 0, ccs: 0 },
     ent: { park: 0, sport: 0, play: 0, movie: 0, esport: 0, nature: 0 },
     tour: 0, pub: 0, prodBank: 0, builtThisTurn: 0, corr: 0,
     arsenalJob: null, arsenalProgress: 0,
@@ -115,6 +146,7 @@ function makeFactions(cities) {
   for (const c of cities) {
     if (c.fac === 'NONE') continue;
     f[c.fac] = f[c.fac] || { id: c.fac, cities: [], treasury: 12000, soldiers: 0, service: 0, tech: 0, wars: 0, allies: [], warTarget: null, policy: 'none', loyalty: 60,
+      culture: 0, identity: {}, invasionSince: {}, lostCulture: false, // 文化存量/认同度/完全入侵计时/文化失所
       units: { inf: 0, assault: 0, special: 0, tank: 0, heli: 0, mobile: 0, heavy: 0 },
       bombers: 0, drones: 0, airQueue: null, airProgress: 0, // A1.4 空军（机场独立队列）
       resources: { iron: 0, coal: 0, oil: 0 } };
@@ -191,7 +223,7 @@ function cityStats(c, facs, F, desire, powerRatio) {
 }
 
 // ================= AI 建造 =================
-function aiBuild(c, s, F, fac, devMode) {
+function aiBuild(c, s, F, fac, devMode, envTemp = 0) {
   if (c.builtThisTurn >= 1) return;
   const totalB = Object.values(c.b).reduce((a, b) => a + b, 0) + Object.values(c.ent).reduce((a, b) => a + b, 0) + (c.tour ? 1 : 0) + (c.pub ? 1 : 0);
   if (totalB >= 40) return;
@@ -202,7 +234,10 @@ function aiBuild(c, s, F, fac, devMode) {
   const epRoom = (k, max) => c.ent[k] < max;
   // 生存优先：粮 → 电 → 住房
   if (F < 90 && room('farm')) want.push(['farm', B.farm.cost]);
-  if (s.pr < 0.9 && c.b.plant < B.plant.max) want.push(['plant', B.plant.cost]);
+  if (s.pr < 0.9) {
+    if (envTemp > 40 && c.b.solar < B.solar.max) want.push(['solar', B.solar.cost]); // 环保：高温优先清洁能源（0 碳）
+    else if (c.b.plant < B.plant.max) want.push(['plant', B.plant.cost]);
+  }
   if (c.P / c.C > 0.95 && room('residence')) want.push(['residence', B.residence.cost]);
   // A1.2 科技拉力（院长第 9 条，所有阵营）：多建学院区建筑——三级学院是人才培养主来源
   if (fac.tech < 40 && c.b.academy < 3) {
@@ -233,6 +268,8 @@ function aiBuild(c, s, F, fac, devMode) {
   // 市政
   if (!c.b.hosp) want.push(['hosp', B.hosp.cost]);
   if (!c.b.police) want.push(['police', B.police.cost]);
+  // 环境治理：温度高且科技到位 → 碳捕集站（市政区，−20 碳/回）
+  if (envTemp > 50 && fac.tech >= 20 && c.b.ccs < 1) want.push(['ccs', B.ccs.cost]);
   // 兵工厂（A1.4：Lv1/2/3 按科技 5/15/25 逐级补；升级不占地）
   const arsenalNeed = fac.tech > 25 ? 3 : fac.tech > 15 ? 2 : fac.tech > 5 ? 1 : 0;
   if (c.b.arsenal < arsenalNeed) want.push(['arsenal', B.arsenal.cost * (c.b.arsenal + 1)]);
@@ -260,6 +297,11 @@ const D = {
   leadCheckEvery: 20, leadStart: 80, leadCooldown: 40, leadTechDiff: 8, leadRatio: 1.5,
   napMinRelation: -10, napStart: 40, napTerm: 12, napMax: 2,
   surrenderRepMin: 30,
+  // A1.5 会议体系（院长 11-13 第 3 条；[外交会议体系](../docs/06-设计/05-外交/外交会议体系.md) §3.0/3.2）
+  summitEvery: 20,       // 定期全球大会：每 20 回合
+  emergencyCooldown: 10, // 紧急会议：发起国冷却 10 回合
+  extinctWindow: 10,     // 灭国事由窗口 10 回合（一次性）
+  meetingFailRep: 3,     // 否决：发起国 rep −3
   // 大统领人格（officers.json aiPersonality；模拟器内联）
   leaders: {
     CN: { aggression: 0.35, caution: 0.70, loyalty: 0.80, greed: 0.45, culture: 0.85, tech: 0.80, economy: 0.75, temperature: 0.45, governance: 'culture', affinity: { JP: 0.25, KR: 0.75, AU: 0.60 }, seekProtection: null },
@@ -278,6 +320,7 @@ function makeDiplo(ids) {
   return { rel, repos: 0, rep: Object.fromEntries(ids.map((x) => [x, 50])), treaties: [], cooldown, memory: [], contracts: [], war: null,
     sanctions: [], coalitionCd: {}, sanctionCd: 0, napCd: {},
     aggression: Object.fromEntries(ids.map((x) => [x, 0])), // A1.2 侵略记录（滚动 30 回合）
+    extinct: [], meetingCd: {}, initiated: {}, // A1.5 会议：灭国事由/发起冷却/每回合 1 次
     lastSanction: {} }; // A1.2 同类制裁冷却：key=`${target}:${type}`
 }
 
@@ -422,44 +465,82 @@ function coalitionCheck(t, facs, diplo, dipPower, ids, rand, log) {
   }
 }
 
-// A1.2 §15.2/15.4 制裁会议：事由（领先/rep<20/侵略）→ 三选项投票 → 半数通过（院长 11-13 第 6/10 条）
-function councilCheck(t, facs, diplo, dipPower, ids, rand, log) {
+// A1.5 会议阶段（[外交会议体系](../docs/06-设计/05-外交/外交会议体系.md) §3.0/3.2；院长 11-13 第 3 条）
+// 时序：[N 回合结算] → [会议阶段] → [N 回合行动]；结果（CB/经济/裁军）本回合行动即可用
+// 定期全球大会每 20 回合（领先制裁）；全球紧急会议事由触发（rep<20/侵略≥4/灭国 10 回合内）
+// 每阵营每回合最多发起 1 次；发起无成本；紧急会议发起国冷却 10 回合；否决发起国 rep −3
+function meetingPhase(t, facs, diplo, dipPower, ids, rand, log, env) {
   if (t < P.warStart) return;
   diplo.sanctions = diplo.sanctions.filter((s) => s.expire > t);
+  diplo.extinct = diplo.extinct || [];
+  diplo.meetingCd = diplo.meetingCd || {};
+  diplo.initiated = diplo.initiated || {};
   const alive = ids.filter((x) => facs[x] && facs[x].cities.length > 0);
   if (alive.length < 3) return;
   const cultureOf = (x) => facs[x].cities.reduce((a, c) => a + c.pub * 40 + c.tour * 20 + Object.values(c.ent).reduce((s, v) => s + v * 8, 0), 0);
-  // ---- 收集事由 ----
-  const cases = [];
-  // ① 领先制裁（每 20 回合检查一次，t≥80；院长第 10 条：科技/文化/军事遥遥领先）
-  if (t >= D.leadStart && (t - D.leadStart) % D.leadCheckEvery === 0) {
+  // ---- 议程收集（同 target+type 去重）----
+  const agenda = [];
+  const addCase = (o) => {
+    const ex = agenda.find((x) => x.target === o.target && x.type === o.type);
+    if (ex) { // 同议程去重：灭国事由升级标签（否则被 rep/侵略事由吞掉，不可观测）
+      if (o.extinct && !ex.extinct) { ex.label = o.label; ex.extinct = o.extinct; }
+      return;
+    }
+    agenda.push(o);
+  };
+  // ① 定期全球大会（每 20 回合）：领先制裁（科技/文化/军事遥遥领先）
+  if (t >= D.leadStart && t % D.summitEvery === 0) {
     const rank = (val) => alive.slice().sort((a, b) => val(b) - val(a));
     const techRank = rank((x) => facs[x].tech);
     if (techRank.length >= 2 && facs[techRank[0]].tech >= facs[techRank[1]].tech + D.leadTechDiff)
-      cases.push({ target: techRank[0], type: 'econ', label: '科技领先→经济制裁' });
+      addCase({ target: techRank[0], type: 'econ', label: '科技领先→经济制裁', track: 'summit' });
     const culRank = rank(cultureOf);
     if (culRank.length >= 2 && cultureOf(culRank[0]) >= cultureOf(culRank[1]) * D.leadRatio && cultureOf(culRank[1]) > 0)
-      cases.push({ target: culRank[0], type: 'econ', label: '文化领先→经济制裁' });
+      addCase({ target: culRank[0], type: 'econ', label: '文化领先→经济制裁', track: 'summit' });
     const milRank = rank((x) => dipPower[x] || 0);
     if (milRank.length >= 2 && (dipPower[milRank[0]] || 0) >= (dipPower[milRank[1]] || 0) * D.leadRatio)
-      cases.push({ target: milRank[0], type: 'disarm', label: '军事领先→裁军制裁' });
+      addCase({ target: milRank[0], type: 'disarm', label: '军事领先→裁军制裁', track: 'summit' });
+    // 环保提案（环境 §3.5/§四）：温度 ≥40 或海平面 ≥0.5；已有未过期法案不再提
+    if (env && (env.temp >= 40 || env.sea >= P.env.level1) && (!diplo.carbonBill || diplo.carbonBill.expire <= t))
+      addCase({ target: null, type: 'carbon', label: `碳排放配额法案（上限=排放×${P.env.quotaRatio}）`, track: 'summit' });
   }
-  // ② rep<20 / 侵略记录 → 战争制裁
+  // ② 全球紧急会议（事由触发）：rep<20 / 侵略记录≥4 / 灭国 10 回合内
   for (const x of alive) {
-    if (diplo.rep[x] < D.sanctionRep) cases.push({ target: x, type: 'cb', label: 'rep<20→战争制裁' });
-    else if ((diplo.aggression[x] || 0) >= D.coalitionAggression) cases.push({ target: x, type: 'cb', label: '侵略记录→战争制裁' });
+    if (diplo.rep[x] < D.sanctionRep) addCase({ target: x, type: 'cb', label: 'rep<20→战争制裁', track: 'emergency' });
+    else if ((diplo.aggression[x] || 0) >= D.coalitionAggression) addCase({ target: x, type: 'cb', label: '侵略记录→战争制裁', track: 'emergency' });
   }
-  for (const cs of cases) {
+  for (const e of diplo.extinct) {
+    if (e.called) continue;
+    if (t - e.t > D.extinctWindow || !facs[e.by] || facs[e.by].cities.length === 0) { e.called = true; continue; }
+    addCase({ target: e.by, type: 'cb', label: `灭国(${e.fac})→战争制裁`, track: 'emergency', extinct: e });
+  }
+  // ---- 逐场召开：每阵营每回合最多发起 1 次（定期大会自动，不占配额）----
+  for (const cs of agenda) {
     const key = `${cs.target}:${cs.type}`;
     if (diplo.sanctions.some((s) => s.target === cs.target && s.type === cs.type && s.expire > t)) continue;
-    if ((diplo.lastSanction[key] || 0) > t) continue;
-    const initiator = alive.filter((x) => x !== cs.target).sort((a, b) => (dipPower[b] || 0) - (dipPower[a] || 0))[0];
-    // ---- 三选项投票：同意=参与 / 弃权=随大流 / 反对=不参与 ----
+    if (!cs.extinct && (diplo.lastSanction[key] || 0) > t) continue; // 灭国=一次性事由，可插队冷却
+    // 发起国：非目标、按动员潜力从强到弱；紧急会议受"每回合 1 次 + 冷却 10 回合"约束
+    const cands = alive.filter((x) => x !== cs.target
+      && (cs.track === 'summit' || ((diplo.initiated[x] || 0) !== t && (diplo.meetingCd[x] || 0) <= t)))
+      .sort((a, b) => (dipPower[b] || 0) - (dipPower[a] || 0));
+    if (!cands.length) continue;
+    const initiator = cands[0];
+    if (cs.track === 'emergency') { diplo.initiated[initiator] = t; diplo.meetingCd[initiator] = t + D.emergencyCooldown; }
+    // ---- 三选项投票：同意=参与 / 弃权=随大流 / 反对=不参与（弃权不算同意，严格过半）----
     let yes = 1, abstain = 0;
     const yesIds = [initiator], absIds = [];
     const votes = [`${initiator}:同意`];
     for (const Y of alive) {
       if (Y === cs.target || Y === initiator) continue;
+      if (cs.type === 'carbon') {
+        // 环保倾向（环境 §八 AI）：文化高、排放占比低 → 同意；高排放国反对
+        const share = (env.facEmit[Y] || 0) / Math.max(1, env.emit);
+        const u = 0.25 + 0.35 * ((D.leaders[Y] || { culture: 0.5 }).culture) - 0.6 * share;
+        if (u > 0.30) { yes++; yesIds.push(Y); votes.push(`${Y}:同意`); }
+        else if (u > 0.15) { abstain++; absIds.push(Y); votes.push(`${Y}:弃权`); }
+        else votes.push(`${Y}:反对`);
+        continue;
+      }
       const allied = hasTreaty(diplo, 'ally', Y, cs.target, t) || hasTreaty(diplo, 'nap', Y, cs.target, t);
       const R = diplo.rel[Y][cs.target];
       if (allied && diplo.rep[cs.target] >= D.sanctionAllyCut) { abstain++; absIds.push(Y); votes.push(`${Y}:弃权(条约随大流)`); continue; }
@@ -467,23 +548,31 @@ function councilCheck(t, facs, diplo, dipPower, ids, rand, log) {
       else if (R < D.sanctionAbstainR) { abstain++; absIds.push(Y); votes.push(`${Y}:弃权(随大流)`); }
       else votes.push(`${Y}:反对(不参与)`);
     }
-    // 院长 11-13 第 3 条：弃权不算同意，同意票严格过半（5→3/4→3/3→2/2→2）
     const need = Math.floor(alive.length / 2) + 1;
     const passed = yes >= need; // 弃权/反对不计入同意
     diplo.lastSanction[key] = t + D.leadCooldown;
+    const track = cs.track === 'summit' ? '定期大会' : '紧急会议';
     if (passed) {
-      // 参与范围：战争制裁=安全型全员参与（强制力）；经济/裁军=同意+弃权参与
-      const support = cs.type === 'cb' ? alive.filter((x) => x !== cs.target) : yesIds.concat(absIds);
-      diplo.sanctions.push({ target: cs.target, type: cs.type, label: cs.label, expire: t + D.sanctionTerm, by: initiator, support });
-      log.push({ t, event: `制裁会议：${initiator} 发起「${cs.label} ${cs.target}」——${votes.join(' ')} → 通过（同意${yes}/需${need}，弃权${abstain}不计入；${cs.type === 'cb' ? '全员参与' : '同意+弃权参与'}）` });
+      if (cs.type === 'carbon') {
+        // 配额法案：成员国（同意+弃权）执行；上限=签约时排放×系数；任期 20 回合
+        diplo.carbonBill = { ratio: P.env.quotaRatio, expire: t + P.env.quotaTerm, members: yesIds.concat(absIds),
+          base: Object.fromEntries(alive.map((x) => [x, env.facEmit[x] || 0])) };
+        log.push({ t, event: `${track}：${initiator} 提案「${cs.label}」——${votes.join(' ')} → 通过（同意${yes}/需${need}；参与 ${yesIds.concat(absIds).join('/')}，任期${P.env.quotaTerm}回）` });
+      } else {
+        // 参与范围：战争制裁=安全型全员参与（强制力）；经济/裁军=同意+弃权参与
+        const support = cs.type === 'cb' ? alive.filter((x) => x !== cs.target) : yesIds.concat(absIds);
+        diplo.sanctions.push({ target: cs.target, type: cs.type, label: cs.label, expire: t + D.sanctionTerm, by: initiator, support });
+        log.push({ t, event: `${track}：${initiator} 提案「${cs.label} ${cs.target}」——${votes.join(' ')} → 通过（同意${yes}/需${need}，弃权${abstain}不计入；${cs.type === 'cb' ? '全员参与' : '同意+弃权参与'}）` });
+      }
     } else {
-      log.push({ t, event: `制裁会议：${initiator} 发起「${cs.label} ${cs.target}」——${votes.join(' ')} → 否决（同意${yes}/需${need}，弃权${abstain}不计入）` });
+      diplo.rep[initiator] = clamp(diplo.rep[initiator] - D.meetingFailRep, 0, 100);
+      log.push({ t, event: `${track}：${initiator} 提案「${cs.label} ${cs.target}」——${votes.join(' ')} → 否决（同意${yes}/需${need}，弃权${abstain}不计入；发起国 rep −${D.meetingFailRep}）` });
     }
-    return; // 一次会议 1 个事由
+    if (cs.extinct) cs.extinct.called = true;
   }
 }
 
-function diploTick(t, facs, diplo, fpower, ids, rand, log) {
+function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
   ids = ids.filter((x) => facs[x].cities.length > 0);
   // 战争状态：交战成员 + 守方盟友（防御性参战，动员潜力直接计入守方）
   for (const f of Object.values(facs)) {
@@ -547,8 +636,9 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log) {
         .filter((x) => !sideB.includes(x) && facs[x] && facs[x].cities.length > 0);
       const brA = dominantBranch(facs[b]);
       const brB = dominantBranch(facs[sideA[0]]);
-      const atk = sideA.reduce((s, x) => s + compositionPower(facs[x], brA), 0);
-      const def = sideB.reduce((s, x) => s + compositionPower(facs[x], brB), 0)
+      // 文化失所：战争能力 ×0.9（征兵不愿为迷茫之国而战）
+      const atk = sideA.reduce((s, x) => s + compositionPower(facs[x], brA) * (facs[x].lostCulture ? P.culture.lostWar : 1), 0);
+      const def = sideB.reduce((s, x) => s + compositionPower(facs[x], brB) * (facs[x].lostCulture ? P.culture.lostWar : 1), 0)
         + alliesOfB.reduce((s, x) => s + (dipPower[x] || 0), 0);
       const pr = atk / Math.max(1, def);
       // 院长 11-13 第 3 条：不要求绝对和平、被灭国可接受 → 取消 A1.1 最后一城死守，统一 pr>1.3
@@ -562,7 +652,10 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log) {
           diplo.rel[b][a] = clamp(diplo.rel[b][a] - 40, -100, 100);
           for (const x of ids) if (!sideA.includes(x) && x !== b) diplo.rel[x][a] = clamp(diplo.rel[x][a] - 10, -100, 100);
           log.push({ t, event: `${sideA.join('+')} 攻 ${b}：占领 ${target.name}（战力比 ${pr.toFixed(2)}）` });
-          if (Bf.cities.length === 0) log.push({ t, event: `${b} 被 ${sideA.join('+')} 灭国` });
+          if (Bf.cities.length === 0) {
+            log.push({ t, event: `${b} 被 ${sideA.join('+')} 灭国` });
+            diplo.extinct.push({ fac: b, by: a, t }); // A1.5 紧急会议事由（10 回合窗口）
+          }
         }
       } else {
         for (const x of sideA) signPeace(t, facs, diplo, x, b);
@@ -578,10 +671,11 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log) {
 
   // ---- A1.1 包围网（自动事件，不占行动槽；可打断进行中的战争）----
   coalitionCheck(t, facs, diplo, dipPower, ids, rand, log);
-  if (diplo.war) return; // 处于战争（含刚成型的包围网）：本轮不做常规外交行动
 
-  // ---- A1.2 制裁会议（领先/rep/侵略；三选项投票）----
-  councilCheck(t, facs, diplo, dipPower, ids, rand, log);
+  // ---- A1.5 会议阶段（院长 11-13 第 3 条：N 结算后 → 会议 → N 行动前；战争期也开紧急会议）----
+  meetingPhase(t, facs, diplo, dipPower, ids, rand, log, env);
+
+  if (diplo.war) return; // 处于战争（含刚成型的包围网）：本轮不做常规外交行动
 
   // ---- A1.2 侵略记录滚动衰减（30 回合清空）----
   for (const x of ids) diplo.aggression[x] = Math.max(0, (diplo.aggression[x] || 0) - D.aggressionDecay);
@@ -723,10 +817,79 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log) {
       const Bf = facs[b];
       for (const c of Bf.cities) { c.fac = a; c.P *= 0.8; facs[a].cities.push(c); }
       Bf.cities = [];
+      diplo.extinct.push({ fac: b, by: a, t }); // A1.5 劝降=灭国，紧急会议事由
       diplo.rep[a] = clamp(diplo.rep[a] - 10, 0, 100);
       diplo.aggression[a] = (diplo.aggression[a] || 0) + 3; // A1.2 劝降计入侵略记录
       log.push({ t, event: `${a} 劝降 ${b}（不战而屈人之兵，潜力比 ${(pick.pr || 0).toFixed(2)} = ${Math.round(dipPower[a] || 0)}/${Math.round(dipPower[b] || 0)}）` });
     }
+  }
+}
+
+// ================= 文化输出（文化输出算法 v1 份额收敛式；2026-11-05 院长定稿） =================
+// P[A→B] = √Culture_A × 距离 × 联系 × 情报(1.0，情报系统未接) × 战争衰减 × 势差乘区
+// 认同度每回向目标份额收敛 r=0.05；完全入侵 ≥60% 持续 5 回；文化胜利=对所有国完全入侵维持 10 回
+function cultureResist(f) {
+  let r = 0;
+  for (const c of f.cities) {
+    r += c.pub * P.culture.resistPub + c.tour * P.culture.resistTour
+      + Object.values(c.ent).reduce((a, v) => a + v, 0) * P.culture.resistEnt;
+  }
+  return clamp(r, 0, P.culture.resistCap);
+}
+
+function culturePressure(A, B, facs, diplo, t) {
+  const fa = facs[A], fb = facs[B];
+  if (!fa || !fb || !fa.cities.length || !fb.cities.length) return 0;
+  const ca = Math.max(1, fa.culture), cb = Math.max(1, fb.culture);
+  const hasBld = fa.cities.some((c) => c.pub > 0 || c.tour > 0 || Object.values(c.ent).some((v) => v > 0));
+  const gap = hasBld ? clamp(Math.pow(ca / cb, P.culture.gapExp), 1.0, P.culture.gapCap) : 1.0; // 势差乘区（门槛=有文化建筑）
+  const adj = (ADJ[A] || []).includes(B) || (ADJ[B] || []).includes(A);
+  let dist = adj ? P.culture.distAdj : P.culture.distSea;
+  if ((A === 'AU' || B === 'AU') && Math.min(fa.tech, fb.tech) < P.culture.contactTech) dist = 0; // 澳洲隔绝门槛
+  if (dist === 0) return 0;
+  const link = hasTreaty(diplo, 'ally', A, B, t) ? 1.2 : 1.0; // 同盟 +0.2（航线系统未接）
+  let dec = 1.0;
+  if (diplo.war) {
+    const sa = diplo.war.sideA || [diplo.war.a], sb = diplo.war.sideB || [diplo.war.b];
+    if ((sa.includes(A) && sb.includes(B)) || (sa.includes(B) && sb.includes(A))) dec = 0; // 交战双边清零
+  }
+  if (dec > 0 && hasTreaty(diplo, 'peace', A, B, t)) dec = P.culture.peaceDecay; // 停战恢复期
+  return Math.sqrt(ca) * dist * link * dec * gap;
+}
+
+function cultureTick(t, facs, diplo, ids) {
+  const alive = ids.filter((x) => facs[x] && facs[x].cities.length > 0);
+  if (alive.length < 2) return;
+  // 文化存量：每回结算（建筑直产×电力满足率；失城不回溯——存量只加不减）
+  for (const x of alive) {
+    const out = facs[x].cities.reduce((a, c) => a + cityStats(c, facs, 100, 1, 1).C_out, 0);
+    facs[x].culture = (facs[x].culture || 0) + out;
+  }
+  // ---- 认同度：向输出份额收敛（本国自压 = √C × (1+抵抗)）----
+  for (const B of alive) {
+    const fb = facs[B];
+    const self = Math.sqrt(Math.max(1, fb.culture)) * (1 + cultureResist(fb));
+    let total = self;
+    const press = {};
+    for (const A of alive) if (A !== B) { press[A] = culturePressure(A, B, facs, diplo, t); total += press[A]; }
+    const id = fb.identity;
+    id[B] = (id[B] || 0) + P.culture.convergeR * (self / total - (id[B] || 0));
+    for (const A of alive) if (A !== B) id[A] = (id[A] || 0) + P.culture.convergeR * ((press[A] || 0) / total - (id[A] || 0));
+    // 死国份额清零 + Σ 归一（差额回本国）
+    let sum = 0;
+    for (const k of Object.keys(id)) { if (k !== B && !alive.includes(k)) id[k] = 0; sum += id[k]; }
+    if (sum > 0) for (const k of Object.keys(id)) id[k] /= sum;
+    if (id[B] < 0.2) id[B] = 0.2; // 本国认同底线 20%（负反馈纪律）
+    // ---- 完全入侵计时：≥60% 起算；<50% 解除 ----
+    fb.invasionSince = fb.invasionSince || {};
+    for (const A of alive) if (A !== B) {
+      if (id[A] >= P.culture.invadeThreshold) { if (!fb.invasionSince[A]) fb.invasionSince[A] = t; }
+      else if (id[A] < P.culture.invadeRelease) fb.invasionSince[A] = 0;
+    }
+    // ---- 文化失所：本国认同<40% 且无单极（最大外国<60%）；解除 ≥45% ----
+    const maxForeign = Math.max(0, ...alive.filter((A) => A !== B).map((A) => id[A] || 0));
+    if (id[B] < P.culture.lostSelf && maxForeign < P.culture.invadeThreshold) fb.lostCulture = true;
+    else if (id[B] >= P.culture.lostRelease) fb.lostCulture = false;
   }
 }
 
@@ -780,8 +943,15 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
   let rng = seed;
   const rand = () => { rng = (rng * 1103515245 + 12345) & 0x7fffffff; return rng / 0x7fffffff; };
   const cities = makeCities();
-  let winner = null; // 科技胜利者（A1.3 收束）
+  let winner = null; // { id, type, t }：科技/军事/文化胜利（先到先得）
+  let doom = null; // 海平面 +1.5m 全局失败（所有阵营失败，无胜者）
+  let env = { carbon: 0, temp: 0, sea: 0, netZeroRun: 0, level: 0, emit: 0, recycle: 0, facEmit: {} };
   const facs = makeFactions(cities);
+  const allIds = Object.keys(facs);
+  for (const f of Object.values(facs)) {
+    f.culture = f.cities.reduce((a, c) => a + c.baseCulture * 8, 0); // 城市基础文化值 ×8（文化区 v1.0）
+    f.identity = Object.fromEntries(allIds.map((x) => [x, x === f.id ? 1 : 0]));
+  }
   for (const c of cities) {
     if (c.fac === 'NONE') { c.b.farm = 1; continue; }
     c.b.farm = c.fac === 'CN' ? 2 : 1; c.b.residence = 1; c.b.office = 1; c.b.street = 1; c.b.hosp = 1;
@@ -839,13 +1009,14 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       for (const c of f.cities) {
         const s = cityStats(c, facs, F, desire, 1);
         stats.push(s);
-        taxSum += s.tax; incomeSum += s.income; upkeepSum += s.upkeep;
+        const coastHit = c.coastal && env.level >= 1 ? (1 - P.env.coastPenalty) : 1; // 海平面一级：沿海产出损
+        taxSum += s.tax * coastHit; incomeSum += s.income * coastHit; upkeepSum += s.upkeep;
         let gg = s.g;
         if (f.policy === 'subsidy') gg *= P.policy.subsidyMult;
         if (f.policy === 'limit') gg *= P.policy.limitMult;
         c.P = Math.max(1000, c.P + c.P * clamp(gg, -P.growthCap, P.growthCap));
         c.builtThisTurn = 0;
-        aiBuild(c, s, F, f, devMode);
+        aiBuild(c, s, F, f, devMode, env.temp);
       }
       if (econHit) incomeSum *= 0.7;
       // ==== 资源收入（国家级简化；库存上限 5 回合）====
@@ -864,7 +1035,7 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       }
       // ==== 征募（普通步兵）====
       const popTotal = f.cities.reduce((a, c) => a + c.P, 0);
-      const target = Math.min(popTotal * (f.atWar ? (stress ? stressService : P.warService) : P.peaceService) * (disarmHit ? 0.5 : 1), 2000000);
+      const target = Math.min(popTotal * (f.atWar ? (stress ? stressService : P.warService) : P.peaceService) * (disarmHit ? 0.5 : 1) * (f.lostCulture ? P.culture.lostRecruit : 1), 2000000);
       let total = totalUnits(f);
       // A1.4 征募费（P0 出口，自定 1 财/兵；v22 兵员 ×8 与国库口径折中）
       if (target > total) {
@@ -938,7 +1109,7 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       if (f.tech >= 40) {
         f.project = (f.project || 0) + 1;
         if (f.project >= P.projectTurns && !winner) {
-          winner = f.id;
+          winner = { id: f.id, type: 'tech', t };
           log.push({ t, event: `${f.id} 率先建成终极工程——科技胜利（t${t}）` });
         }
       }
@@ -949,21 +1120,87 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
         log.push({ t, fac: f.id, pop: Math.round(pop), soldiers: Math.round(f.soldiers), treasury: Math.round(f.treasury), F: F.toFixed(1), tech: Math.floor(f.tech), L: avgL.toFixed(1), desire: desire.toFixed(2), policy: f.policy, oil: f.resources.oil, factories: f.cities.reduce((a, c) => a + (c.b.arsenal ? 1 : 0), 0) });
       }
     }
+    // ==== 环境账（全球碳 → 温度 → 海平面；环境系统 §十一；压力盘不接）====
+    if (!stress) {
+      let emit = 0, recycle = 0;
+      const facEmit = {};
+      for (const f of Object.values(facs)) {
+        let fe = 0;
+        for (const c of f.cities) {
+          fe += c.b.factory * P.env.emit.factory + c.b.plant * P.env.emit.plant + c.b.coal * P.env.emit.coal;
+          recycle += c.ent.park * P.env.recycle.park + P.env.recycle.nature[c.ent.nature] + c.b.ccs * P.env.recycle.ccs;
+        }
+        facEmit[f.id] = fe; emit += fe;
+      }
+      // 碳额度法案：成员国超排自动购买额度（10 财/碳）；无钱罚 20 财/回 + rep −2
+      const bill = diplo.carbonBill;
+      if (bill && bill.expire > t) {
+        for (const x of bill.members) {
+          const f = facs[x]; if (!f || !f.cities.length) continue;
+          const over = (facEmit[x] || 0) - (bill.base[x] || 0) * bill.ratio;
+          if (over <= 0) continue;
+          const cost = over * P.env.quotaBuyPrice;
+          if (f.treasury >= cost) f.treasury -= cost;
+          else { f.treasury -= Math.min(P.env.quotaFine, Math.max(0, f.treasury)); diplo.rep[x] = clamp(diplo.rep[x] - 2, 0, 100); }
+        }
+      }
+      const netC = emit - recycle;
+      env.emit = emit; env.recycle = recycle; env.facEmit = facEmit; env.carbon += netC;
+      env.temp = Math.max(env.temp, clamp(env.carbon / P.env.tempK * 100, 0, 100)); // 温度单调不减
+      if (netC <= 0) env.netZeroRun++; else env.netZeroRun = 0;
+      const rate = env.netZeroRun >= P.env.netZeroHold ? 0 : P.env.seaRates.find(([th]) => env.temp < th)[1];
+      env.sea += rate / 1000;
+      const lv = env.sea >= P.env.level3 ? 3 : env.sea >= P.env.level2 ? 2 : env.sea >= P.env.level1 ? 1 : 0;
+      if (lv !== env.level) {
+        env.level = lv;
+        if (lv === 1) log.push({ t, event: `海平面 +0.5m：沿海城产出 −${(P.env.coastPenalty * 100).toFixed(0)}%` });
+        if (lv === 2) {
+          for (const f of Object.values(facs)) {
+            const gone = f.cities.filter((c) => c.coastal);
+            if (!gone.length) continue;
+            f.cities = f.cities.filter((c) => !c.coastal);
+            for (const c of gone) { c.drowned = true; c.P = 0; }
+            log.push({ t, event: `海平面 +1.0m：${f.id} ${gone.map((c) => c.name).join('/')} 被淹没（海底遗迹）` });
+          }
+        }
+        if (lv === 3 && !winner) {
+          doom = { t };
+          log.push({ t, event: `海平面 +1.5m——全局失败（大陆陷落，所有阵营失败）` });
+          break;
+        }
+      }
+    }
     // ==== 外交 AI（A1 v1 意图机）====
     if (stress) {
       for (const f of Object.values(facs)) f.atWar = true;
     } else {
-      diploTick(t, facs, diplo, factionPower, Object.keys(facs), rand, log);
+      diploTick(t, facs, diplo, factionPower, Object.keys(facs), rand, log, env);
+      cultureTick(t, facs, diplo, Object.keys(facs));
+      // ==== 胜利判定（军事/文化；科技在结算内）====
+      const aliveIds = Object.keys(facs).filter((x) => facs[x].cities.length > 0);
+      if (!winner && aliveIds.length === 1) {
+        winner = { id: aliveIds[0], type: 'military', t };
+        log.push({ t, event: `${aliveIds[0]} 统一全球——军事胜利（t${t}）` });
+      }
+      // 文化胜利：全阵营存活（原链）+ 对所有其他阵营完全入侵并维持 10 回合（院长 11-13 第 4 条）
+      if (!winner && aliveIds.length === Object.keys(facs).length) {
+        for (const A of aliveIds) {
+          const others = aliveIds.filter((B) => B !== A);
+          const ok = others.length > 0 && others.every((B) => (facs[B].invasionSince || {})[A] > 0
+            && t - facs[B].invasionSince[A] >= P.culture.victoryHold && (facs[B].identity[A] || 0) >= P.culture.invadeThreshold);
+          if (ok) { winner = { id: A, type: 'culture', t }; log.push({ t, event: `${A} 文化入侵全球——文化胜利（t${t}）` }); break; }
+        }
+      }
     }
   }
-  return { log, cities, facs, diplo, winner };
+  return { log, cities, facs, diplo, winner, doom, env };
 }
 
 const turns = Number(process.argv[2] || 200);
 const seed = Number(process.argv[3] || 1);
 const stress = process.argv[4] === 'stress';
 const stressService = Number(process.argv[5] || P.stressService);
-const { log, cities, facs, diplo, winner } = run(turns, seed, stress, stressService);
+const { log, cities, facs, diplo, winner, doom, env } = run(turns, seed, stress, stressService);
 console.log(`\n===== v22 FULL 盘 seed=${seed} turns=${turns}${stress ? ` 模式=战时压力(${(stressService * 100).toFixed(1)}%)` : ''} =====`);
 console.log('\n[阵营] t | 人口 | 兵 | 国库 | 粮安F | 科技 | 宜居 | 欲望 | 政策 | 油 | 兵工厂');
 for (const r of log) {
@@ -981,7 +1218,19 @@ const survivors = Object.values(facs).filter((f) => f.cities.length > 0).length;
 console.log('\n[验收]');
 console.log(`CN 人口=${fmt(cnPop)}（初始1,520,000）| 5% 动员=${fmt(cnPop * 0.05)} | 10%=${fmt(cnPop * 0.1)}`);
 console.log(`CN 兵=${fmt(cn ? cn.soldiers : 0)} | 存活=${survivors}/4 | 国库=${fmt(cn ? cn.treasury : 0)} | 科技=${cn ? cn.tech.toFixed(0) : 0}/40`);
-console.log(`科技胜利=${winner || '无'}${winner ? `（t${log.find((r) => r.event && r.event.includes('科技胜利'))?.t || '?'}）` : ''}`);
+console.log(`胜利=${doom ? `全局失败（灭世 t${doom.t}）` : winner ? `${winner.id}（${winner.type} t${winner.t}）` : '无'}`);
+console.log(`\n[环境] 累计碳=${fmt(env.carbon)} | 温度指数=${env.temp.toFixed(1)} | 海平面=${env.sea.toFixed(2)}m（${env.level}级） | 净碳=${fmt(env.emit - env.recycle)}（排放${fmt(env.emit)}/回收${fmt(env.recycle)}） | 配额法案=${diplo.carbonBill ? `系数${diplo.carbonBill.ratio} 至t${diplo.carbonBill.expire}` : '无'}${stress ? '（压力盘未接环境账）' : ''}`);
+console.log('\n[文化] 阵营 | 文化存量 | 本国认同 | 最大外国 | 完全入侵(≥60%) | 失所');
+{
+  const ids = Object.keys(facs).filter((x) => facs[x].cities.length > 0);
+  for (const f of Object.values(facs)) {
+    if (!f.cities.length) continue;
+    const maxA = ids.filter((x) => x !== f.id).sort((a, b) => (f.identity[b] || 0) - (f.identity[a] || 0))[0];
+    const inv = ids.filter((x) => x !== f.id && (f.invasionSince[x] || 0) > 0)
+      .map((x) => `${x}:${((f.identity[x] || 0) * 100).toFixed(0)}%`).join(' ');
+    console.log(`${f.id} | ${fmt(f.culture)} | ${((f.identity[f.id] || 0) * 100).toFixed(0)}% | ${maxA ? `${maxA}:${((f.identity[maxA] || 0) * 100).toFixed(0)}%` : '-'} | ${inv || '-'} | ${f.lostCulture ? '是' : '否'}`);
+  }
+}
 console.log('\n[兵种构成 t200] 阵营 | 普通 | 突击 | 特种 | 坦克 | 武直 | 机动炮 | 重炮 | 轰炸机 | 无人机 | 防空 | 铁 | 煤 | 油 | 兵工厂');
 for (const f of Object.values(facs)) {
   if (!f.cities.length) continue;
