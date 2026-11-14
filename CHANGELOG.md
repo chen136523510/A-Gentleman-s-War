@@ -12,6 +12,7 @@
 - **人口限速落库（院长 11-13 第 7 条）**：`growth.base 0.008→0.006`、新增 `livabilityExp=1.5`（f_L^1.5）、`cap=0.02`（单回 ±2% 封顶，替换原硬编码 ±3%）；CalcGrowth 同步。
 - **Status 三态口径（接口变更）**：`draft`/`active`/缺省并存，引擎判断由"非空即拦"改为 `=="draft"` 才拦——市政先例的 `status:"active"` 卡此前被建造目录误拦（未触发因其均为 initial 件）。
 - **diploAI 数据段落库**：`balance.diploAI` 38 参数（与 sim/v22/full.js D 块 1:1）+ officers 四大统领 `aiPersonality`（丘序明/陈睿/徐浩森/马逸杰）+ `factions.json leaderId`。Unity `DiplomacyAI` 未实现（规范 §十三.4 后置）。⚠ 发现数据矛盾：`factions.ruler`（KR=陈楠）与 `officers.isLeader`（KR=徐浩森，模拟器人格源）不一致，leaderId 按模拟器口径落徐浩森，**ruler 矛盾待院长裁**。
+- **院长三裁落地（11-14 第二批）**：①**KR 大统领=徐浩森**（factions.ruler 陈楠→徐浩森，与 officers.isLeader/模拟器人格源对齐，leaderId 不变）②**科技节奏对表白机口径**：`tech.json costBase 500→2000`（×4.0；1700 实测 t200=29/38 偏快，2000 实测 **t200=26/38 ≈ 白机 26/40**，t150=23/t100=19；极限科技流约 4 倍收入即可 ~150t 收束，升级链+科研链收入上限 ~6 倍覆盖）③画廊访问改本地服务器 `tools/3d-viewer/serve.py`（file:// 下 model.json fetch 被浏览器拦截）。
 - **回归**：`dotnet build` 0/0；BatchSmoke OK；BatchBuildTest **59 PASS/0 FAIL**（+14 新断言：升级链两段/跳级拒绝/财扣除/科技生效/训练字段/±2% 双向封顶/f_L^1.5 比值/居民承载叠加/maxPerCity 拦截）；BatchSimulation 200 回合 OK（人口 448.9 万 vs 旧 458 万——限速生效；科技 38/38 @t150，**节奏观察：学院全城拉力下 Unity 科技树偏快，待与白机口径对表**）。
 
 ## 2026-11-13 白机 · 院长第二轮裁定落档（战争 C / 环境慢炖 / 淹没=失城 / 结算顺序）
