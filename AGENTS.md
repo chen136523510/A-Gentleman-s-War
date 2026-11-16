@@ -6,10 +6,13 @@
 
 **A Gentleman's War（《国男志》）**：仿三国志 12 的现代架空策略经营游戏（东亚微缩地图 14 城：东亚 11+澳洲 3 含达尔文无主村落 / CN·JP·KR·AU 四阵营+NONE / 学院 21 群友为武将）。独立项目、独立仓（对齐 nono 先例），从主仓 nandexueyuan 迁移而来（迁移清单见 `docs/04-技术笔记/设计文档与工程经验迁移清单.md`）。
 
+**一期/二期（2026-11-16 院长令）**：一期 = 一套成熟系统 + 14 城/4 阵营**教学关卡** + 全部核心内容 + 教学指引 + **默认 CN 开局** + 固定工作流；**无选阵营环节**。二期 = 新地图/新阵营/选阵营/平衡。**所有一期设定按二期最终版设计**：14/4/21/21 上限都是一期剧本数据，规则不得写死；剧本演绎走 ScenarioDefinition/EventScript/TutorialDefinition（参考三国志剧本/历史事件）。
+
 - 引擎：**Unity 2022.3.62f3c1 LTS（中国版）+ URP**（L1 保 2D Renderer；**L2 走 3D Universal Renderer**，2026-11-12 院长定）；编辑器 `F:\Unity\unityEditor1.0\2022.3.62f3c1`；构建链 VS2022
 - 使命：**打包单机可执行文件发给朋友直接玩**——一切技术选型为此服务
 - 设计权威：`docs/06-设计/`（00-总纲 ~ 07-技术架构 八模块，自主仓整树迁入）；L1 大地图 Web 验证版已在主仓归档（画风定调=三国群英传7 参考写实）
 - 铁律（原 R1 设计约束，继续有效）：L1/L2/L3 三层同一份数据；**每城地形/底图独一无二，建筑走通用套件**（2026-11-12 院长定，特色建筑后续点单）；数值一期成型后统一微调；负反馈纪律（不教玩家/前期少战事）；单局时长不设上限
+- **一期验收（2026-11-16）**：完整内容 + 教学指引 + 默认 CN + 固定工作流 + **L3 可玩**；一期不做平衡目标（教学剧本的确定性结果可接受），二期再做平衡
 
 ## 二、技术栈
 
@@ -17,7 +20,7 @@
 |---|---|---|
 | 引擎 | Unity 2022.3.62f3c1（中国版） | URP：L1 2D Renderer / L2 3D Universal Renderer（2026-11-12 定）；官方 MCP 不可用（<Unity 6），社区 unity-mcp 替代 ⛏待接线 |
 | L1 底图 | 离线烘焙大纹理（2560×1440 Seedream 写实卫星底图，`Assets/_Project/Art/Map/`） | 烘焙器=`tools/bakery/`（cities 模式）；运行时只做相机/交互 |
-| 数据 | `Assets/_Project/Data/*.json`（cities/geo-coastlines/links） | 运行时 JsonUtility/Newtonsoft 读取；一份服三层数据 |
+| 数据 | `Assets/_Project/Data/*.json`（cities/geo-coastlines/links/scenario/events/tutorial） | 运行时 JsonUtility/Newtonsoft 读取；一份服三层数据；规则/剧本分层 |
 | 城市贴图 | `Assets/_Project/Art/Cities/` 14 张（Seedream 写实城图；13 城+达尔文村落） | 管线与登记见 `docs/07-美术/` |
 | AI 直驱 | unity-mcp（社区版）⛏ 待接线 | 接线后补环境笔记 |
 
@@ -56,9 +59,10 @@
 
 ## 七、开发规范（R49 院长令，黑机必须遵守）
 
-1. **所有内容数据驱动**：城市/阵营/地图/事件/剧本进 JSON/ScriptableObject；**禁止写死 14 城/4 阵营/地图尺寸/数量**。
-2. **新地图/新阵营/新事件 = 加数据，不改规则代码**；扩展点（MapDefinition/FactionDefinition/EventDefinition/ScenarioDefinition）见 `docs/04-技术笔记/代码规范.md`。
+1. **所有内容数据驱动**：城市/阵营/地图/事件/剧本/教学进 JSON/ScriptableObject；**禁止写死 14 城/4 阵营/21 将/地图尺寸/数量/开局形态/胜利判定参数**。
+2. **新地图/新阵营/新事件 = 加数据，不改规则代码**；扩展点（MapDefinition/FactionDefinition/EventDefinition/ScenarioDefinition/TutorialDefinition）见 `docs/04-技术笔记/代码规范.md`。
 3. 存档字段可缺省、未知字段保留；城市/阵营用稳定字符串 ID，不用数组下标；新图/新阵营烟雾测试必须过。
+4. **规则/剧本分层（2026-11-16 院长令）**：阵营数/城市数/武将数/开局形态/UN 门槛/选举方式/文化胜利存活口径全部读 ScenarioDefinition；一期教学剧本（14 城/4 阵营/默认 CN/全存活/全票/相对多数）只是默认数据；新剧本只加 Scenario/EventScript/Tutorial，不改规则层；**N 阵营 smoke test 必过**。
 
 ## 八、上下文成本纪律
 
