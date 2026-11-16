@@ -40,6 +40,6 @@
 
 ## 技术基线（R18 ADR-009 起）
 
-- **Unity 2022.3.62f3c1 LTS 中国版 + URP 2D**；UI 用 uGUI（运行时程序化构建，见 `L1MapBuilder`），数据走 `Assets/_Project/Data/*.json`；
+- **Unity 2022.3.62f3c1 LTS 中国版 + URP**（L1 2D Renderer / L2 3D Universal Renderer，2026-11-12 院长定）；UI 用 uGUI（运行时程序化构建，见 `L1MapBuilder`），数据走 `Assets/_Project/Data/*.json`；
 - L1 大地图=离线烘焙大纹理 + 运行时 Sprite/航路/标签叠放；
 - Web 雏形（`poc/guonanzhi-ui/`，Vue UMD）已归档主仓，只作交互与信息密度参考，**不再作为正式技术基线**。
