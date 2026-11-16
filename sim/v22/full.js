@@ -1537,15 +1537,14 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
         winner = { id: aliveIds[0], type: 'military', t };
         log.push({ t, event: `${aliveIds[0]} 统一全球——军事胜利（t${t}）` });
       }
-      // A1.6 文化胜利：UN 盟主 + 对所有其他成员国完全入侵并维持 10 回（全阵营存活铁律保留）
+      // A1.6 文化胜利（11-16 院长裁）：UN 盟主 + 对所有其他**存活阵营**完全入侵并维持 10 回
+      // 不要求初始阵营全存活；复国=UN 多一票（不阻塞文化胜利，反而增加目标/票数）
       if (!winner && diplo.un && diplo.un.leader) {
-        const members = diplo.un.members.filter((x) => facs[x] && facs[x].cities.length > 0);
         const A = diplo.un.leader;
-        if (!members.includes(A)) { diplo.un.leader = null; } // 盟主失国=空位
+        if (!facs[A] || facs[A].cities.length === 0) { diplo.un.leader = null; } // 盟主失国=空位
         else {
-          const others = members.filter((B) => B !== A);
-          const allAlive = aliveIds.length === Object.keys(facs).length;
-          const ok = allAlive && others.length > 0 && others.every((B) => (facs[B].invasionSince || {})[A] > 0
+          const others = aliveIds.filter((B) => B !== A);
+          const ok = others.length > 0 && others.every((B) => (facs[B].invasionSince || {})[A] > 0
             && t - facs[B].invasionSince[A] >= P.culture.victoryHold && (facs[B].identity[A] || 0) >= P.culture.invadeRelease);
           if (ok) {
             winner = { id: A, type: 'culture', t };
