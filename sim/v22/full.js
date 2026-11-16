@@ -318,7 +318,7 @@ const D = {
   // A1.6 文化与同盟收口（2026-11-16 院长裁：最小复国 + UN 全票 + 联合进攻/经济制裁）
   trade: { minRel: 20, term: 24, link: 0.20, relPerTurn: 2 },      // 贸易协定/航线（贸易最小规则 v0.2：关系 +2/回）
   econAlly: { minRel: 40, term: 24, link: 0.10, max: 1 },          // 经济同盟（每类限 1 盟友）
-  un: { start: 100, charterCd: 20, electionEvery: 25, voteThreshold: 0.45, leaderTrade: 1.15 },
+  un: { start: 100, charterCd: 20, electionEvery: 25, voteThreshold: 0.45, abstainWindow: 0.12, charterRatio: 2 / 3, leaderTrade: 1.15 },
   revive: { wait: 3, militiaRate: 0.03, rep: 30, relYes: 100, relKiller: -100, cooldown: 10 },
   culturePush: { cost: 30000, duration: 20, mult: 4.0, cooldown: 25, relDrop: 0 }, // A1.6 文化推广（周期性文化攻势）
   allianceMeeting: { cd: 5, voteThreshold: 0.50, relFail: 5 },
@@ -643,7 +643,7 @@ function meetingPhase(t, facs, diplo, dipPower, ids, rand, log, env) {
 }
 
 // ================= A1.6 文化与同盟收口（2026-11-16 院长裁） =================
-// 时序：全球会议之后、常规外交行动之前；含 复国 → UN 宪章 → 盟主选举 → 联合进攻 → 经济制裁
+// 时序：全球会议之后、常规外交行动之前；含 复国 → UN 宪章 → 常任理事国选举 → 联合进攻 → 经济制裁
 function a1_6Phase(t, facs, diplo, dipPower, ids, rand, log) {
   const allIds = Object.keys(facs);
   const alive = ids.filter((x) => facs[x] && facs[x].cities.length > 0);
@@ -689,6 +689,7 @@ function a1_6Phase(t, facs, diplo, dipPower, ids, rand, log) {
       f.invasionSince = {}; f.lostCulture = false; f.atWar = false; f.project = 0; f.policy = 'none';
       f.bombers = 0; f.drones = 0; f.airQueue = null; f.airProgress = 0; f.mainPath = 'military';
       f.resources = { iron: inc.iron, coal: inc.coal, oil: inc.oil };
+      f.revivedBy = initiator; // A1.6 UN 投票完全跟随复国者阵营（不是额外一票）
       f.arsenalJob = null; f.arsenalProgress = 0;
       for (const c of f.cities) { c.arsenalJob = null; c.arsenalProgress = 0; }
       // 关系/声誉：对同意国 +100、对灭国者 −100（双向）
@@ -710,7 +711,7 @@ function a1_6Phase(t, facs, diplo, dipPower, ids, rand, log) {
     }
   }
 
-  // ---- ② UN 宪章（全票；可在战争期发起，通过=全球停战+和平锁）----
+  // ---- ② UN 宪章（存活阵营 ≥2/3 同意；弃权不算；可在战争期发起，通过=全球停战+和平锁）----
   diplo.unCd = diplo.unCd || 0;
   if (!diplo.un && t >= D.un.start && diplo.unCd <= t) {
     const allAlive = allIds.every((x) => facs[x] && facs[x].cities.length > 0);
@@ -721,16 +722,18 @@ function a1_6Phase(t, facs, diplo, dipPower, ids, rand, log) {
       const cands = alive.filter((x) => facs[x].mainPath !== 'military').sort((a, b) => score(b) - score(a));
       const initiator = cands[0];
       if (initiator) {
-        const votes = [`${initiator}:同意`]; let allYes = true;
+        const votes = [`${initiator}:同意`]; let yes = 1, abstain = 0;
         for (const Y of alive) {
           if (Y === initiator) continue;
           const L = D.leaders[Y] || {};
           const u = 0.35 + 0.30 * (diplo.rep[initiator] / 100) + 0.30 * (diplo.rel[Y][initiator] / 100)
             - 0.35 * (L.aggression || 0.5) + (atWarAny(Y) ? 0.25 : 0) + 0.10 * (L.culture || 0.5);
-          if (u >= D.un.voteThreshold) votes.push(`${Y}:同意`);
-          else { votes.push(`${Y}:反对`); allYes = false; }
+          if (u >= D.un.voteThreshold) { yes++; votes.push(`${Y}:同意`); }
+          else if (u >= D.un.voteThreshold - D.un.abstainWindow) { abstain++; votes.push(`${Y}:弃权`); }
+          else votes.push(`${Y}:反对`);
         }
-        if (allYes) {
+        const need = Math.ceil(alive.length * D.un.charterRatio); // ≥2/3（弃权不算）
+        if (yes >= need) {
           if (diplo.war) {
             const w = diplo.war;
             for (const x of (w.sideA || [w.a])) for (const y of (w.sideB || [w.b])) signPeace(t, facs, diplo, x, y);
@@ -738,40 +741,51 @@ function a1_6Phase(t, facs, diplo, dipPower, ids, rand, log) {
           }
           for (const f of Object.values(facs)) f.atWar = false;
           diplo.un = { founded: t, members: alive.slice(), leader: null, nextElection: t + D.un.electionEvery };
-          log.push({ t, event: `联合国成立：${initiator} 提出宪章——${votes.join(' ')} → 全票通过（全球停战，和平锁生效）` });
+          log.push({ t, event: `联合国成立：${initiator} 提出宪章——${votes.join(' ')} → 通过（同意${yes}/需${need}，弃权${abstain}不计入；全球停战，和平锁生效）` });
         } else {
           diplo.rep[initiator] = clamp(diplo.rep[initiator] - D.meetingFailRep, 0, 100);
           diplo.unCd = t + D.un.charterCd;
-          log.push({ t, event: `联合国宪章：${initiator} 提案——${votes.join(' ')} → 未通过（需全票；发起国 rep −${D.meetingFailRep}）` });
+          log.push({ t, event: `联合国宪章：${initiator} 提案——${votes.join(' ')} → 未通过（同意${yes}/需${need}，弃权${abstain}不计入；发起国 rep −${D.meetingFailRep}）` });
         }
       }
     }
   }
 
-  // ---- ③ 盟主选举（每 25 回；每国 1 票；严格过半/空位）----
+  // ---- ③ 常任理事国选举（每 25 回；每国 1 票、不投自己；第一轮相对多数，未过半则空位）----
   if (diplo.un && t >= diplo.un.nextElection) {
     const members = diplo.un.members.filter((x) => facs[x] && facs[x].cities.length > 0);
     if (members.length >= 2) {
-      const tally = {};
-      for (const v of members) {
+      const bestOf = (v) => {
         const L = D.leaders[v] || {};
         let best = null, bestU = -1;
         for (const c of members) {
-          if (c === v) continue; // 不投自己（现实联合国选举惯例；防 1-1-1-1 永久僵局）
+          if (c === v) continue; // 不投自己
           const u = 0.45 * (facs[v].identity[c] || 0) + 0.25 * (diplo.rel[v][c] / 100)
             + 0.15 * (diplo.rep[c] / 100) + 0.15 * ((L.affinity && L.affinity[c]) || 0.3);
           if (u > bestU) { bestU = u; best = c; }
         }
-        if (best) tally[best] = (tally[best] || 0) + 1;
+        return best;
+      };
+      const voteOf = {};
+      // 第一遍：非复国跟随者按自身效用投票
+      for (const v of members) {
+        if (facs[v].revivedBy && members.includes(facs[v].revivedBy) && facs[v].revivedBy !== v) continue;
+        voteOf[v] = bestOf(v);
       }
-      const need = Math.floor(members.length / 2) + 1;
+      // 第二遍：复国国完全跟随复国者阵营（不是额外一票）
+      for (const v of members) {
+        if (voteOf[v]) continue;
+        const patron = facs[v].revivedBy;
+        voteOf[v] = (patron && voteOf[patron]) ? voteOf[patron] : bestOf(v);
+      }
+      const tally = {};
+      for (const v of members) if (voteOf[v]) tally[voteOf[v]] = (tally[voteOf[v]] || 0) + 1;
+      const need = Math.floor(members.length / 2) + 1; // 第一轮相对多数，未过半则空位
       const ranked = Object.keys(tally).sort((a, b) => tally[b] - tally[a] || (facs[b].culture || 0) - (facs[a].culture || 0));
-      // 4 阵营小样本：绝对多数常不可得（2-2 僵局）→ 相对多数（≥半数票）当选；1-1-1-1 才空位
-      const relNeed = members.length === 2 ? 2 : Math.ceil(members.length / 2);
-      const leader = ranked.length && tally[ranked[0]] >= relNeed ? ranked[0] : null;
+      const leader = ranked.length && tally[ranked[0]] >= need ? ranked[0] : null;
       diplo.un.leader = leader;
       diplo.un.nextElection = t + D.un.electionEvery;
-      log.push({ t, event: `联合国大会：盟主选举——${Object.entries(tally).map(([k, v]) => `${k}:${v}`).join(' ')} → ${leader ? `${leader} 当选常任理事国（贸易 ×${D.un.leaderTrade}）` : '无过半者，盟主空缺'}` });
+      log.push({ t, event: `联合国大会：常任理事国选举——${Object.entries(tally).map(([k, v]) => `${k}:${v}`).join(' ')} → ${leader ? `${leader} 当选常任理事国（贸易 ×${D.un.leaderTrade}）` : '未过半，常任理事国空缺'}` });
     } else {
       diplo.un.leader = null; diplo.un.nextElection = t + D.un.electionEvery;
     }
@@ -815,10 +829,10 @@ function a1_6Phase(t, facs, diplo, dipPower, ids, rand, log) {
     if ((diplo.econMeetCd[A] || 0) > t || (diplo.econMeetCd[B] || 0) > t) continue;
     const outsiders = alive.filter((x) => x !== A && x !== B);
     if (!outsiders.length) continue;
-    // 目标=非成员中动员潜力最高者；需 A/B 至少一方对其关系 <20
+    // 目标=非成员中动员潜力最高者；需 A/B 至少一方对其关系 <40（否则关系太好不制裁）
     const target = outsiders.sort((x, y) => (dipPower[y] || 0) - (dipPower[x] || 0))[0];
     if (sanctionActive(diplo, target, 'econ', t)) continue;
-    if (diplo.rel[A][target] >= 20 && diplo.rel[B][target] >= 20) continue;
+    if (diplo.rel[A][target] >= 40 && diplo.rel[B][target] >= 40) continue;
     // 全票：A 发起、B 表决
     const L = D.leaders[B] || {};
     const u = 0.25 + 0.25 * (diplo.rel[B][target] < 0 ? 1 : 0) + 0.20 * (diplo.rep[A] / 100)
@@ -937,7 +951,7 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
   // ---- A1.5 会议阶段（院长 11-13 第 3 条：N 结算后 → 会议 → N 行动前；战争期也开紧急会议）----
   meetingPhase(t, facs, diplo, dipPower, ids, rand, log, env);
 
-  // ---- A1.6 文化与同盟收口：复国 → UN 宪章 → 盟主选举 → 联合进攻 → 经济制裁 ----
+  // ---- A1.6 文化与同盟收口：复国 → UN 宪章 → 常任理事国选举 → 联合进攻 → 经济制裁 ----
   a1_6Phase(t, facs, diplo, dipPower, ids, rand, log);
 
   if (diplo.war) return; // 处于战争（含刚成型的包围网）：本轮不做常规外交行动
@@ -1185,7 +1199,7 @@ function culturePressure(A, B, facs, diplo, t) {
   if (hasTreaty(diplo, 'trade', A, B, t)) link += D.trade.link;
   if (hasTreaty(diplo, 'ally', A, B, t)) link += 0.2;
   if (hasTreaty(diplo, 'econAlly', A, B, t)) link += D.econAlly.link;
-  if (diplo.un && diplo.un.leader === A) link += 0.5; // A1.6 盟主文化平台（非对称；仅盟主）
+  if (diplo.un && diplo.un.leader === A) link += 0.5; // A1.6 常任理事国文化平台（非对称；仅常任理事国）
   if (diplo.culturePush[A] && diplo.culturePush[A].until > t) link *= diplo.culturePush[A].mult; // A1.6 文化推广（全局文化攻势）
   let dec = 1.0;
   if (diplo.war) {
@@ -1360,7 +1374,7 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
         aiBuild(c, s, F, f, devMode, env.temp);
       }
       if (econHit) incomeSum *= 0.7;
-      if (diplo.un && diplo.un.leader === f.id) incomeSum *= D.un.leaderTrade; // A1.6 盟主贸易优势
+      if (diplo.un && diplo.un.leader === f.id) incomeSum *= D.un.leaderTrade; // A1.6 常任理事国贸易优势
       // ==== 资源收入（国家级简化；库存上限 5 回合）====
       const inc = P.resources[f.id] || { iron: 0, coal: 0, oil: 0 };
       for (const k of ['iron', 'coal', 'oil'])
@@ -1537,11 +1551,11 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
         winner = { id: aliveIds[0], type: 'military', t };
         log.push({ t, event: `${aliveIds[0]} 统一全球——军事胜利（t${t}）` });
       }
-      // A1.6 文化胜利（11-16 院长裁）：UN 盟主 + 对所有其他**存活阵营**完全入侵并维持 10 回
+      // A1.6 文化胜利（11-16 院长裁）：UN 常任理事国 + 对所有其他**存活阵营**完全入侵并维持 10 回
       // 不要求初始阵营全存活；复国=UN 多一票（不阻塞文化胜利，反而增加目标/票数）
       if (!winner && diplo.un && diplo.un.leader) {
         const A = diplo.un.leader;
-        if (!facs[A] || facs[A].cities.length === 0) { diplo.un.leader = null; } // 盟主失国=空位
+        if (!facs[A] || facs[A].cities.length === 0) { diplo.un.leader = null; } // 常任理事国失国=空位
         else {
           const others = aliveIds.filter((B) => B !== A);
           const ok = others.length > 0 && others.every((B) => (facs[B].invasionSince || {})[A] > 0
@@ -1549,7 +1563,7 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
           if (ok) {
             winner = { id: A, type: 'culture', t };
             const shares = others.map((B) => `${B}:${Math.round((facs[B].identity[A] || 0) * 100)}%`).join(' ');
-            log.push({ t, event: `${A} 文化入侵全球（UN 盟主）——文化胜利（t${t}）；认同 ${shares}` });
+            log.push({ t, event: `${A} 文化入侵全球（UN 常任理事国）——文化胜利（t${t}）；认同 ${shares}` });
           }
         }
       }
@@ -1640,7 +1654,7 @@ for (const x of Object.keys(facs)) {
 }
 console.log('\n[UN]');
 console.log(diplo.un
-  ? `成立 t${diplo.un.founded} | 成员 ${diplo.un.members.join('/')} | 盟主 ${diplo.un.leader || '空位'} | 下届 t${diplo.un.nextElection}`
+  ? `成立 t${diplo.un.founded} | 成员 ${diplo.un.members.join('/')} | 常任理事国 ${diplo.un.leader || '空位'} | 下届 t${diplo.un.nextElection}`
   : '未成立');
 const revived = (diplo.extinct || []).filter((e) => e.revived).map((e) => `${e.fac}(t${e.t}被${e.by}灭→复国)`);
 console.log(`复国：${revived.join(' ') || '无'}`);
