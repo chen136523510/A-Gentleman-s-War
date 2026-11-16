@@ -61,11 +61,13 @@ const P = {
     gapExp: 0.5, gapCap: 2.0, // 势差乘区 clamp((Ca/Cb)^0.5, 1.0, 2.0)；门槛=攻击方有文化建筑
     invadeThreshold: 0.6, invadeRelease: 0.5, invadeHold: 5, // 完全入侵 60% 入 / 50% 出 / 持续 5 回
     victoryHold: 10,        // 文化胜利：对所有国完全入侵维持 10 回合
-    contactTech: 10,        // AU 联系门槛（双方科技 ≥10 才可跨海文化输出）
+    contactTech: 7,        // AU 联系门槛（双方科技 ≥7 才可跨海文化输出；A1.6 由 10 下调，AU 发育慢）
     distAdj: 1.0, distSea: 0.6, // 距离系数（邻接/远洋；v0 系数表）
     peaceDecay: 0.3,        // 停战期输出 0.3（恢复期简化）
     lostSelf: 0.4, lostRelease: 0.45, // 文化失所：本国认同 <40% 且无单极 → 解除 ≥45%
     lostRecruit: 0.85, lostWar: 0.9,  // 失所效果：征兵 ×0.85 / 战争能力 ×0.9
+    // A1.6 KR 文化种子：每城槽位上限 + 仅 2 城 → 种子路径靠"文化产出乘区"（文化区开题 §九 已指出）
+    facMult: { CN: 1.0, JP: 1.0, KR: 2.0, AU: 1.0 },
   },
   // 环境（环境系统 §十一/§12 碳回收/§四 碳额度；R42 院长定稿）
   env: {
@@ -80,6 +82,7 @@ const P = {
     quotaBuyPrice: 10,      // 超排自动购买额度 10 财/碳（§四）
     quotaFine: 20,          // 无钱超排罚 20 财/回 + rep −2
     quotaTerm: 20,          // 法案任期
+    unGreen: { emitMult: 0.55, recycleBonus: 12 }, // A1.6 UN 环保合作：成员国排放 ×0.55、全球回收 +12
   },
 };
 // ================= 建筑谱系（×8；上限/成本/岗位/产出） =================
@@ -133,7 +136,7 @@ const COASTAL = ['上海', '深圳', '香港', '台北', '东京', '名古屋', 
 // ================= 生成 =================
 function makeCities() {
   return CITY_INIT.map(([name, fac, pop, q, cul]) => ({
-    name, fac, P: pop, C: pop * 1.5, q, baseCulture: cul, // 城市基础文化值（文化区数值 v1.0 压低档）
+    name, fac, origFac: fac, P: pop, C: pop * 1.5, q, baseCulture: cul, // 城市基础文化值（文化区数值 v1.0 压低档）；origFac=复国原属
     coastal: COASTAL.includes(name),
     b: { residence: 0, farm: 0, coal: 0, plant: 0, hydro: 0, solar: 0, factory: 0, arsenal: 0, airport: 0, aaGun: 0, street: 0, mall: 0, office: 0, academy: 0, hosp: 0, police: 0, ccs: 0 },
     ent: { park: 0, sport: 0, play: 0, movie: 0, esport: 0, nature: 0 },
@@ -146,6 +149,7 @@ function makeFactions(cities) {
   for (const c of cities) {
     if (c.fac === 'NONE') continue;
     f[c.fac] = f[c.fac] || { id: c.fac, cities: [], treasury: 12000, soldiers: 0, service: 0, tech: 0, wars: 0, allies: [], warTarget: null, policy: 'none', loyalty: 60,
+      mainPath: 'military', // A1.6 胜利路径（每 10 回合重算）
       culture: 0, identity: {}, invasionSince: {}, lostCulture: false, // 文化存量/认同度/完全入侵计时/文化失所
       units: { inf: 0, assault: 0, special: 0, tank: 0, heli: 0, mobile: 0, heavy: 0 },
       bombers: 0, drones: 0, airQueue: null, airProgress: 0, // A1.4 空军（机场独立队列）
@@ -230,6 +234,7 @@ function aiBuild(c, s, F, fac, devMode, envTemp = 0) {
   const prod = 64 + c.b.factory * B.factory.prodOut;
   c.prodBank += prod;
   const want = [];
+  const mainPath = fac.mainPath || 'military'; // A1.6 路径（computePaths 每 10 回合重算）
   const room = (k, max) => c.b[k] < (max ?? B[k].max);
   const epRoom = (k, max) => c.ent[k] < max;
   // 生存优先：粮 → 电 → 住房
@@ -239,6 +244,14 @@ function aiBuild(c, s, F, fac, devMode, envTemp = 0) {
     else if (c.b.plant < B.plant.max) want.push(['plant', B.plant.cost]);
   }
   if (c.P / c.C > 0.95 && room('residence')) want.push(['residence', B.residence.cost]);
+  // A1.6 文化路径：pub/tour/ent 优先拉满（不因消费满足而停；文化=主路径的建造表达）
+  if (mainPath === 'culture') {
+    if (c.pub < PUB.max) want.push(['pub', PUB.costs[c.pub]]);
+    if (c.tour < TOUR.max) want.push(['tour', TOUR.costs[c.tour]]);
+    for (const k of ['park', 'sport', 'play', 'movie', 'esport', 'nature']) {
+      if (epRoom(k, ENT[k].caps.length)) { want.push([`ent:${k}`, ENT[k].costs[c.ent[k]]]); break; }
+    }
+  }
   // A1.2 科技拉力（院长第 9 条，所有阵营）：多建学院区建筑——三级学院是人才培养主来源
   if (fac.tech < 40 && c.b.academy < 3) {
     const acCost = c.b.academy === 0 ? B.academy.cost : B.academy.upCost[c.b.academy];
@@ -246,13 +259,13 @@ function aiBuild(c, s, F, fac, devMode, envTemp = 0) {
   }
   // JP 军事优先（院长第 7 条）：兵工厂先行；遇强邻 devMode 已转 tech
   if (devMode === 'military' && fac.tech > 5 && c.b.arsenal < 1) want.push(['arsenal', B.arsenal.cost]);
-  // 消费供给（多娱乐线，前移到岗位前——娱乐也是就业）
-  if (s.ent < s.pool * P.shares.ent * 0.6) {
+  // 消费供给（多娱乐线，前移到岗位前——娱乐也是就业；文化路径已在上面拉满）
+  if (mainPath !== 'culture' && s.ent < s.pool * P.shares.ent * 0.6) {
     for (const k of ['park', 'movie', 'sport', 'play', 'esport', 'nature']) {
       if (epRoom(k, ENT[k].caps.length)) { want.push([`ent:${k}`, ENT[k].costs[c.ent[k]]]); break; }
     }
   }
-  if (s.tour < s.pool * P.shares.tour * 0.6 && c.tour < 3) want.push(['tour', TOUR.costs[c.tour]]);
+  if (mainPath !== 'culture' && s.tour < s.pool * P.shares.tour * 0.6 && c.tour < 3) want.push(['tour', TOUR.costs[c.tour]]);
   // 岗位
   if (s.jobs < c.P * 0.45) {
     if (room('office')) want.push(['office', B.office.cost]);
@@ -263,18 +276,18 @@ function aiBuild(c, s, F, fac, devMode, envTemp = 0) {
     if (room('street')) want.push(['street', B.street.cost]);
     if (c.P >= 240000 && room('mall')) want.push(['mall', B.mall.cost]);
   }
-  // 文化
-  if (c.pub < 3 && s.C_out < 30) want.push(['pub', PUB.costs[c.pub]]);
+  // 文化（非文化路径每城只保 1 座博物馆；文化路径已在上面拉满）
+  if (mainPath !== 'culture' && c.pub < 1 && s.C_out < 30) want.push(['pub', PUB.costs[c.pub]]);
   // 市政
   if (!c.b.hosp) want.push(['hosp', B.hosp.cost]);
   if (!c.b.police) want.push(['police', B.police.cost]);
   // 环境治理：温度高且科技到位 → 碳捕集站（市政区，−20 碳/回）
   if (envTemp > 50 && fac.tech >= 20 && c.b.ccs < 1) want.push(['ccs', B.ccs.cost]);
-  // 兵工厂（A1.4：Lv1/2/3 按科技 5/15/25 逐级补；升级不占地）
+  // 兵工厂（A1.4：Lv1/2/3 按科技 5/15/25 逐级补；升级不占地）；文化路径只在战时补
   const arsenalNeed = fac.tech > 25 ? 3 : fac.tech > 15 ? 2 : fac.tech > 5 ? 1 : 0;
-  if (c.b.arsenal < arsenalNeed) want.push(['arsenal', B.arsenal.cost * (c.b.arsenal + 1)]);
-  // 机场（科技 10 后每城 1 座）与防空（战时补到 2）
-  if (fac.tech > 10 && c.b.airport < 1) want.push(['airport', B.airport.cost]);
+  if ((mainPath !== 'culture' || fac.atWar) && c.b.arsenal < arsenalNeed) want.push(['arsenal', B.arsenal.cost * (c.b.arsenal + 1)]);
+  // 机场（科技 10 后每城 1 座）与防空（战时补到 2）；文化路径只在战时补
+  if ((mainPath !== 'culture' || fac.atWar) && fac.tech > 10 && c.b.airport < 1) want.push(['airport', B.airport.cost]);
   if (fac.atWar && c.b.aaGun < 2) want.push(['aaGun', B.aaGun.cost]);
   for (const [key, cost] of want) {
     if (c.prodBank < cost / 5 || fac.treasury < cost * 0.1) continue;
@@ -302,6 +315,19 @@ const D = {
   emergencyCooldown: 10, // 紧急会议：发起国冷却 10 回合
   extinctWindow: 10,     // 灭国事由窗口 10 回合（一次性）
   meetingFailRep: 3,     // 否决：发起国 rep −3
+  // A1.6 文化与同盟收口（2026-11-16 院长裁：最小复国 + UN 全票 + 联合进攻/经济制裁）
+  trade: { minRel: 20, term: 24, link: 0.20, relPerTurn: 2 },      // 贸易协定/航线（贸易最小规则 v0.2：关系 +2/回）
+  econAlly: { minRel: 40, term: 24, link: 0.10, max: 1 },          // 经济同盟（每类限 1 盟友）
+  un: { start: 100, charterCd: 20, electionEvery: 25, voteThreshold: 0.45, leaderTrade: 1.15 },
+  revive: { wait: 3, militiaRate: 0.03, rep: 30, relYes: 100, relKiller: -100, cooldown: 10 },
+  culturePush: { cost: 30000, duration: 20, mult: 4.0, cooldown: 25, relDrop: 0 }, // A1.6 文化推广（周期性文化攻势）
+  allianceMeeting: { cd: 5, voteThreshold: 0.50, relFail: 5 },
+  pathBias: {
+    CN: { military: 1.80, culture: 0.30, tech: 0.90, economy: 0.60 }, // 四大闸门 #3：CN 倾向吞并，不投资文化输出竞争
+    JP: { military: 1.60, culture: 0.40, tech: 0.70, economy: 0.50 },
+    KR: { military: 0.50, culture: 1.80, tech: 0.90, economy: 0.60 }, // 文化种子选手
+    AU: { military: 0.60, culture: 0.50, tech: 1.50, economy: 1.00 },
+  },
   // 大统领人格（officers.json aiPersonality；模拟器内联）
   leaders: {
     CN: { aggression: 0.35, caution: 0.70, loyalty: 0.80, greed: 0.45, culture: 0.85, tech: 0.80, economy: 0.75, temperature: 0.45, governance: 'culture', affinity: { JP: 0.25, KR: 0.75, AU: 0.60 }, seekProtection: null },
@@ -321,6 +347,8 @@ function makeDiplo(ids) {
     sanctions: [], coalitionCd: {}, sanctionCd: 0, napCd: {},
     aggression: Object.fromEntries(ids.map((x) => [x, 0])), // A1.2 侵略记录（滚动 30 回合）
     extinct: [], meetingCd: {}, initiated: {}, // A1.5 会议：灭国事由/发起冷却/每回合 1 次
+    un: null, unCd: 0, reviveCd: {}, jointCd: {}, econMeetCd: {}, tradeCd: {}, econAllyCd: {}, // A1.6 文化与同盟收口
+    culturePush: {}, pushCd: {}, // A1.6 文化推广
     lastSanction: {} }; // A1.2 同类制裁冷却：key=`${target}:${type}`
 }
 
@@ -346,17 +374,58 @@ function rankNorm(id, ids, val) {
 }
 
 function victoryProgress(id, ids, facs, fpower) {
-  const culture = {}, pop = {};
+  const culture = {}, pop = {}, commercial = {};
   for (const x of ids) {
     culture[x] = facs[x].cities.reduce((a, c) => a + c.pub * 40 + c.tour * 20 + Object.values(c.ent).reduce((s, v) => s + v * 8, 0), 0);
     pop[x] = facs[x].cities.reduce((a, c) => a + c.P, 0);
+    commercial[x] = facs[x].cities.reduce((a, c) => a + c.b.office * B.office.income + c.b.street * B.street.cap + c.b.mall * B.mall.cap, 0);
   }
   return {
     military: 0.6 * rankNorm(id, ids, (x) => fpower[x] || 0) + 0.4 * rankNorm(id, ids, (x) => facs[x].cities.length),
     culture: rankNorm(id, ids, (x) => culture[x]),
     tech: clamp(facs[id].tech / 40, 0, 1),
-    economy: 0.5 * rankNorm(id, ids, (x) => facs[x].treasury) + 0.5 * rankNorm(id, ids, (x) => pop[x]),
+    economy: 0.5 * rankNorm(id, ids, (x) => facs[x].treasury) + 0.5 * rankNorm(id, ids, (x) => commercial[x]),
   };
+}
+
+// A1.6 胜利路径选择器（外交AI规范 §五 + pathBias；每 10 回合重算）
+// 经济进度用"国库+商业产出"（规范口径），不用人口——否则大国永远选经济
+function computePaths(facs, allIds) {
+  const ids = allIds.filter((x) => facs[x] && facs[x].cities.length > 0);
+  if (!ids.length) return;
+  const commercial = (x) => facs[x].cities.reduce((a, c) =>
+    a + c.b.office * B.office.income + c.b.street * B.street.cap + c.b.mall * B.mall.cap, 0);
+  for (const x of ids) {
+    const L = D.leaders[x];
+    const bias = D.pathBias[x] || { military: 1, culture: 1, tech: 1, economy: 1 };
+    if (!L) continue;
+    const p = {
+      military: 0.6 * rankNorm(x, ids, (y) => facs[y].soldiers || 0) + 0.4 * rankNorm(x, ids, (y) => facs[y].cities.length),
+      culture: rankNorm(x, ids, (y) => facs[y].culture || 0),
+      tech: clamp(facs[x].tech / 40, 0, 1),
+      economy: 0.5 * rankNorm(x, ids, (y) => facs[y].treasury || 0) + 0.5 * rankNorm(x, ids, commercial),
+    };
+    const w = {
+      military: p.military * L.aggression * bias.military,
+      culture: p.culture * L.culture * bias.culture,
+      tech: p.tech * L.tech * bias.tech,
+      economy: p.economy * L.economy * bias.economy,
+    };
+    facs[x].mainPath = Object.keys(w).sort((a, b) => w[b] - w[a])[0];
+    facs[x].pathW = w;
+  }
+}
+
+// 交战对判定（贸易/航线前置）
+function atWarPair(diplo, a, b) {
+  if (!diplo.war) return false;
+  const sa = diplo.war.sideA || [diplo.war.a], sb = diplo.war.sideB || [diplo.war.b];
+  return (sa.includes(a) && sb.includes(b)) || (sa.includes(b) && sb.includes(a));
+}
+
+// 某类条约数量（A1.6：经济同盟每类限 1 盟友）
+function treatyCount(diplo, type, x, t) {
+  return diplo.treaties.filter((tr) => tr.type === type && !tr.dead && tr.expire > t && (tr.a === x || tr.b === x)).length;
 }
 
 function softmaxPick(items, T, rand) {
@@ -389,6 +458,7 @@ function applyLoss(f, ratio) {
 // A1.2 §15.1 包围网：侵略者触发红线 → 其余国家按人格掷骰决定是否联合围殴（不背刺条约对象）
 function coalitionCheck(t, facs, diplo, dipPower, ids, rand, log) {
   if (t < P.warStart) return;
+  if (diplo.un) return; // A1.6 UN 和平锁：联合国成立后不再有包围网战争
   for (const X of ids) {
     if (!facs[X] || facs[X].cities.length === 0) continue;
     const others = ids.filter((x) => x !== X && facs[x] && facs[x].cities.length > 0);
@@ -572,6 +642,198 @@ function meetingPhase(t, facs, diplo, dipPower, ids, rand, log, env) {
   }
 }
 
+// ================= A1.6 文化与同盟收口（2026-11-16 院长裁） =================
+// 时序：全球会议之后、常规外交行动之前；含 复国 → UN 宪章 → 盟主选举 → 联合进攻 → 经济制裁
+function a1_6Phase(t, facs, diplo, dipPower, ids, rand, log) {
+  const allIds = Object.keys(facs);
+  const alive = ids.filter((x) => facs[x] && facs[x].cities.length > 0);
+  if (alive.length < 2) return;
+  const atWarAny = (x) => !!(diplo.war && ((diplo.war.sideA || [diplo.war.a]).includes(x) || (diplo.war.sideB || [diplo.war.b]).includes(x)));
+
+  // ---- ① 最小复国会议（院长 11-16：本轮加最小复国，保全阵营存活）----
+  diplo.reviveCd = diplo.reviveCd || {};
+  for (const e of diplo.extinct || []) {
+    if (e.revived) continue;
+    const X = e.fac, killer = e.by;
+    if (t - e.t < D.revive.wait || (diplo.reviveCd[X] || 0) > t) continue;
+    // 发起人：非灭国者、持有 X 原属城且不止一城（不能把自己唯一城送掉）
+    const holders = alive.filter((y) => y !== killer && facs[y].cities.length > 1
+      && facs[y].cities.some((c) => c.origFac === X));
+    if (!holders.length) continue;
+    const cands = holders.slice().sort((a, b) => {
+      const pa = facs[a].mainPath === 'culture' ? 2 : facs[a].mainPath === 'economy' ? 1 : 0;
+      const pb = facs[b].mainPath === 'culture' ? 2 : facs[b].mainPath === 'economy' ? 1 : 0;
+      if (pa !== pb) return pb - pa;
+      return (dipPower[b] || 0) - (dipPower[a] || 0);
+    });
+    const initiator = cands[0];
+    const city = facs[initiator].cities.find((c) => c.origFac === X);
+    const participants = alive.filter((y) => y !== killer);
+    const votes = [`${initiator}:同意`]; const yesSet = new Set([initiator]);
+    for (const Y of participants) {
+      if (Y === initiator) continue;
+      const want = diplo.rel[Y][killer] < 0 || diplo.rep[killer] < 40 || facs[Y].mainPath === 'culture';
+      if (want) { yesSet.add(Y); votes.push(`${Y}:同意`); } else votes.push(`${Y}:反对`);
+    }
+    const need = Math.floor(participants.length / 2) + 1;
+    if (yesSet.size >= need) {
+      // 城转归复国方
+      facs[initiator].cities = facs[initiator].cities.filter((c) => c !== city);
+      city.fac = X; facs[X].cities.push(city);
+      // 复国国重置
+      const f = facs[X];
+      const inc = P.resources[X] || { iron: 0, coal: 0, oil: 0 };
+      f.units = { inf: Math.round(city.P * D.revive.militiaRate), assault: 0, special: 0, tank: 0, heli: 0, mobile: 0, heavy: 0 };
+      f.soldiers = f.units.inf; f.service = P.peaceService; f.treasury = 0;
+      f.culture = city.baseCulture * 8; f.identity = Object.fromEntries(allIds.map((y) => [y, y === X ? 1 : 0]));
+      f.invasionSince = {}; f.lostCulture = false; f.atWar = false; f.project = 0; f.policy = 'none';
+      f.bombers = 0; f.drones = 0; f.airQueue = null; f.airProgress = 0; f.mainPath = 'military';
+      f.resources = { iron: inc.iron, coal: inc.coal, oil: inc.oil };
+      f.arsenalJob = null; f.arsenalProgress = 0;
+      for (const c of f.cities) { c.arsenalJob = null; c.arsenalProgress = 0; }
+      // 关系/声誉：对同意国 +100、对灭国者 −100（双向）
+      for (const Y of allIds) {
+        diplo.rel[X][Y] = Y === killer ? D.revive.relKiller : (yesSet.has(Y) ? D.revive.relYes : 0);
+        diplo.rel[Y][X] = Y === killer ? D.revive.relKiller : (yesSet.has(Y) ? 50 : 0);
+      }
+      diplo.rep[X] = D.revive.rep; diplo.aggression[X] = 0;
+      diplo.cooldown[X] = { war: 0, peace: 0 };
+      if (!hasTreaty(diplo, 'ally', X, initiator, t))
+        diplo.treaties.push({ type: 'ally', a: X, b: initiator, expire: t + D.allyTerm });
+      if (diplo.un && !diplo.un.members.includes(X)) diplo.un.members.push(X);
+      e.revived = true;
+      log.push({ t, event: `复国会议：${initiator} 以 ${city.name} 复国 ${X}——${votes.join(' ')} → 通过（同意${yesSet.size}/需${need}；${X} 回归，民兵 ${fmt(f.units.inf)}，与 ${initiator} 结盟）` });
+    } else {
+      diplo.rep[initiator] = clamp(diplo.rep[initiator] - D.meetingFailRep, 0, 100);
+      diplo.reviveCd[X] = t + D.revive.cooldown;
+      log.push({ t, event: `复国会议：${initiator} 提案复国 ${X}——${votes.join(' ')} → 否决（同意${yesSet.size}/需${need}；发起国 rep −${D.meetingFailRep}）` });
+    }
+  }
+
+  // ---- ② UN 宪章（全票；可在战争期发起，通过=全球停战+和平锁）----
+  diplo.unCd = diplo.unCd || 0;
+  if (!diplo.un && t >= D.un.start && diplo.unCd <= t) {
+    const allAlive = allIds.every((x) => facs[x] && facs[x].cities.length > 0);
+    if (allAlive) {
+      // 发起人：非军事路径中"最有人缘"者（关系总和+rep；文化路径小幅加分）——避免被单一低关系对象卡死
+      const score = (x) => alive.reduce((s, y) => s + (y === x ? 0 : diplo.rel[x][y]), 0)
+        + 0.3 * diplo.rep[x] + (facs[x].mainPath === 'culture' ? 20 : 0);
+      const cands = alive.filter((x) => facs[x].mainPath !== 'military').sort((a, b) => score(b) - score(a));
+      const initiator = cands[0];
+      if (initiator) {
+        const votes = [`${initiator}:同意`]; let allYes = true;
+        for (const Y of alive) {
+          if (Y === initiator) continue;
+          const L = D.leaders[Y] || {};
+          const u = 0.35 + 0.30 * (diplo.rep[initiator] / 100) + 0.30 * (diplo.rel[Y][initiator] / 100)
+            - 0.35 * (L.aggression || 0.5) + (atWarAny(Y) ? 0.25 : 0) + 0.10 * (L.culture || 0.5);
+          if (u >= D.un.voteThreshold) votes.push(`${Y}:同意`);
+          else { votes.push(`${Y}:反对`); allYes = false; }
+        }
+        if (allYes) {
+          if (diplo.war) {
+            const w = diplo.war;
+            for (const x of (w.sideA || [w.a])) for (const y of (w.sideB || [w.b])) signPeace(t, facs, diplo, x, y);
+            diplo.war = null;
+          }
+          for (const f of Object.values(facs)) f.atWar = false;
+          diplo.un = { founded: t, members: alive.slice(), leader: null, nextElection: t + D.un.electionEvery };
+          log.push({ t, event: `联合国成立：${initiator} 提出宪章——${votes.join(' ')} → 全票通过（全球停战，和平锁生效）` });
+        } else {
+          diplo.rep[initiator] = clamp(diplo.rep[initiator] - D.meetingFailRep, 0, 100);
+          diplo.unCd = t + D.un.charterCd;
+          log.push({ t, event: `联合国宪章：${initiator} 提案——${votes.join(' ')} → 未通过（需全票；发起国 rep −${D.meetingFailRep}）` });
+        }
+      }
+    }
+  }
+
+  // ---- ③ 盟主选举（每 25 回；每国 1 票；严格过半/空位）----
+  if (diplo.un && t >= diplo.un.nextElection) {
+    const members = diplo.un.members.filter((x) => facs[x] && facs[x].cities.length > 0);
+    if (members.length >= 2) {
+      const tally = {};
+      for (const v of members) {
+        const L = D.leaders[v] || {};
+        let best = null, bestU = -1;
+        for (const c of members) {
+          if (c === v) continue; // 不投自己（现实联合国选举惯例；防 1-1-1-1 永久僵局）
+          const u = 0.45 * (facs[v].identity[c] || 0) + 0.25 * (diplo.rel[v][c] / 100)
+            + 0.15 * (diplo.rep[c] / 100) + 0.15 * ((L.affinity && L.affinity[c]) || 0.3);
+          if (u > bestU) { bestU = u; best = c; }
+        }
+        if (best) tally[best] = (tally[best] || 0) + 1;
+      }
+      const need = Math.floor(members.length / 2) + 1;
+      const ranked = Object.keys(tally).sort((a, b) => tally[b] - tally[a] || (facs[b].culture || 0) - (facs[a].culture || 0));
+      // 4 阵营小样本：绝对多数常不可得（2-2 僵局）→ 相对多数（≥半数票）当选；1-1-1-1 才空位
+      const relNeed = members.length === 2 ? 2 : Math.ceil(members.length / 2);
+      const leader = ranked.length && tally[ranked[0]] >= relNeed ? ranked[0] : null;
+      diplo.un.leader = leader;
+      diplo.un.nextElection = t + D.un.electionEvery;
+      log.push({ t, event: `联合国大会：盟主选举——${Object.entries(tally).map(([k, v]) => `${k}:${v}`).join(' ')} → ${leader ? `${leader} 当选常任理事国（贸易 ×${D.un.leaderTrade}）` : '无过半者，盟主空缺'}` });
+    } else {
+      diplo.un.leader = null; diplo.un.nextElection = t + D.un.electionEvery;
+    }
+  }
+
+  // ---- ④ 同盟会议·联合进攻（全票；通过=盟友加入现有战争 sideA）----
+  diplo.jointCd = diplo.jointCd || {};
+  if (diplo.war) {
+    const w = diplo.war, a = w.a, b = w.b;
+    const sideA = w.sideA || [a], sideB = w.sideB || [b];
+    if ((diplo.jointCd[a] || 0) <= t) {
+      const allies = [...new Set(diplo.treaties.filter((x) => x.type === 'ally' && !x.dead && x.expire > t && (x.a === a || x.b === a))
+        .map((x) => (x.a === a ? x.b : x.a))
+        .filter((y) => !sideA.includes(y) && !sideB.includes(y) && facs[y] && facs[y].cities.length > 0))];
+      if (allies.length) {
+        const votes = [`${a}:同意`]; let yes = 1;
+        for (const Y of allies) {
+          const L = D.leaders[Y] || {};
+          const winChance = clamp(((dipPower[a] || 0) - (dipPower[b] || 0)) / Math.max(1, dipPower[b] || 0), 0, 1);
+          const u = 0.30 + 0.20 * (diplo.rel[Y][a] / 100) + 0.20 * (diplo.rep[a] / 100)
+            - 0.25 * (L.caution || 0.5) + 0.15 * (L.aggression || 0.5)
+            + 0.20 * winChance + 0.10 * ((L.affinity && L.affinity[a]) || 0.3);
+          if (u >= D.allianceMeeting.voteThreshold) { yes++; votes.push(`${Y}:同意`); } else votes.push(`${Y}:反对`);
+        }
+        if (yes < allies.length + 1) {
+          diplo.jointCd[a] = t + 15; // AI 预判会被否，不发起
+        } else {
+          w.sideA = sideA.concat(allies);
+          for (const Y of allies) if (facs[Y]) facs[Y].atWar = true;
+          log.push({ t, event: `同盟会议：${a} 提案联合进攻 ${b}——${votes.join(' ')} → 全票通过（${allies.join('/')} 参战）` });
+        }
+      }
+    }
+  }
+
+  // ---- ⑤ 经济同盟会议·经济制裁（全票；通过=成员对目标经济制裁 12 回）----
+  diplo.econMeetCd = diplo.econMeetCd || {};
+  for (const tr of diplo.treaties.filter((x) => x.type === 'econAlly' && !x.dead && x.expire > t)) {
+    const A = tr.a, B = tr.b;
+    if (!facs[A] || !facs[B] || !facs[A].cities.length || !facs[B].cities.length) continue;
+    if ((diplo.econMeetCd[A] || 0) > t || (diplo.econMeetCd[B] || 0) > t) continue;
+    const outsiders = alive.filter((x) => x !== A && x !== B);
+    if (!outsiders.length) continue;
+    // 目标=非成员中动员潜力最高者；需 A/B 至少一方对其关系 <20
+    const target = outsiders.sort((x, y) => (dipPower[y] || 0) - (dipPower[x] || 0))[0];
+    if (sanctionActive(diplo, target, 'econ', t)) continue;
+    if (diplo.rel[A][target] >= 20 && diplo.rel[B][target] >= 20) continue;
+    // 全票：A 发起、B 表决
+    const L = D.leaders[B] || {};
+    const u = 0.25 + 0.25 * (diplo.rel[B][target] < 0 ? 1 : 0) + 0.20 * (diplo.rep[A] / 100)
+      - 0.20 * (L.economy || 0.5) * 0.3 + 0.20 * (1 - clamp((dipPower[target] || 0) / Math.max(1, dipPower[B] || 0), 0, 1));
+    if (u < D.allianceMeeting.voteThreshold) {
+      // AI 预判会被否 → 不发起（防每 5 回刷屏与无谓 rep 损失）
+      diplo.econMeetCd[A] = t + 20; diplo.econMeetCd[B] = t + 20;
+      continue;
+    }
+    diplo.sanctions.push({ target, type: 'econ', label: '经济同盟制裁', expire: t + D.sanctionTerm, by: A, support: [A, B] });
+    diplo.econMeetCd[A] = t + D.allianceMeeting.cd; diplo.econMeetCd[B] = t + D.allianceMeeting.cd;
+    log.push({ t, event: `经济同盟会议：${A}+${B} 提案制裁 ${target}——${A}:同意 ${B}:同意 → 全票通过（商业/科技 ×0.7，${D.sanctionTerm} 回）` });
+  }
+}
+
 function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
   ids = ids.filter((x) => facs[x].cities.length > 0);
   // 战争状态：交战成员 + 守方盟友（防御性参战，动员潜力直接计入守方）
@@ -675,6 +937,9 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
   // ---- A1.5 会议阶段（院长 11-13 第 3 条：N 结算后 → 会议 → N 行动前；战争期也开紧急会议）----
   meetingPhase(t, facs, diplo, dipPower, ids, rand, log, env);
 
+  // ---- A1.6 文化与同盟收口：复国 → UN 宪章 → 盟主选举 → 联合进攻 → 经济制裁 ----
+  a1_6Phase(t, facs, diplo, dipPower, ids, rand, log);
+
   if (diplo.war) return; // 处于战争（含刚成型的包围网）：本轮不做常规外交行动
 
   // ---- A1.2 侵略记录滚动衰减（30 回合清空）----
@@ -694,10 +959,25 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
     else tr.dead = true;
   }
 
-  // ---- 关系自然回归（和平期缓慢回中并小幅上升）----
+  // ---- A1.6 贸易/经济同盟到期：贸易关系≥20 续约；经济同盟需贸易仍在 + 关系≥30 ----
+  for (const tr of diplo.treaties.filter((x) => x.type === 'trade' && !x.dead && x.expire <= t)) {
+    const alive = facs[tr.a] && facs[tr.a].cities.length > 0 && facs[tr.b] && facs[tr.b].cities.length > 0;
+    if (alive && diplo.rel[tr.a][tr.b] >= D.trade.minRel) tr.expire = t + D.trade.term;
+    else tr.dead = true;
+  }
+  for (const tr of diplo.treaties.filter((x) => x.type === 'econAlly' && !x.dead && x.expire <= t)) {
+    const alive = facs[tr.a] && facs[tr.a].cities.length > 0 && facs[tr.b] && facs[tr.b].cities.length > 0;
+    if (alive && diplo.rel[tr.a][tr.b] >= 30 && hasTreaty(diplo, 'trade', tr.a, tr.b, t)) tr.expire = t + D.econAlly.term;
+    else tr.dead = true;
+  }
+
+  // ---- 关系自然回归（和平期缓慢回中并小幅上升；A1.6 贸易协定 +2/回）----
   for (const a of ids) for (const b of ids) if (a !== b) {
     const atWar = diplo.war && ((diplo.war.a === a && diplo.war.b === b) || (diplo.war.a === b && diplo.war.b === a));
-    if (!atWar) diplo.rel[a][b] = clamp(diplo.rel[a][b] * 0.99 + 0.05, -100, 100);
+    if (!atWar) {
+      diplo.rel[a][b] = clamp(diplo.rel[a][b] * 0.99 + 0.05, -100, 100);
+      if (hasTreaty(diplo, 'trade', a, b, t)) diplo.rel[a][b] = clamp(diplo.rel[a][b] + D.trade.relPerTurn, -100, 100);
+    }
   }
 
   // ---- 意图生成 + softmax 掷骰（随机行动顺序，防第一个阵营垄断）----
@@ -717,11 +997,15 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
       const ally = hasTreaty(diplo, 'ally', a, b, t);
       const peace = hasTreaty(diplo, 'peace', a, b, t);
       const nap = hasTreaty(diplo, 'nap', a, b, t);
+      const trade = hasTreaty(diplo, 'trade', a, b, t);       // A1.6 贸易协定/航线
+      const econAlly = hasTreaty(diplo, 'econAlly', a, b, t); // A1.6 经济同盟
       const cb = sanctionCb(diplo, a, b, t); // A1.2：参与制裁国对目标有合法战争 CB
       const pr = (dipPower[a] || 0) / Math.max(1, dipPower[b] || 0);
       const adj = (ADJ[a] || []).includes(b);
       // 宣战 U（A1 §6.1；A1.1：制裁 CB 门槛 0.8、U+0.3、无声誉代价）
-      if (!ally && !peace && !nap && t >= P.warStart && t >= (diplo.cooldown[a].war || 0)) {
+      // A1.6 UN 和平锁：成员国之间禁止宣战
+      const unLocked = !!(diplo.un && diplo.un.members.includes(a) && diplo.un.members.includes(b));
+      if (!unLocked && !ally && !peace && !nap && t >= P.warStart && t >= (diplo.cooldown[a].war || 0)) {
         const repFactor = diplo.rep[b] < 30 ? 0.80 : 1; // 声誉低 → 更容易被宣战（A1 §九）
         if (pr < (cb ? 0.80 : (adj ? 1.30 : 1.60) * repFactor)) continue;
         const feasibility = clamp(pr * 0.8, 0, 1.5) / 1.5;
@@ -765,6 +1049,28 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
         Un /= (1 + napCount * 0.5);
         cands.push({ type: 'nap', b, U: Un, label: `互不侵犯${b}` });
       }
+      // A1.6 贸易协定/航线（文化/经济路径主动签；link +0.2、关系 +2/回）
+      if (!trade && !atWarPair(diplo, a, b) && t >= D.napStart && R >= D.trade.minRel
+        && diplo.rep[a] >= 30 && t >= ((diplo.tradeCd && diplo.tradeCd[a + b]) || 0)) {
+        const pathBonus = facs[a].mainPath === 'culture' ? 0.25 : facs[a].mainPath === 'economy' ? 0.15 : 0;
+        const Ut = 0.30 * (L.affinity[b] || 0.3) + 0.20 * L.economy + 0.20 * (1 - Math.min(pr, 1))
+          + pathBonus - 0.10 * L.caution * 0.3;
+        cands.push({ type: 'trade', b, U: Ut, label: `贸易协定${b}` });
+      }
+      // A1.6 经济同盟（贸易协定前置 + R≥40；每类限 1 盟友）
+      if (trade && !econAlly && R >= D.econAlly.minRel
+        && treatyCount(diplo, 'econAlly', a, t) < D.econAlly.max && diplo.rep[a] >= 30
+        && t >= ((diplo.econAllyCd && diplo.econAllyCd[a + b]) || 0)) {
+        const pathBonus = facs[a].mainPath === 'economy' ? 0.20 : facs[a].mainPath === 'culture' ? 0.15 : 0;
+        const Ue = 0.35 * L.economy + 0.20 * (L.affinity[b] || 0.3) + 0.15 * (1 - Math.min(pr, 1))
+          + pathBonus - 0.10 * L.caution * 0.3;
+        cands.push({ type: 'econAlly', b, U: Ue, label: `经济同盟${b}` });
+      }
+      // A1.6 文化推广候选在 b 循环外按"最低认同份额"选目标（逐国击破）
+    }
+    // A1.6 文化推广：文化路径 AI 主操作（全局文化攻势；周期性）
+    if (facs[a].mainPath === 'culture' && t >= 60 && t >= (diplo.pushCd[a] || 0) && facs[a].treasury >= D.culturePush.cost) {
+      cands.push({ type: 'push', b: null, U: 0.55 + 0.30 * L.culture, label: '文化推广' });
     }
     cands.push({ type: 'none', U: 0.15, label: '观望' });
     const pick = softmaxPick(cands, L.temperature, rand);
@@ -804,6 +1110,28 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
       diplo.rel[a][b] = clamp(diplo.rel[a][b] + 5, -100, 100);
       diplo.rel[b][a] = clamp(diplo.rel[b][a] + 5, -100, 100);
       log.push({ t, event: `${a} 与 ${b} 签订互不侵犯（${D.napTerm} 回合，U=${pick.U.toFixed(2)}）` });
+    } else if (pick.type === 'trade') {
+      if (diplo.rep[a] < 30 || diplo.rel[b][a] < 0) {
+        diplo.tradeCd = diplo.tradeCd || {};
+        diplo.tradeCd[a + b] = t + 5;
+        log.push({ t, event: `${a} 提议与 ${b} 签贸易协定被拒（对方 rep ${diplo.rep[a].toFixed(0)} R ${diplo.rel[b][a].toFixed(0)}）` });
+        continue;
+      }
+      diplo.treaties.push({ type: 'trade', a, b, expire: t + D.trade.term });
+      diplo.rel[a][b] = clamp(diplo.rel[a][b] + 5, -100, 100);
+      diplo.rel[b][a] = clamp(diplo.rel[b][a] + 5, -100, 100);
+      log.push({ t, event: `${a} 与 ${b} 签订贸易协定/航线（${D.trade.term} 回合，文化 link +${D.trade.link}）` });
+    } else if (pick.type === 'econAlly') {
+      if (diplo.rep[a] < 30 || diplo.rel[b][a] < 0) {
+        diplo.econAllyCd = diplo.econAllyCd || {};
+        diplo.econAllyCd[a + b] = t + 5;
+        log.push({ t, event: `${a} 提议与 ${b} 结经济同盟被拒（对方 rep ${diplo.rep[a].toFixed(0)} R ${diplo.rel[b][a].toFixed(0)}）` });
+        continue;
+      }
+      diplo.treaties.push({ type: 'econAlly', a, b, expire: t + D.econAlly.term });
+      diplo.rel[a][b] = clamp(diplo.rel[a][b] + 5, -100, 100);
+      diplo.rel[b][a] = clamp(diplo.rel[b][a] + 5, -100, 100);
+      log.push({ t, event: `${a} 与 ${b} 结成经济同盟（${D.econAlly.term} 回合，U=${pick.U.toFixed(2)}）` });
     } else if (pick.type === 'annex') {
       // 目标接受判定（A1 §8.1：关系/声誉/战力综合；弱势+低声誉的劝降方易被拒）
       // A1.2：劝降方声誉越高越容易被接受（院长第 2 条）
@@ -821,6 +1149,11 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
       diplo.rep[a] = clamp(diplo.rep[a] - 10, 0, 100);
       diplo.aggression[a] = (diplo.aggression[a] || 0) + 3; // A1.2 劝降计入侵略记录
       log.push({ t, event: `${a} 劝降 ${b}（不战而屈人之兵，潜力比 ${(pick.pr || 0).toFixed(2)} = ${Math.round(dipPower[a] || 0)}/${Math.round(dipPower[b] || 0)}）` });
+    } else if (pick.type === 'push') {
+      facs[a].treasury -= D.culturePush.cost;
+      diplo.culturePush[a] = { until: t + D.culturePush.duration, mult: D.culturePush.mult };
+      diplo.pushCd[a] = t + D.culturePush.cooldown;
+      log.push({ t, event: `${a} 发动文化推广（文化压力 ×${D.culturePush.mult}，${D.culturePush.duration} 回，耗 ${fmt(D.culturePush.cost)} 财）` });
     }
   }
 }
@@ -847,7 +1180,13 @@ function culturePressure(A, B, facs, diplo, t) {
   let dist = adj ? P.culture.distAdj : P.culture.distSea;
   if ((A === 'AU' || B === 'AU') && Math.min(fa.tech, fb.tech) < P.culture.contactTech) dist = 0; // 澳洲隔绝门槛
   if (dist === 0) return 0;
-  const link = hasTreaty(diplo, 'ally', A, B, t) ? 1.2 : 1.0; // 同盟 +0.2（航线系统未接）
+  // A1.6 联系系数：基线 1.0 + 贸易/航线 0.2 + 军事同盟 0.2 + 经济同盟 0.1
+  let link = 1.0;
+  if (hasTreaty(diplo, 'trade', A, B, t)) link += D.trade.link;
+  if (hasTreaty(diplo, 'ally', A, B, t)) link += 0.2;
+  if (hasTreaty(diplo, 'econAlly', A, B, t)) link += D.econAlly.link;
+  if (diplo.un && diplo.un.leader === A) link += 0.5; // A1.6 盟主文化平台（非对称；仅盟主）
+  if (diplo.culturePush[A] && diplo.culturePush[A].until > t) link *= diplo.culturePush[A].mult; // A1.6 文化推广（全局文化攻势）
   let dec = 1.0;
   if (diplo.war) {
     const sa = diplo.war.sideA || [diplo.war.a], sb = diplo.war.sideB || [diplo.war.b];
@@ -860,9 +1199,10 @@ function culturePressure(A, B, facs, diplo, t) {
 function cultureTick(t, facs, diplo, ids) {
   const alive = ids.filter((x) => facs[x] && facs[x].cities.length > 0);
   if (alive.length < 2) return;
-  // 文化存量：每回结算（建筑直产×电力满足率；失城不回溯——存量只加不减）
+  // 文化存量：每回结算（建筑直产×电力满足率×阵营文化乘区；失城不回溯——存量只加不减）
   for (const x of alive) {
-    const out = facs[x].cities.reduce((a, c) => a + cityStats(c, facs, 100, 1, 1).C_out, 0);
+    const out = facs[x].cities.reduce((a, c) => a + cityStats(c, facs, 100, 1, 1).C_out, 0)
+      * (P.culture.facMult[x] || 1);
     facs[x].culture = (facs[x].culture || 0) + out;
   }
   // ---- 认同度：向输出份额收敛（本国自压 = √C × (1+抵抗)）----
@@ -964,6 +1304,7 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
   const log = [];
   const diplo = makeDiplo(['CN', 'JP', 'KR', 'AU']);
   for (let t = 1; t <= turns; t++) {
+    if (t === 1 || t % 10 === 0) computePaths(facs, allIds); // A1.6 胜利路径（每 10 回合重算）
     // ==== 全国粮 ====
     let totalQ = 0, totalD = 0, totalPop = 0;
     for (const c of cities) { totalQ += c.b.farm * B.farm.yield; totalPop += c.P; }
@@ -1019,6 +1360,7 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
         aiBuild(c, s, F, f, devMode, env.temp);
       }
       if (econHit) incomeSum *= 0.7;
+      if (diplo.un && diplo.un.leader === f.id) incomeSum *= D.un.leaderTrade; // A1.6 盟主贸易优势
       // ==== 资源收入（国家级简化；库存上限 5 回合）====
       const inc = P.resources[f.id] || { iron: 0, coal: 0, oil: 0 };
       for (const k of ['iron', 'coal', 'oil'])
@@ -1130,8 +1472,10 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
           fe += c.b.factory * P.env.emit.factory + c.b.plant * P.env.emit.plant + c.b.coal * P.env.emit.coal;
           recycle += c.ent.park * P.env.recycle.park + P.env.recycle.nature[c.ent.nature] + c.b.ccs * P.env.recycle.ccs;
         }
+        if (diplo.un && diplo.un.members.includes(f.id)) fe *= P.env.unGreen.emitMult; // A1.6 UN 环保合作
         facEmit[f.id] = fe; emit += fe;
       }
+      if (diplo.un) recycle += P.env.unGreen.recycleBonus; // A1.6 UN 全球回收
       // 碳额度法案：成员国超排自动购买额度（10 财/碳）；无钱罚 20 财/回 + rep −2
       const bill = diplo.carbonBill;
       if (bill && bill.expire > t) {
@@ -1176,19 +1520,38 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
     } else {
       diploTick(t, facs, diplo, factionPower, Object.keys(facs), rand, log, env);
       cultureTick(t, facs, diplo, Object.keys(facs));
+      // A1.6 文化快照（调研用；每 25 回合）
+      if (t % 25 === 0) {
+        const idsNow = Object.keys(facs).filter((x) => facs[x].cities.length > 0);
+        const parts = idsNow.map((B) => {
+          const id = facs[B].identity || {};
+          const top = idsNow.filter((x) => x !== B && (id[x] || 0) > 0.25)
+            .map((x) => `${x}:${Math.round((id[x] || 0) * 100)}%`);
+          return `${B}[自${Math.round((id[B] || 0) * 100)}% ${top.join(' ')}]`;
+        });
+        log.push({ t, event: `文化快照：${idsNow.map((A) => `${A}存量${Math.round(facs[A].culture)}`).join(' ')} | ${parts.join(' ')}` });
+      }
       // ==== 胜利判定（军事/文化；科技在结算内）====
       const aliveIds = Object.keys(facs).filter((x) => facs[x].cities.length > 0);
       if (!winner && aliveIds.length === 1) {
         winner = { id: aliveIds[0], type: 'military', t };
         log.push({ t, event: `${aliveIds[0]} 统一全球——军事胜利（t${t}）` });
       }
-      // 文化胜利：全阵营存活（原链）+ 对所有其他阵营完全入侵并维持 10 回合（院长 11-13 第 4 条）
-      if (!winner && aliveIds.length === Object.keys(facs).length) {
-        for (const A of aliveIds) {
-          const others = aliveIds.filter((B) => B !== A);
-          const ok = others.length > 0 && others.every((B) => (facs[B].invasionSince || {})[A] > 0
-            && t - facs[B].invasionSince[A] >= P.culture.victoryHold && (facs[B].identity[A] || 0) >= P.culture.invadeThreshold);
-          if (ok) { winner = { id: A, type: 'culture', t }; log.push({ t, event: `${A} 文化入侵全球——文化胜利（t${t}）` }); break; }
+      // A1.6 文化胜利：UN 盟主 + 对所有其他成员国完全入侵并维持 10 回（全阵营存活铁律保留）
+      if (!winner && diplo.un && diplo.un.leader) {
+        const members = diplo.un.members.filter((x) => facs[x] && facs[x].cities.length > 0);
+        const A = diplo.un.leader;
+        if (!members.includes(A)) { diplo.un.leader = null; } // 盟主失国=空位
+        else {
+          const others = members.filter((B) => B !== A);
+          const allAlive = aliveIds.length === Object.keys(facs).length;
+          const ok = allAlive && others.length > 0 && others.every((B) => (facs[B].invasionSince || {})[A] > 0
+            && t - facs[B].invasionSince[A] >= P.culture.victoryHold && (facs[B].identity[A] || 0) >= P.culture.invadeRelease);
+          if (ok) {
+            winner = { id: A, type: 'culture', t };
+            const shares = others.map((B) => `${B}:${Math.round((facs[B].identity[A] || 0) * 100)}%`).join(' ');
+            log.push({ t, event: `${A} 文化入侵全球（UN 盟主）——文化胜利（t${t}）；认同 ${shares}` });
+          }
         }
       }
     }
@@ -1262,5 +1625,23 @@ for (const a of Object.keys(diplo.rel)) {
 }
 const allies = diplo.treaties.filter((x) => x.type === 'ally' && !x.dead).map((x) => `${x.a}-${x.b}(至t${x.expire})`);
 const peaces = diplo.treaties.filter((x) => x.type === 'peace').map((x) => `${x.a}-${x.b}(至t${x.expire})`);
+const trades = diplo.treaties.filter((x) => x.type === 'trade' && !x.dead).map((x) => `${x.a}-${x.b}(至t${x.expire})`);
+const econAllies = diplo.treaties.filter((x) => x.type === 'econAlly' && !x.dead).map((x) => `${x.a}-${x.b}(至t${x.expire})`);
 console.log(`同盟：${allies.join(' ') || '无'}`);
 console.log(`停战：${peaces.join(' ') || '无'}`);
+console.log(`贸易/航线：${trades.join(' ') || '无'}`);
+console.log(`经济同盟：${econAllies.join(' ') || '无'}`);
+
+// A1.6 路径 / UN
+console.log('\n[A1.6 路径]');
+for (const x of Object.keys(facs)) {
+  if (!facs[x].cities.length) continue;
+  const w = facs[x].pathW ? Object.entries(facs[x].pathW).map(([k, v]) => `${k}:${v.toFixed(2)}`).join(' ') : '-';
+  console.log(`${x} mainPath=${facs[x].mainPath} | ${w}`);
+}
+console.log('\n[UN]');
+console.log(diplo.un
+  ? `成立 t${diplo.un.founded} | 成员 ${diplo.un.members.join('/')} | 盟主 ${diplo.un.leader || '空位'} | 下届 t${diplo.un.nextElection}`
+  : '未成立');
+const revived = (diplo.extinct || []).filter((e) => e.revived).map((e) => `${e.fac}(t${e.t}被${e.by}灭→复国)`);
+console.log(`复国：${revived.join(' ') || '无'}`);
