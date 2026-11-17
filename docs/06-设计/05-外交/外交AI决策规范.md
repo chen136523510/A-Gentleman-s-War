@@ -50,7 +50,7 @@ memory[] = { type, target, turn, weight }              // 背信/援助记忆
 personality = { aggression, caution, loyalty, greed, culture, tech, economy, temperature, affinity{}, seekProtection }
 ```
 
-## 四、人格参数表（大统领驱动 · 4 位默认大统领 · 首版数值，模拟标定）
+## 四、人格参数表（大统领驱动 · 4 位教程默认大统领 · 首版数值，模拟标定）
 
 > 人格**跟领袖走，不跟国家走**（11-12 第 4 条）。下表为当前地图四位默认大统领；新地图只换领袖数据。
 
