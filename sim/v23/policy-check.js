@@ -189,8 +189,8 @@ const CARDS = [
     effect: '居民楼承载 ×1.05；造价 ×0.97', cost: '无',
     eval: [{ m: '承载', v: 5, unit: '%' }, { m: '平衡人口≈', v: 2.5, unit: '%' }] },
   { id: 'warEconomy', name: '战时经济', attr: 'universal', group: null,
-    effect: '战时工业 +10%；和平商业 −3%', cost: '机制型（和平）',
-    eval: [{ m: '战时工业', v: 10, unit: '%' }, { m: '和平商业', v: -3, unit: '%' }] },
+    effect: '工业 +10%；商业 −5%', cost: '机制型（商业）',
+    eval: [{ m: '工业', v: 10, unit: '%' }, { m: '商业', v: -5, unit: '%' }] },
 ];
 
 // ================= 互斥组 =================

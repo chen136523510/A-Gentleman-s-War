@@ -69,7 +69,7 @@ const CARD_FX = {
   carbonQuota: { industry: 0.97 }, greenTransition: { industry: 0.97 },
   smartCity: { upkeep: 0.90 },
   landReform: { carry: 1.05 },
-  warEconomy: { industry: 1.10, income: 0.97 }, // 和平期为主，取保守值
+  warEconomy: { industry: 1.10, income: 0.95 }, // v1.0 常驻：工业+10% 商业-5%
 };
 const DEFAULT_POL = { tax: 1, pool: 1, income: 1, upkeep: 1, growth: 1, culEnt: 1, culValue: 1, out: 1, self: 1, resistPub: null, recruit: 1, tech: 1, revenueBonus: 0, industry: 1, food: 1, tourCap: 1, tourIncome: 1, upkeepCost: 0, subsidyPerK: 0, carry: 1, relFlow: 0, repFlow: 0 };
 const MULT_KEYS = ['tax', 'pool', 'income', 'upkeep', 'growth', 'culEnt', 'culValue', 'out', 'self', 'recruit', 'tech', 'industry', 'food', 'tourCap', 'tourIncome', 'carry'];
