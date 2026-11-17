@@ -4,6 +4,74 @@
 
 ---
 
+## 2026-11-17 黑机 · 教程副本产出（P2b 数据+外壳）
+
+- **剧本变体加载**：`L1Data.ApplyScenarioVariant`（scenario-\<id\>.json 必需 + events-\<id\>/tutorial.json 可选）；default 加载路径零改动。
+- **三份教程数据**：`scenario-tutorial.json`（CN6 城/台北锁/主树全完成/终极工程 1 回合/上海城墙+兵营+兵工厂/15 事件）、`events-tutorial.json`（R-065 §五 15 事件全覆盖）、`tutorial.json`（8 章 TutorialDefinition：dialog/freezeMode/allowedActions/focusTarget/fogMask/completion）。
+- **引擎外壳**：TutorialDefinition 类 + `GameState.TutorialStepId/TutorialStepsDone`；新事件效果 `grantunits`（兵种/OnlyIfZero 防重复发兵）/`settutorialstep`；挂起壳 startbattle/startmeeting/cultureboost/openDisposition（L3 战斗/会议系统/处置 UI 未接，先记日志不阻断）。
+- **回归**：BUILD OK（+13 条教程断言：主树 38/38、台北锁、WLT 自立+城墙、发兵 8000/1600、步骤推进 ch7）；SMOKE/NFACTION OK；200 回合逐字节一致。
+- **叠加教程余项（UI/L3 阻塞）**：引导底座冻结/雾遮挡/高亮、处置面板、科技面板拖动、情报气泡、事件卡——对应系统未接。
+
+## 2026-11-17 黑机 · 资源序 7+8：兵工厂/公用/市政升级 —— 96draft 管线收官
+
+- **翻正 7 卡**：兵工厂（B1 产线可建，每城 1）、污水处理厂（污染 −4）、环保产业园（污染 −3/科技/财）、医院 Lv2（增速 0.2→0.3，TryUpgrade 升级链）、警察局 Lv2（治安 15）、三甲医院（Lv4）、警察厅（治安 20）。
+- **挂起 8 卡（有因）**：机场/防空/炮塔/雷达（等 L3 战斗/空军/情报系统，院长铁律）、造船厂（海军挂起 11-06 裁）、红灯区（九卡待补）、监狱（教程 P2b）、公园 legacy（退役）。
+- **回归**：BUILD/SMOKE/NFACTION OK；200 回合逐字节一致。**96draft 管线收官：135 条 = active 127 + draft 8（全部挂起有因）**。
+
+## 2026-11-17 黑机 · 资源序 5b/6：工业 12 卡 + 农业加工 8 卡
+
+- **序 5b**：`ResourceTick` 矿产池进出（矿场产出×在岗率、钢铁耗铁 32/化工耗煤 16、池不为负）；`FactionState.Uranium` 铀池；互联网/半导体/AI 算力 sci 80/128/176；纺织/家电民生 +1/+2；金矿=财 256。
+- **序 6**：加工 8 卡作物乘区——`cropId/cropFoodMult/cropWealthMult/pastureMult` 进 `FoodOutput/CalcOutputs`（面粉 +96、糖厂甘蔗 ×1.5、淀粉厂牧场 +26.4 全精确）；L1 城级近似，地块级挂靠待 L2 地块制。
+- **回归**：BUILD/SMOKE/NFACTION OK；200 回合逐字节一致。余 draft 15（序 7 军事 6 + 公用 2 + 市政升级等）。
+
+## 2026-11-17 黑机 · 资源序 5a：电力底座
+
+- **能源 5 卡翻正**：火电/水电/核电/光伏风电/垃圾发电。
+- **城级电力**：`CityCalc.PowerGeneration/PowerDemand/PowerRatio`（pr=min(1,Σ产电×在岗率/Σ耗电)）；`powerMinLevel` 起始等级（学院/商业中心 Lv2+ 才耗电）；医院耗电 3、军事基地 4 对齐工业区数值 §5.2。
+- **pr 作用范围**：耗电建筑的财产/生产/科技/文化产出、娱乐/文旅池回收 ×pr；医疗/治安等非产出效果不吃 pr（与 sim 一致）。
+- **回归**：`BatchBuildTest` **BUILD OK**（+8 条电力断言）；`BatchSmokeTest`/`NFactionSmoke` 全过；`BatchSimulation` 200 回合与基线**逐字节一致**。
+- **挂账**：火电耗煤/核电耗铀、全国余电输送（10% 损耗）、升级 +4/+8。余 draft 35（序 5b 工业 12 卡）。
+
+## 2026-11-16 黑机 · 资源序 4b：文化区 26 卡（娱乐/文旅池 + 热度乘区）
+
+- **翻正 26 卡**：大众娱乐 17 + 公共文化 6 + 文旅 3 `draft→active`；补 `servicePopulation/poolClass/poolRecovery/cultureResistance`。
+- **消费池分账**：娱乐 25% 池=大众娱乐+live/音乐厅/歌剧院；文旅 15% 池=民宿/酒店/度假区+**会展/世博**（按文档挂文旅）；文旅财 ×**热度乘区** `clamp(0.5+Heat/100, 0.5, 2.0)`（序 4a 城级 Heat）；服务覆盖 `c=min(1,Σ服务/P)` 进娱乐 E。
+- **世博每阵营 1**：新增 `MaxPerFaction` + 建造跨城校验；**公园 legacy 退役**（greenBelt 取代，初始卡保留结算）；红灯区旧卡维持 draft（九卡待补）。
+- **回归**：`BatchBuildTest` **BUILD OK**（+32 条）；`BatchSmokeTest`/`NFactionSmoke` 全过；`BatchSimulation` 200 回合与基线**逐字节一致**。
+- **余量**：draft 40（序 5 工业 17 卡起）。
+
+## 2026-11-16 黑机 · 资源序 4a：文化底座（公式 A / 份额收敛 / 热度）
+
+- **文化产出公式 A**：`CityCalc.CultureOutput`（宜居/人口/科技因子 × 污染惩罚）+ `FactionState.CultureOutput`；旧 `f.Culture` 保留兼容。
+- **文化存量与认同度**：`CultureStock` 历史累计、`Identity` 份额、`DominationTurns` 连击；`CultureSystem.Tick` 份额收敛式（P=√存量×距离，r=0.05，≥60% 连续 5 回=完全入侵、<50% 解除），结果接 `VictoryChecker` 文化胜利。
+- **距离口径**：相邻 1.0 / 远洋 0.6 / 未达 `contactTech` 0（澳洲隔绝同口径）；联系/情报/战争暂 1.0，DiplomacyAI/间谍/战争后接。
+- **热度/服务覆盖/抵抗**：`CityState.Heat`（§6.2）；`ServicePopulation` + `ServiceCoverage`（旧卡不受影响）；`CultureResistance`（博物馆/会展/世博，封顶 50%）。
+- **回归**：`BatchBuildTest` **BUILD OK**（+9 条文化断言）；`BatchSmokeTest`/`NFactionSmoke` 全过；`BatchSimulation` 200 回合与基线**逐字节一致**。
+- **余 4b**：文化区 27 卡翻正 + 娱乐/文旅池回收 + 热度乘区 + 典藏陈列。
+
+## 2026-11-16 黑机 · 资源序 3：商业区 5 卡（消费池）
+
+- **96draft 序 3 完成**：商业街/写字楼/商场/银行/港口物流园 5 卡 `draft→active`，维护统一=财造价×3%。
+- **消费池（C-01~C-05，v22 ×8）**：`balance.json commerce` 段 + `CityCalc` 新增 `ConsumptionPool/EmploymentRate/Desire/CalcCommercial/BankMultiplier`；池=民用人口/1000×2.5×K_desire×8；回收=min(池×归一化份额, 单座上限)×在岗率，**不吃民生乘区**；缺类份额按现存类权重回流（娱乐/文旅序 4 接入后自动分账）。
+- **商场门槛 240,000（30k×8）**；银行前置写字楼；港口沿海限定；写字楼/港口 ×在岗率；街/写字楼/商场吃银行 +20%。
+- **建造校验**：`ConstructionSystem` 新增 `CoastalOnly/MinPopulation/RequiresBuilding` 数据驱动门槛（旧卡缺省不改变行为）。
+- **回归**：`BatchBuildTest` **BUILD OK**（+21 条商业断言）；`BatchSmokeTest`/`NFactionSmoke` 全过；`BatchSimulation` 200 回合与基线**逐字节一致**。
+- **余量**：draft 65（序 4 文化区 27 卡起）；升级变体卡后续批次。
+
+## 2026-11-16 黑机 · 基座 P2a（N 阵营 smoke）—— 基座验收闭合
+
+- **P2a 完成**（R-064 §五）：新增 `UnRules`（UN 成立门槛 ceil(n×2/3) 弃权不算 + 常任理事国选举 need=floor(n/2)+1、平票按文化排序、未过半空位，与 sim `a1_6Phase` 1:1；Unity DiplomacyAI 后置接入时调用）；`EventRunner` 支持 `scenario.events` 白名单（缺省/空=全跑，旧行为）；新增 `NFactionSmokeTest`（S1 教程 4/14 含 WLT 事件、S2 内战 2/14、S3 逐鹿 7/14、S4 复苏 8/14、S5 小图 2/3，`AGW/批处理 N 阵营 smoke` → `tmp/nfaction-report.txt`）。
+- **S1~S5 全过**（`NFACTION OK`）：城市归属符合剧本、未列入剧本的阵营不登场、门槛表 1~8 全过、S3 军事/S4 文化胜利构造触发。
+- **基座验收（施工单 §〇）三条+旧档附条全过**：①行为不变（200 回合逐字节一致）②无规则硬编码（grep 全清）③N 阵营 smoke S1~S5 ④Schema 2→5 迁移 PASS。**基座完成**，下一阶段=资源→教程副本产出→叠加教程。
+- **余 P2b（教程接入）**：tutorial.json 外壳/12 类事件效果/引导底座/灭国必俘+监狱/科技面板拖动/教程上海 initialBuildings/主树预置完成。
+
+## 2026-11-16 黑机 · 基座 P0/P1（规则/剧本分层 + 去硬编码 + 胜利判定）
+
+- **P0 完成**（R-064）：`ScenarioDefinition` 16 组字段（阵营/城市/武将/随机开局/胜利/UN/外交/科技/建筑/环境/事件/教学/存档/菜单）；factions/cities/officers/balance 剧本字段落库；市政监狱 + 上海—长崎航线（17→18）；`GameState.Create` 建局唯一入口读剧本（阵营筛选/城市归属/初始建筑/锁城/玩家/`ScenarioId` 旧档兼容）。
+- **P1 完成**：阵营顺序与 UI 城数数据化；武将池 `officers.json` 加载 + `officerAssignments` 覆写；科技树外壳（`startEra/lines/nodeOverrides/ultimateProjects`，38 节点不动）；建筑集合/单位树外壳；新增 `VictoryChecker`（军事/科技/文化三路径，只读 `victoryOverrides`；文化维持计数；EndTurn 判定不强制结束）。
+- **回归**：`dotnet build` 0/0；`BatchBuildTest` **BUILD OK**（新增武将池 21 + 三胜利构造 PASS）；`BatchSmokeTest` **SMOKE OK**；`BatchSimulation` 200 回合人口 4,488,653 / 科技 26/38，与 P0 基线**逐字节一致**。
+- **文档**：[基座施工单](docs/04-技术笔记/基座施工单-2026-11-16.md) §九回填（实际路径/院长三裁/回归）；**P2 余项**=N 阵营 S1~S5 / UN 选举（DiplomacyAI 后置）/ 教程外壳与 12 类事件效果 / 监狱效果 / 科技面板拖动。
+
 ## 2026-11-16 白机第二轮 · 基座施工单 + 教学关卡 v0.3 + 走偏修正（文档层）
 
 - **基座施工单 v1.0**（R-064）：[基座施工单](docs/04-技术笔记/基座施工单-2026-11-16.md)——ScenarioDefinition 字段终稿（含 `victoryOverrides`/`un` 参数键）、数据文件改造（scenario/factions/cities/officers/tech/buildings/balance/events/tutorial/tech-tutorial）、代码改造点（GameState/阵营注册/武将分配/胜利判定/UN/科技树/UI/存档/EventScript 12 类效果/Tutorial 条件）、硬编码清点（文档层 D1~D7 已修 + 黑机项 R4/C1~C7）、N 阵营 smoke S1~S5（2/4/6/7/8 + 3 城小图；UN 门槛取整表，8 阵营=6/8）、P0→P2 施工顺序。
