@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-11-19 黑机 · B1+B2 收官（AI 四篇细则 + sim/v24 AI 盘）+ B6 数据缺口
+
+- **B6 数据缺口修复**：①科技成本口径回写 4 处（`科技树.md`/`数值设计总纲 §4.6`/`学院区开题`/`40 节点标签表`——C0=2000（2026-11-14 ×4.0），全树 31 万~46 万按研序，旧"≈95k"为 500 口径已废）；②`requiresTech` 异常修复（`oilWell→grn2`、`foodIndustry→grn3`，设计依据=角色表/40 节点表；引擎暂无消费点，P2 BuildAI 接首个消费）；③catalog 统计补齐 **23 条**（实缺多于交接单 8 条：红灯区 8+监狱 3+P1/P2 重导 12；`tmp/blender/stats_unity.py` 只读 blend 补算 tris/meshes/bbox，与 export_web 同口径，**149/149 全齐**，零 FBX 重导）。
+- **B1 AI 四篇细则**（开题 v0.3 §四 施工化，白机 P1 移交黑机）：[AI科技细则](docs/06-设计/00-总纲/AI科技细则.md)（38 节点 U=路径×收益×递减+前置奖励−成本+局势；工程入场券；验收 24/38 折算口径）/ [AI建造细则](docs/06-设计/00-总纲/AI建造细则.md)（13 需求缺口×边际递减×维护预算 75%）/ [AI政策细则](docs/06-设计/00-总纲/AI政策细则.md)（policyPressure 压力锅+事件底座+预览复用+两算法）/ [AI战争细则](docs/06-设计/00-总纲/AI战争细则.md)（pr≥1.0 硬门槛+时机+U_target 战役目标+战损停战；战略层，L3 战术不写）。
+- **B2 sim/v24 AI 盘**：`sim/v24/ai.js`（v22 基座只读复制；**v22 未动**）+ [全量模拟-v24-AI盘](docs/06-设计/00-总纲/全量模拟-v24-AI盘.md)。科技节点制（38 节点 B 案，成本=tech.json 公式归一化 40 点，**v22 经济标定零改动**——悉尼/墨尔本城况与 v22 逐字节一致）；建造/政策/战争决策层全量接入，政策乘区 50 卡全阵营落点接线。实测：科技胜利 4/5（CN t189~t200）+ 500 局 t201；t200 科技均值 23.5/40（JP 单项达标）；建造 385~408 ≥300；政策 pressure/fixed 对照（首装 t1/t10/t12，满槽收敛，变动 4.5~5 次/100 回）；warsmoke 战争全链（宣战→联合进攻全票→U_target 占领→战损记账）；同 seed 确定性零差异。**九指标 7✅2⚠️**：科技均值差 3.7pt（KR/AU 双城国学院天花板）；**科技×文化胜利先到先得冲突需院长裁**（报告 §五.2）。
+- **回归**：buildings.json 改动后 BatchBuildTest+BatchSmokeTest+BatchNFactionSmoke 全绿（BUILD OK / SMOKE OK / NFACTION OK）。
+
 ## 2026-11-18 黑机 · A1~A5（红灯区收尾/AI 数据前置/教程去剧情）
 
 - **红灯区八座收尾**：`AGW_ART3D_FILTER` 局部导入 8 座 FBX → prefab/Mats/meta（**149 prefab 全量在盘**）；`L2ArtMap.cs` 补 8 条映射（salon/danceHall/massage/bathCenter/bubbleSpa/ktv/nightclub/nightlessCity）；**scale/origin/mats 8/8 PASS**，四视角出图目检通过（临时联览 `tmp/redlight-overview.png`）；`Art3DImport` 增环境变量过滤，避免全量重写 149 座。
