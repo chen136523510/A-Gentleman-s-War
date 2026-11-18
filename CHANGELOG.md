@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-11-18 黑机 · 连续推进收官（监狱落库/红灯区九卡/存档槽位/L2 3D）
+
+- **监狱 v0.2 落库**：`buildings.json` 单卡→**三级单链**（拘留所 prison→监狱 prisonLv2→天牢 prisonLv3，升级不变 2×2，`jailCapacity/jailPersuadeMult/jailTalkCooldown/jailRaidPenalty/jailExecRepMult` 字段，status=draft 结构先行）；`GameState` 增 `state.jail{cityId:[officerId]}`+对话冷却+被押忠诚，**五交互 API**（收押含押送/对话含冷却/劝降 40%×监狱乘区×忠诚因子封顶 90%/处决声望×天牢减半/释放+2）；事件 `captureofficer/executeofficer/releaseofficer`；教程上海初始拘留所 + `wlt-capture` 自动收押；监狱详情临时面板（L2 城市面板「监狱」按钮）；`OfficerDefinition.LoyaltyInit` 入 schema。**三座监狱 3D 建模**（mun-prison1/2/3，高墙/瞭望塔/四角塔套件递进）。PrisonSmoke **14/14 PASS**。
+- **红灯区九卡翻正落库**：旧单卡 `redLightDistrict` 移除，**三线三级 9 张 active**（发廊/歌舞厅/风情街 × 按摩店/洗浴中心/泡泡浴 × KTV/夜总会/不夜城；v22 量纲 ×8：jobs/poolRecovery/造价/维护；负外部性 治安−1~−5/民生 0~−2；热度无引擎落点记 note）；`ent-redlight` 资产挂风情街，其余八座建模挂后续批次。BatchBuildTest 断言更新（九卡 active/监狱链 draft/挂起卡收窄至 L3 五卡+公园 legacy）。
+- **存档 v2 增量**：ESC 存档/读档改走 **SavePickerPanel**——手动 3 槽 + 读档列表（自动/槽位/回合快照全列）；v3（战斗中存档，R36）仍随 L3 挂账。
+- **L2 3D 化**：`L2CityView` 内核换 3D（API 不动，控制器仅改 MouseTile/右键语义）——地形贴图平面 96×96、**建筑 id→3D 资产映射表 134 条**（L2ArtMap）、蓝图工地（金框+幽灵随进度升起→完工实体）、55° 轨道相机（右键旋转/WASD 平移/滚轮缩放，退城还原 L1 2D）；preview/grid/hover 换地面 quad。全景/市政厅近景/工地截图验证 + L2SelfTest PASS。
+- **美术修复批**：P1 影城 60×40 全尺寸重建、P2×4 收格（绿化带/奥体/农产品加工 7 座/博物馆）、音乐厅"细线"销项（=竖琴索面设计）——复检全过。
+- **回归**：SMOKE/BUILD/NFACTION/POLICY/PRISON 全绿。
+
+## 2026-11-18 黑机 · 3D 资产验收统一入口
+
+- **院长令**：跳过网页进阶版，**直接在 Unity 验收**；一次性全量导出；黑机逐座仔细目检。
+- **全量入库**：138 座 FBX+prefab+平色材质入 `Assets/_Project/Art/3D/`（LFS）；`catalog.json`=登记事实源（footprint/tris/材质数/bbox）。导出器 `tmp/blender/export_unity.py` 复用既有 blend，与网页评审几何/材质同源。
+- **管线三修**（验收中发现并修复）：①FBX cm 单位 ×100 → importer `globalScale=0.01`；②市政府 blend 误带周边街景（all_objects→直系集合）；③**双面材质**（URP `_Cull=0`，对齐网页双面渲染基线——修复 v2b 坡屋顶在 Unity 消失）；**朝向实测修正：Unity 内建筑正面=+Z=南**（原文档 -Z 系口径错误）。
+- **Unity 验收场景**：菜单 AGW/美术3D ①导入②出图③开场景④重建；左栏分区导航/搜索/列表 + 右栏满格体检 + 轨道相机/转台/换座。
+- **逐座验收结论**（四视角×138 + 数值体检）：**通过 127**；问题 **P1×1**（影城欠格 2/3）/**P2×7**（绿化带超格 11m、奥体超格 5.5m、农产品加工 7 座越界 3.2m、博物馆门廊 3.2m、音乐厅游离细线、加工厂屋顶观感）/​**P3×8**（铁矿坑下沉、甘蔗辨识度等）——详见 [美术资产验收-Unity归档版-2026-11-18](docs/07-美术/美术资产验收-Unity归档版-2026-11-18.md)。P1/P2 修复后重导出即可（同管线，每座≈1 分钟）。
+
+## 2026-11-17 黑机 · 3D 资产验收统一入口
+
+- **一个端口/一个页面**：新增 [gallery.html](tools/3d-viewer/gallery.html)，侧栏分区导航（市政/居民/商业/工业/农业/学院/文化/军事/娱乐/市政府）+ 搜索 + 全部 138 件模型网格；`serve.py` 只打印这一个入口，旧分区页保留但不再需要逐个打开。
+- **每件资产两种全窗**：点参考图 = 全窗看图（再点切换原始尺寸）；「3D 全窗」= 单模型查看器铺满窗口（旋转/缩放/平移）；均支持原生全屏。
+- **清单生成**：[build-gallery.js](tools/3d-viewer/build-gallery.js) 从各分区页提取模型/参考图/视角参数 → [gallery-data.js](tools/3d-viewer/gallery-data.js)；分区页更新后重跑脚本即可。
+- **旋转修正**：[viewer.js](tools/3d-viewer/viewer.js) 左右拖拽方向改为 `cam.az += dx`（拖拽方向=模型转向），修复此前左右反向。
+
+## 2026-11-17 黑机 · 政策卡底座落库（R-067）
+
+- **数据三件套**：新增 `Assets/_Project/Data/policies.json` **50 张**（军/经/文/外/通各 10；10 组互斥 `exclusiveGroup`；效果统一 `mult|bias|switch`，成本 `taxPct|wealthPerThousand`）；`balance.json` 加 `policies` 组（装卡 100 财/槽位冷却 2）；`scenario.json`/`scenario-tutorial.json` 加 `policySlots.base=2/2/2/2/2`。
+- **规则底座**：`PolicySystem`（`Assets/_Project/Scripts/L1/PolicySystem.cs`）——每阵营政策状态（已装/冻结/解锁/额外槽）、开局/科技/事件解锁、装卡/卸卡/批量确认、槽型校验、**10 组互斥硬拦截**、槽位 t1 装→t2 冻→t3 改、卸卡免费、净新增计费、预设/批量接口、存档字段与旧档补全。
+- **效果接入现有公式**：税收/消费池/商业/工业/科技/粮产/人口增长/同化/忠诚流/军管底线/文化自压/抵抗/文化值/文旅/娱乐文化/维护/建造造价工期/征募费/装备维护/资源池上限/军费；外交关系流与 rep 按回合累积（小数结转）。**L3 占位参数**（战斗 q/城防/战损/间谍/环境/贸易/同盟/宣战阈值）已聚合进 `PolicyModifiers`，等对应系统消费。
+- **临时面板**：顶栏「政策」→ `PolicyPanel`（五槽五列/按色卡池/编辑态/确认总消耗/重置/冻结与互斥提示/三套预设一键载入）。
+- **验收**：`PolicySmokeTest` 全绿（50 卡/五属性各10/10 互斥组、减税装卡扣费与冻结、互斥/槽型/冻结拦截、卸卡免费、通用槽规则、存档往返、3 回合结算、基建狂魔造价工期、减税税收实际 ×0.8）；既有 `smoke/build/nfaction/sim` 回归全部通过。
+- **口径澄清（2026-11-17 院长）**：`officers.json` **保留 `faction/city` 为开发侧可选属性，不作为产品侧硬绑定**；需要某剧本关联时由 `ScenarioDefinition.officerAssignments` 提前指定/覆写。
+
 ## 2026-11-17 白机 · 政策卡专题收尾 v1.0
 
 - **院长两令落地**：①50 张暂定；②**政策卡不是玩法重点**——不希望玩家频繁切面板调整。
