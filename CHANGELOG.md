@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-11-18 白机 · AI 决策专题开题 v0.1（R-069）
+
+- **院长令**："开 AI 决策专题"（11-18）——五线全量 AI=**建造/科技/政策/战争/外交**全量决策；政策卡系统只提供候选集/预览/批量提交接口。
+- **开题落地**：[AI决策专题开题](docs/06-设计/00-总纲/AI决策专题开题.md) v0.1——①统一意图机骨架（感知→路径→候选→效用→softmax→执行→记账，复用外交 AI 已验证范式）；②五线节拍/预算表（外交 2 行动/回、建造 1 座/城/回、科技同时 1 节点、政策 ≤1 张/10 回、战争 1 战役目标）；③五线设计要点（建造需求驱动定稿/科技节点效用/政策低频预设优先/战争战役目标/外交收口）；④支线（内政/事件/监狱/间谍/特殊阵营）随各自系统；⑤v24 AI 盘验证计划（5 seed×200+500）；⑥Unity 接口（`Scripts/L1/AI/` 六模块 + `balance.ai` 组 + `state.ai` 存档缺省）。
+- **待院长裁 7 点**：L3 战术 AI 归属 / 科技粒度 / 政策频率 / 一期难度档 / 建造角色表补全责任 / 支线排期 / AI 性能预算。
+- **索引回写**：需求池 R-069、专题清单、handoff 专题指针与挂账 #9。
+
 ## 2026-11-18 黑机 · 连续推进收官（监狱落库/红灯区九卡/存档槽位/L2 3D）
 
 - **监狱 v0.2 落库**：`buildings.json` 单卡→**三级单链**（拘留所 prison→监狱 prisonLv2→天牢 prisonLv3，升级不变 2×2，`jailCapacity/jailPersuadeMult/jailTalkCooldown/jailRaidPenalty/jailExecRepMult` 字段，status=draft 结构先行）；`GameState` 增 `state.jail{cityId:[officerId]}`+对话冷却+被押忠诚，**五交互 API**（收押含押送/对话含冷却/劝降 40%×监狱乘区×忠诚因子封顶 90%/处决声望×天牢减半/释放+2）；事件 `captureofficer/executeofficer/releaseofficer`；教程上海初始拘留所 + `wlt-capture` 自动收押；监狱详情临时面板（L2 城市面板「监狱」按钮）；`OfficerDefinition.LoyaltyInit` 入 schema。**三座监狱 3D 建模**（mun-prison1/2/3，高墙/瞭望塔/四角塔套件递进）。PrisonSmoke **14/14 PASS**。
