@@ -4,6 +4,15 @@
 
 ---
 
+## 2026-11-18 黑机 · A1~A5（红灯区收尾/AI 数据前置/教程去剧情）
+
+- **红灯区八座收尾**：`AGW_ART3D_FILTER` 局部导入 8 座 FBX → prefab/Mats/meta（**149 prefab 全量在盘**）；`L2ArtMap.cs` 补 8 条映射（salon/danceHall/massage/bathCenter/bubbleSpa/ktv/nightclub/nightlessCity）；**scale/origin/mats 8/8 PASS**，四视角出图目检通过（临时联览 `tmp/redlight-overview.png`）；`Art3DImport` 增环境变量过滤，避免全量重写 149 座。
+- **AI 建造角色表（R-069 裁点 5）**：`buildings.json` 145 卡补 `role[]`（13 需求词表：food/wealth/power/housing/security/medical/science/culture/jobs/consumption/military/greenPower/environment；含 draft 占位）；只加字段不改既有字段，indent1；口径文档 [建造角色表](docs/04-技术笔记/建造角色表-2026-11-18.md)。
+- **科技 40 节点收益标签表**：逐节点 成本/前置/收益类型/收益值/解锁建筑；含 3 终极工程；标注 **tech.json 仍 38 节点（缺 grn2b/grn2c）**、成本文档 500 vs JSON 2000、`oilWell/foodIndustry` requiresTech 异常；文件 [科技节点收益标签表](docs/06-设计/03-内政/科技节点收益标签表-2026-11-18.md)。
+- **教学关卡 v0.6 去剧情**：执行 11-17 院长令——删除角色台词/剧情旁白/教程专属事件故事卡；改 9 步机制引导（新增政策卡面板：预览/装卡/卸卡）；保留 L3 参数/科技终局/UI 锚点/引导底座；文件 [教学关卡设计](docs/06-设计/00-总纲/教学关卡设计.md)。
+- **回归**：`BatchBuildTest` BUILD OK · `BatchSmokeTest` SMOKE OK · `BatchNFactionSmoke` NFACTION OK · `PolicySmoke` OK · `PrisonSmoke` OK · `AgwL2SelfTest` PASS。
+- **文档收尾**：handoff 过期点修正（catalog/监狱/美术 P1P2/96draft 计数）、需求池 R-069 行序、专题清单/资产登记/changelog 回写；B 组接续单 [B组交接-2026-11-18](docs/04-技术笔记/B组交接-2026-11-18.md)。
+
 ## 2026-11-18 白机 · AI 决策专题定稿 v0.3（R-069）
 
 - **院长令**："开 AI 决策专题"（11-18）——五线全量 AI=**建造/科技/政策/战争/外交**全量决策；政策卡系统只提供候选集/预览/批量提交接口。
