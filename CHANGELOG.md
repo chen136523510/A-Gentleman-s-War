@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-11-20 黑机 · 大落库日（政策收费/监狱翻正/AI P2/矿产电网/外交底座/美术 P3）
+
+- **政策收费口径落库**（架构 v0.7，11-19 定稿）：`costPerCard 100→0`+`coolChangeCost=100`；`PolicySystem.PreviewChangeCost` 始末差异口径（装卡免费/冷却期内改动 100 财每槽、卸换均计/期满免费；卸卡不触发新冷却）；Panel 文案+Smoke 断言重写。**PolicySmoke 56/56**。
+- **监狱三级翻正**：`prison/prisonLv2/prisonLv3` draft→active（系统 11-18 已落库）；96draft 挂起收窄至 **6**（L3 五卡+公园 legacy）。
+- **AI P2 Unity 落库**（R-069 P2）：`Scripts/L1/AI/` 六模块（AIController/TechAI/BuildAI/PolicyAI/WarAI/AiLog）+ `AiSmokeTest`；`balance.json ai` 组 **301 键纯增量**（tech 22/build 48/policy 31/war 15+debugLog；=sim/v24 AIP 同名同值）；TechTick 换 TechAI 逐节点效用（删 ai1/grn1 硬编码）；**WarAI 只落参数+纯函数（Unity L1 无战争引擎）**；requiresTech 首个消费点（oilWell→grn2、foodIndustry→grn3）；PolicyAI 含 **swap 换卡评估**（v24.1 口径：负增益硬过滤+载体加权+liv-bias 修正）。AiSmoke 21/21（四国序列分化/确定性/建造 396/政策变动 7 次带内）。
+- **v24.1 swap 对照盘**（挂账 #18 前半）：`sim/v24/ai-swap.js`；fee 对齐架构 v0.7；15 盘确定性零差异；结论=**建议默认开启 swap**（附录入 v24 报告）。
+- **矿产/电网 B4.8 落库**：`GameState.SettleMineralPower`（火电煤 16/核电铀 8=×8 引擎口径；核电每 10 运转回维修；0 料停机维护照付；fuel_first 四级分配）；余电调配（ai6 解锁/10% 损耗/grn10 归零/本地优先）；矿场独立枯竭档位（50 回/档+深井 100）；库存 5 回合收入上限；**tech.json +grn2b/grn2c → 40 节点**（既有 38 零改动）；balance mineral/power 组；`MineralPanel`+城市面板资源/燃料行；存档缺省兼容。**MineralSmoke 45/45**；专题 §十三落库记录。
+- **外交义务底座 v0.4 落库**：`GrantPolicyCard/Mandates/ExpireMandate/RecordViolation/RepairMandate/AidIfNeeded`+累进（×1.5/×2 封顶）；违约=状态转换语义；cb 按卡 tags `violationCb`；负财援助 100 财虚空产出；**环保主义卡=第 51 张**（event 解锁：宜居 +5/污染建筑禁建禁升级/产出 ×0.7 不含 PowerGen——待裁）；`perfidy` 字段缺省 0（名单待院长点）。**MandateSmoke 68/68**。
+- **美术 P3 五项全链**：Blender 修模 6 座（鱼塘浮桩/营帐篷落地、甘蔗梢叶带+新材质 `cane_leaf`、茶园 52 垄、球场 FIBA 白线【红胶面基调微变待院长确认】、羊群 ×1.5×12）→ FBX 重导（catalog 6 条刷新）→ **prefab 重导 6/6**+四视角出图目检过（验收报告 **v1.3**）。#8/#14/#15 设计决策不做。
+- **回归**：BUILD/SMOKE/NFACTION/POLICY/PRISON/AI/MINERAL/MANDATE + BatchSimulation 200 回合 + L2SelfTest **全绿**。
+
+
 ## 2026-11-19 白机 · 事件卡专题 v0.2（院长 8 条）+ 矿产/电网专题 v0.1（B4.2/B4.8）
 
 - **院长 11-19 八条（事件卡 v0.2 已落）**：①事件两层——**剧情事件**（教程/剧本固定，WLT 自立 t2）vs **普通事件**（机制自然产生、可推算，沙盒某城自立/事件卡）；②事件卡归普通事件，四大作用=状态可读化/短期策略窗口/给对冲工具创造需求/机制自动调节（叙事次要）；③**过回合时出现、过回合过程中不结算、下回合开始结算**（出现≠结算，pending 入档）；④冷却**视情况而定**（逐卡配置）；⑤两张卡间全局 ≥10 回合先保留（后续细讲）；⑥卡面**只显示变化项**；⑦矿产/电网 8 点**留待黑机处理**；⑧文档同步。**事件卡定位/作用待院长确认 + 3 点待裁**（触发粒度/低欲望民生+1/政策 AI 加权）。
