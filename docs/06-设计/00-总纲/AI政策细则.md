@@ -64,7 +64,7 @@ U(plan) = pathMatch(plan) × gain(plan) × 财约束(plan) − swapCost(plan) �
 | 项 | 定义 |
 |---|---|
 | `pathMatch` | 方案卡色 × 主路径亲和：military→军卡 ×1.5；culture→文卡 ×1.5；economy→经卡 ×1.5；tech→通/经卡 ×1.3；非亲和 ×1.0；再乘 `pathBias[mainPath]` |
-| `财约束` | 净费用 > 库财×`cashGuard`(0.5) → 方案剔除；否则 ×1.0（100 财/张已含在净费用） |
+| `财约束` | 净费用 > 库财×`cashGuard`(0.5) → 方案剔除；否则 ×1.0（冷却期内改动费 100/次已含在净费用；装卡免费（11-19 定稿）） |
 | `swapCost` | 新卡数 × `CostPerCard`(100) 折 U：`× A_cash`(0.01 财→U 系数，与 §3.1 载体规模同尺度) |
 | `freezeCost` | 变动槽位冻结 `SlotUnlockDelay`(2) 回合 × `A_freeze`(2.0/回合) × 该槽紧迫度（战时军槽 ×2） |
 | `risk` | 高危卡（宣战阈值降低/外交惩罚类）在 `caution` 高人格 ×(1+caution) 惩罚；被制裁中环保卡 ×1.3（UN 环保合作顺从） |
