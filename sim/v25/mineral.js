@@ -34,8 +34,8 @@ const P = {
   taxConst: 800, taxPerPop: 1 / 1500,
   // 消费
   poolK: 2.5, shares: { retail: 0.60, ent: 0.25, tour: 0.15 },
-  // 俸禄（回归公式：20×(0.8+五维/500)=32 财/将/回，×8=256；每城按 2 将）
-  salaryPerGeneral: 256, generalsPerCity: 2,
+  // 俸禄（权威=索引-参数 salaryPerGeneral=13 财/将/回，v18a 调优；×8=104。⚠️ v22~v24 历史盘误用公式算例 32×8=256，v25 已修正）
+  salaryPerGeneral: 104, generalsPerCity: 2,
   // 军（B1 v1.2：批次制；1 批 = 8,000 兵；轻 1 回合/批、重 2 回合/批）
   soldierSalary: 0.05, peaceService: 0.005, warService: 0.10, stressService: 0.02,
   batchSize: 8000,
