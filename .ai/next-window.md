@@ -26,7 +26,8 @@
 | 政策卡内容专题 §十一 残留 | 已修（2026-11-24） | ~~遗产保护仍写 resistPub~~ → 已改为 culEnt |
 | `数值公式总纲` 内部矛盾 | §2.3 "粮安 F 已删除" vs §3.5 "见 §2.3" | ✅ **已修（11-24 黑机）：§3.5 改为 ❌已删除 + 现行口径指针** |
 | `间谍专题开题` 内部冲突 | §七④ 负伤 5 回合 vs §五/§十 8 回合 | ✅ **已裁（11-24）：统一 8 回合、医院减半→4**；§七④ 已改 |
-| `maxWars` 事实不符 | AI战争细则 L95 | `ai.war.maxWars=1` 已落，但 sim D 块 `maxWarsPerFaction` 仍 2 → 需黑机统一 |
+| `maxWars` 事实不符 | AI战争细则 L95 | ✅ **已修（11-24 黑机）：`sim/v26/policy.js` maxWarsPerFaction=1，审计+200 回复跑** |
+| **v26 报告 errata** | [报告 L9/L213/L306](/G:/A%20Gentleman's%20War/docs/06-设计/00-总纲/全量模拟-v26-政策盘.md) | 报告为 50 初始卡口径（特殊 2 不进 AI 池）、`resistPubBias` 已删死键、占位键现为 5（+环保 2）、maxWars 报告=2 而脚本已对齐 1——**报告不改，引用以本 errata 为准** |
 | `突袭士气 ±20` | 兵种数值表 | ✅ **已裁（11-24）：作废**；伏兵减士气 −15 **已裁保留**（见 §三 #4） |
 
 ### 1.3 百科（进度：11 词条全部 11-24 已同步；剩概念化改造）
@@ -38,13 +39,13 @@
 
 | # | 任务 | 前置/参考 | 优先级 |
 |:--:|---|---|:--:|
-| 1 | **`policies.json` 52 张落库**（初始 50 + 特殊 2，统一结构 `initial/acquire`；数值 v1.2 定版） | 数据源=`sim/data/cards.js`；内容专题 v3.0 §10/§12.4 | **最高**（政策卡唯一未落库项） |
+| 1 | ~~**`policies.json` 52 张落库**~~ ✅ **11-24 完成**（初始 50 + 特殊 2，统一 `initial/acquire/via`；`tools/build-policies-json.js` 由 `sim/data/cards.js` 生成；PolicySmoke 52 绿） | 数据源=`sim/data/cards.js`；改值后重跑生成器 | — |
 | 2 | **复苏副本定稿**（空城占领/爆铺刹车/21 将池） | [游戏模式与副本规划](../06-设计/00-总纲/游戏模式与副本规划.md) §复苏；`sim/data/scenarios.js` 已留空城数据 | **高**（模拟基座阻塞） |
 | 3 | L3 M1 施工（BattleSimManager+30Hz tick+命令流+4060 压测） | [L3战斗层开题](../06-设计/04-军事/L3战斗层开题.md) v0.3（D1~D14/E1~E10） | 高 |
 | 4 | 事件卡落库（events.json 3 卡 + EventSystem + 卡面 UI） | [事件卡专题](../06-设计/06-事件/事件卡专题.md) v1.0 | 中 |
-| 5 | `balance.json` 同步抵抗参数删除 | ✓ `cultureResistanceCap/resistPub/resistTour/resistEnt` 全删；`P[B→B]=√Culture_B` | **高**（与白机已对齐） |
+| 5 | ~~`balance.json` 同步抵抗参数删除~~ ✅ **11-24 完成**（`CultureSystem`/`DataDefinitions`/`buildings.json`/`balance.json` 全删；`P[B→B]=√Culture_B×self`；Build 绿） | 与白机已对齐 | — |
 | 6 | 21 将火柴人建模（1 基底 + 装饰件） | [武将3D形象-火柴人方案](../07-美术/武将3D形象-火柴人方案.md) | 中 |
-| 7 | `maxWarsPerFaction` sim=2 → 1 统一 | AI战争细则 L95 已标 | 低 |
+| 7 | ~~`maxWarsPerFaction` sim=2 → 1 统一~~ ✅ **11-24 完成**（`sim/v26/policy.js` 对齐 1；审计+200 回复跑） | AI战争细则 L95 | — |
 | 8 | 96draft 余 6 draft（L3 五卡+公园） | 随 L3/空军/海军 | 低 |
 
 ## 三、院长待裁（阻塞项）
@@ -78,7 +79,8 @@ node sim/v26/policy.js 200 1 --scenario=revival   # 复苏盘（基础版，待�
 3. **写死阵营/城市数 = 违规**（AGENTS §七.1）；已修 `makeDiplo` 一处，新代码注意。
 4. **doc-sync 判定用内容哈希**：批量改 syncDate 不产生假 stale；但**改动正文会让下游级联 stale**（正常，属下一批）。
 5. **模拟报告永不回改**：口径变→出新报告（v27），不修旧报告数字。
-6. **政策卡数值唯一源=`sim/data/cards.js`**；改值只改 1 行；内容专题卡表只是设计意图说明。
+6. **政策卡数值唯一源=`sim/data/cards.js`**；改值只改 1 行；**`policies.json` 由 `node tools/build-policies-json.js` 生成，勿手改**；内容专题卡表只是设计意图说明。
+7. **服役比例接线口径**：`MilitaryTick` 自动征募仍按旧 `PeaceRecruitRate=0.5%` trickle；5% 默认/8% 常规上限/10% 强征硬顶用于成本档与 `ForceRecruit`。v27 经济盘验证后再决定是否把自动目标升到 5%（直接升会抽干建造财）。
 7. **文档头部状态/「待裁」字样 ≠ 当前事实**：盘点"未讨论/待裁"必须以 [索引-决策](../docs/06-设计/00-总纲/索引-决策.md) 与 AGENTS 的最新裁定为准，禁止直接采信文档里的"待裁/待定/待填"关键词（多为历史写作文本或拆分模板残留）。**反面案例（2026-11-24 白机）**：曾把 L2 3D 建模（11-12 已定）、政策卡保留（11-24 已定）、红灯区/起义叛乱（已定版/作废留档）、21 将档案（✅ 定稿）误报为"未讨论"。
 
 ## 变更记录

@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-11-24 黑机 · 政策卡 52 张落库 + 抵抗删除 + 服役比例接线
+
+- **`policies.json` 52 张落库**：初始 50（五属性各 10）+ 特殊 2（`carbonQuota` UN 提案 / `environmentalism` 环保提案·event）；**所有卡统一结构**，新增 `initial/acquire/via` 属性，特殊卡 `initial=false` 不进初始池；`unlock.type=techCount`（早 0/中 10/后 22）对齐 sim 科技门槛。生成器 **`tools/build-policies-json.js`** 以 `sim/data/cards.js` 为唯一数值源；`PolicySmokeTest` 升 52 卡口径（通用 12/其余 10、互斥组 10、开局解锁 13）。
+- **C# 底座扩展**：`PolicyCardDefinition.Initial/Acquire/Via`、`PolicyUnlock.TechCount/Type=proposal`；`PolicyModifiers` 新增 `ServiceRatioCapBias/MilitarySalaryMult/MilitaryCostMult/MilitaryIncomePerSoldier/FiscalIncomeMult/WelfareBias/SubsidyPerPop/RelationPerTurnEnemy/RelationPerTurnVsWeak/CannotDeclareWar`；`ApplyEffect` 支持 v3.0 全 fx 键（旧参数名保留兼容）；AI `fxParamMap/fxW` 升 v3.0 全键。
+- **抵抗系统 Unity 落地删除**：`CultureSystem` 改 `P[B→B]=√Culture_B×self`（删 `Resistance()`）；删 `PolicyModifiers.CultureResistMult`、`BuildingDefinition.CultureResistance`、`CultureBalance.ResistanceCap`、`balance.culture.resistanceCap`、buildings.json 三处 `cultureResistance`；`BatchBuildTest` 抵抗断言移除。
+- **服役比例接线**：`RecruitBalance` 增 `ServiceRatioBase=5% / Cap=8% / Max=10% / Batch=1.0/1.5/2.2`；`MilitaryTick` 自动征募**维持旧 trickle 0.5%**（避免 5% 常备军抽干建造财；v27 经济盘后再评估），`ForceRecruit` 按批次成本 + 强征硬顶 10%；军饷/装备吃 `salary/milCost`，军队经商收益入财。**建造回归因 5% 自动征募失败→已修为 trickle，BUILD OK**。
+- **maxWars 统一**：`sim/v26/policy.js` `maxWarsPerFaction=2→1`（对齐 AI 战争细则 `maxWars=1`）；审计+200 回复跑无异常。
+- **回归**：POLICY（52 卡）/MANDATE（68 PASS）/BUILD/SMOKE/AI/NFACTION/MINERAL/UI **全绿**；AI 政策变动阈值按新卡池放宽至 [1,15]（实际 12）。
+- **v26 报告 errata（不改报告）**：报告为 50 初始卡口径、`resistPubBias` 已删死键、占位键现 5（+环保 2）、maxWars 报告=2 而脚本已对齐 1；引用以 [next-window](.ai/next-window.md) errata 为准。
+
+---
+
 ## 2026-11-24 白机 · 服役比例定值 + 文档状态债清零
 
 - **服役比例参数定值**（院长授权白机定）：`serviceRatioBase=5%`（每城默认）/ `serviceRatioCap=8%` / **超限=强征** / 批次成本 **志愿 1.0 · 义务 1.5 · 强征 2.2**（军饷与征募同乘）；400v² 软刹车保留。落 [索引-参数](docs/06-设计/00-总纲/索引-参数.md)、[政策卡内容-军事 §2.0](docs/06-设计/00-总纲/政策卡内容-军事.md)、兵种数值表、军事建筑数值；**v27 复苏盘起模拟器按 5%/10% 重跑**（现行 `peaceService=0.5%` 为旧占位）；handoff 挂账 #23 销账。

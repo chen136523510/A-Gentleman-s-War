@@ -95,7 +95,8 @@ const P = {
   // 政策（人口·院长 11-12：只保留生育补贴/计划生育；补贴耗财；无延迟）
   policy: { subsidyCostPer1000: 1, subsidyMult: 1.12, limitMult: 0.85 },
   // 外交
-  warStart: 100, warEvery: 20, maxWarsPerFaction: 2, allyRatio: 0.6, joinWarRatio: 2.0, allyDefense: 1.5,
+  // 11-24 对齐 AI 战争细则 `ai.war.maxWars=1`（v26 报告为 2 口径历史基线；sim 结构上单场战争，改动应不敏感）
+  warStart: 100, warEvery: 20, maxWarsPerFaction: 1, allyRatio: 0.6, joinWarRatio: 2.0, allyDefense: 1.5,
   // 文化输出（文化输出算法 v1 份额收敛式；2026-11-05 院长定稿；院长 11-13 第 4 条：文化胜利=文化入侵全球并维持）
   culture: {
     convergeR: 0.05,        // 收敛速率 r（balance 留 0.03/0.05/0.08 三档）
