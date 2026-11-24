@@ -9,6 +9,7 @@
 sim/
   README.md              ← 本文件
   data/cards.js          ← 政策卡数据（一条一卡，AI 友好规范 P1：改值只改 1 行，供各版本 require）
+  tools/doc-sync.js      ← 文档同步哨兵（scan 全景 / gen 生成 docs/meta/docs-index.json / stale 同步债 / who 影响面反查）
   v22/
     core.js              ← 白机版 v22 全量核心盘（人口/粮/消费/财政/军费五账）
     full-*.js            ← 黑机版全量盘交接位（60+ 建筑/AI 决策器/科技/战争）
