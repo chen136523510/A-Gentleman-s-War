@@ -35,7 +35,7 @@ const CARDS = [
   { id: 'screenSoftPower', attr: 'cul', tier: '中', mutex: null, fx: { culEnt: 1.15 } },                                    // 文化产业：娱乐线文化值 ×1.15
   { id: 'academicFreedom', attr: 'cul', tier: '中', mutex: 'speech', fx: { tech: 1.05, out: 1.05 } },                       // 百家争鸣：科技+5%、输出+5%
   { id: 'civicEducation', attr: 'cul', tier: '早', mutex: null, fx: { out: 1.05, assimil: 1.15 } },                         // 义务教育：文化值+5%、同化×1.15
-  { id: 'culturalCensorship', attr: 'cul', tier: '中', mutex: 'speech', fx: { self: 1.2, out: 0.90, W: -3 } },              // 言论管制：自压×1.2、输出−10%、W−3
+  { id: 'culturalCensorship', attr: 'cul', tier: '中', mutex: 'speech', fx: { self: 1.2, out: 0.90, W: -3 } },              // 言论管制：自压×1.2（self=单卡专属特殊乘区，非通用抵抗，11-24 院长定性）、输出−10%、W−3
   { id: 'doubleReduction', attr: 'cul', tier: '中', mutex: null, fx: { W: 3, tech: 0.97 } },                                // 教育双减：W+3、科技−3%
   { id: 'nationalism', attr: 'cul', tier: '中', mutex: null, fx: { relFlow: -0.3, loyaltyFlow: 1, serviceCap: 0.01 } },     // 民族主义：关系−0.3/回（降档）、本国城忠诚+1/回、上限+1pp
   { id: 'feminism', attr: 'cul', tier: '中', mutex: null, fx: { repPerTurn: 0.2, comm: 0.97, industry: 0.97, loyaltyFlow: -0.5 } }, // 女权主义：rep+0.2（降档）、工业商业×0.97、忠诚−0.5

@@ -47,10 +47,12 @@ sim/
 | 科技 | 学院链 Lv1/2/3 = 10/16/24（每城 1 条链、开局每城一座学校）；入池 ÷800；**科技 40/40 后 60 回合终极工程 = 科技胜利** |
 | 外交票制 | **弃权不算同意**，同意严格过半（5→3/4→3/3→2/2→2）；战争制裁全员参与、经济/裁军同意+弃权参与（[外交提案与表决](../docs/06-设计/05-外交/外交提案与表决.md)） |
 
+> ⏸ **全量模拟暂停（院长 2026-11-24 第 2 条）**：**接下来的模拟等复苏副本写好后进行**——复苏副本（`revival` 剧本）目前是白机基础版（空城占领/爆铺刹车/21 将池未建模），待定稿后再跑全量盘。期间仅做单点验证（audit/断言回归），不出正式报告。
+
 运行：
 - 标准全量盘：`node sim/v22/full.js 200 <seed>`
 - 战时压力盘：`node sim/v22/full.js 200 <seed> stress <服役率>`（如 `stress 0.02`；强制全阵营交战、跳过外交）
-- **v26 起剧本切换（院长 2026-11-24 第 2 条：全量模拟用复苏副本）**：`node sim/v26/policy.js 200 <seed> --scenario=revival`（复苏盘）/ `--scenario=tutorial`（教学盘，兼容历史盘）/ 默认 tutorial
+- **v26 起剧本切换**：`node sim/v26/policy.js 200 <seed> --scenario=revival`（复苏盘，**待定稿**）/ `--scenario=tutorial`（教学盘，兼容历史盘）/ 默认 tutorial
 - **v26 场景对照**：`node sim/v26/policy.js 200 1 vs|tune|stack|finance|neutral|infra|spy|auto|audit [nobuild]`
 
 ## 四、历史脚本
