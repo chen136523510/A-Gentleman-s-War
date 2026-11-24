@@ -157,15 +157,15 @@
 ### 4.2 已达标项
 
 - Unity 数据层：`Assets/_Project/Data/*.json` 已按主题分文件（cities/factions/officers/buildings/balance/tech/policies）——**符合 P1**。
-- `@hook` 标记：sim/v26/policy.js 已铺 **14 个**（W/industry/comm/fisc/serviceCap/milIncome/salary/upkeep/subsidyCost/relation/rep/assimil/q/resistPub），`grep -n "@hook:W"` 直达落点。
+- `@hook` 标记：sim/v26/policy.js 已铺 **13 个**（W/industry/comm/fisc/serviceCap/milIncome/salary/upkeep/subsidyCost/relation/rep/assimil/q），`grep -n "@hook:W"` 直达落点（`resistPub` 键已随抵抗删除于 11-24 清理）。
 - 文档摘要块：部分文档有（如内容专题有版本行），**未统一模板**，待推动。
 
 ### 4.3 本轮已落地（示范）
 
 | 项 | 成果 | 收益 |
 |---|---|---|
-| **P0 数据外置** | `sim/data/cards.js`（70 行，50 卡一条一卡）+ `policy.js` 改 `require` 引用 | 改卡值 = 改 1 行（~100 token），不再整块替换（~6k）；200 回合复跑数值逐位一致（6,243/6,768/6,967） |
-| **P2 @hook** | 14 个标记铺设 | 定位从"读 700 行"→"grep 1 行 + 读 ±40 行" |
+| **P0 数据外置** | `sim/data/cards.js`（52 张 = 初始 50 + 特殊 2，一条一卡）+ `policy.js` 改 `require` 引用 | 改卡值 = 改 1 行（~100 token），不再整块替换（~6k）；200 回合复跑数值逐位一致（6,243/6,768/6,967） |
+| **P2 @hook** | 13 个标记铺设 | 定位从"读 700 行"→"grep 1 行 + 读 ±40 行" |
 | **P3 断言** | 6 场景加 `[ASSERT]`（vs/finance/stack/spy/infra/neutral） | 每次验证输出 30 行 → **1 行**（"全 PASS"）；断言自身含口径注释（如建造盘单 seed 噪声 ±10pp） |
 | 附带修复 | 断言口径两处（国有化下限放宽 / 财支出改测乘区而非总额） | 断言不误报；财支出总额 11.2% 中 2/3 来自 W 卡抬高人口→建筑增长（二阶项） |
 
@@ -174,7 +174,7 @@
 | 优先级 | 项 | 工作量 | 收益 |
 |:--:|---|---|---|
 | ✅ **P0** | `sim/data/cards.js` 拆分（52 张卡）+ v26 引用 | **已完成 11-24** | 改值从 6k→100 token；数值逐位一致 |
-| ✅ **P2** | `@hook` 标记铺设（sim v26 先行） | **已完成 11-24**（14 个） | 定位从"读 700 行"→"grep 1 行" |
+| ✅ **P2** | `@hook` 标记铺设（sim v26 先行） | **已完成 11-24**（13 个） | 定位从"读 700 行"→"grep 1 行" |
 | ✅ **P3** | 模拟盘断言（6 场景） | **已完成 11-24** | 输出 30 行→1 行 |
 | ✅ **P1** | 政策卡内容专题拆分（1148 → 索引 + 军/经/文/外/通 5 子文档） | **已完成 11-24**：主文件 338 行 + 子文档 133~204 行；**零失真校验 PASS**（逐行多重集：原 1149 行 = 新 1162 − 新增 13） | 单次读取 1148→338 行（3.4×） |
 | ✅ **P3.5** | 百科同步优化（院长第 2 条） | **已完成 11-24**：政策卡词条修 5 处失真；外交词条「待办」改「已定稿」；README 状态总表加同步日期列+⚠待核对 | 百科不再自相矛盾 |

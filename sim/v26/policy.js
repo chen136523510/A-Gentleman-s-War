@@ -699,21 +699,21 @@ const TECH_COST_REF = (() => {
 
 // ================= 政策卡 52 张（数据外置 · AI 友好规范 P1）=================
 // 数据源：sim/data/cards.js（一条一卡、id 在最左、改值只改 1 行，不碰本文件）
-// 特殊 2 张不进 AI 卡池：carbonQuota（UN 提案发卡，sim 由 carbonBill 法案承载）· environmentalProtection（event：污染建筑产出 ×0.7，发电不参与）
-const { CARDS, CARD_BY_ID, ATTR_NAME, SLOTS_PER_ATTR } = require('../data/cards.js');
+// 特殊 2 张（carbonQuota=UN 提案 / environmentalism=环保提案）结构与普通卡一致，但 initial=false 不进 AI 卡池
+const { CARDS, INITIAL_CARDS, SPECIAL_CARDS, CARD_BY_ID, ATTR_NAME, SLOTS_PER_ATTR } = require('../data/cards.js');
 
 
 // ================= 政策：效果聚合（全阵营；落点=主公式 ×8 尺度） =================
 // v26 键分派：BIAS_KEYS 加性（+=），SWITCH_KEYS 布尔（||），其余乘性（*=）
 const BIAS_KEYS = ['relFlow', 'repPerTurn', 'warThreshold', 'liv', 'W', 'loyaltyFlow', 'counterSpy',
-  'serviceCap', 'relWeakest', 'relVsWeak', 'relWar', 'milIncome', 'subsidyCost', 'resistPubBias'];
+  'serviceCap', 'relWeakest', 'relVsWeak', 'relWar', 'milIncome', 'subsidyCost'];
 const SWITCH_KEYS = ['canDeclareWar', 'noAlliance', 'immigration'];
 const COSTLIKE_KEYS = ['upkeep', 'salary', 'cost', 'recruit', 'milCost', 'buyPriceMul']; // cardGain 用：v 越小越好
 function facMods(f) {
   const m = { tax: 1, pool: 1, income: 1, comm: 1, growth: 1, industry: 1, food: 1, tech: 1, self: 1, culEnt: 1,
     out: 1, tourCap: 1, tourIncome: 1, relFlow: 0, recruit: 1, liv: 0, upkeep: 1, capacity: 1, cost: 1,
     repPerTurn: 0, warThreshold: 0, W: 0, loyaltyFlow: 0, counterSpy: 0, serviceCap: 0,
-    relWeakest: 0, relVsWeak: 0, relWar: 0, milIncome: 0, subsidyCost: 0, resistPubBias: 0,
+    relWeakest: 0, relVsWeak: 0, relWar: 0, milIncome: 0, subsidyCost: 0,
     canDeclareWar: 0, noAlliance: 0, immigration: 0, salary: 1, milCost: 1, q: 1, arsenal: 1,
     assimil: 1, emit: 1, buyPriceMul: 1, fisc: 1 };
   for (const arr of Object.values(f.cards || {})) for (const id of arr) {
@@ -851,7 +851,7 @@ function policyPressureTick(t, facs, rand, log, diplo) {
       // 换卡：occupied 槽逐位评估（未满槽的已装位同样可换）
       for (let i = 0; i < arr.length; i++) {
         const oldId = arr[i];
-        const pool = CARDS.filter((c) => c.attr === attr && c.id !== oldId && cardUnlocked(f, c) && !equipped(c.id) && !mutexHit(c, oldId))
+        const pool = INITIAL_CARDS.filter((c) => c.attr === attr && c.id !== oldId && cardUnlocked(f, c) && !equipped(c.id) && !mutexHit(c, oldId))
           .sort((a, b) => cardGain(f, b, mods) - cardGain(f, a, mods)).slice(0, Pp.topKPerSlot);
         for (const c of pool) {
           const U = cardGain(f, c, mods) - cardGain(f, CARD_BY_ID[oldId], mods) - fee * Pp.aCash - freezeU;
@@ -860,7 +860,7 @@ function policyPressureTick(t, facs, rand, log, diplo) {
       }
       // 装卡：空槽（v24 行为保持，仅成本口径改装卡免费）
       if (arr.length < SLOTS_PER_ATTR) {
-        const pool = CARDS.filter((c) => c.attr === attr && cardUnlocked(f, c) && !equipped(c.id) && !mutexHit(c, null))
+        const pool = INITIAL_CARDS.filter((c) => c.attr === attr && cardUnlocked(f, c) && !equipped(c.id) && !mutexHit(c, null))
           .sort((a, b) => cardGain(f, b, mods) - cardGain(f, a, mods)).slice(0, Pp.topKPerSlot);
         for (const c of pool) {
           const U = cardGain(f, c, mods) - fee * Pp.aCash - freezeU;
@@ -2460,26 +2460,27 @@ function runScenario(name) {
       cost: '建造造价', capacity: '承载', repPerTurn: '声誉流(已修)', warThreshold: '宣战阈值', W: '民生W偏置',
       loyaltyFlow: '忠诚流', serviceCap: '服役上限', relFlow: '关系流', relWeakest: '最弱国关系',
       relVsWeak: '对弱国关系', relWar: '对交战国关系', milIncome: '军队经商收入', subsidyCost: '生育补贴支出',
-      resistPubBias: '文化抵抗(博物馆)', canDeclareWar: '宣战锁', noAlliance: '同盟拦截', immigration: '⚠占位(无移民系统)',
+      canDeclareWar: '宣战锁', noAlliance: '同盟拦截', immigration: '⚠占位(无移民系统)',
       counterSpy: '⚠占位(无间谍引擎)', salary: '军饷乘区', milCost: '军费乘区', q: '战力q', arsenal: '兵工厂批次',
       assimil: '同化(自份额收敛)', emit: '排放乘区', buyPriceMul: '采购价',
+      polluteBan: '⚠占位(污染引擎未建)', polluteOut: '⚠占位(污染建筑产出；发电不参与)',
     };
-    console.log(`\n===== v26 落点审计：CARDS=${CARDS.length} 张（普通 50 + 特殊 2 另计）=====`);
-    console.log('属性 | id | fx 键 → 落点');
+    console.log(`\n===== v26 落点审计：CARDS=${CARDS.length} 张（初始 ${INITIAL_CARDS.length} + 特殊 ${SPECIAL_CARDS.length}，特殊不进 AI 池）=====`);
+    console.log('属性 | id | 池 | fx 键 → 落点');
     const byAttr = {};
     for (const c of CARDS) {
       const parts = Object.entries(c.fx).map(([k, v]) => `${k}${typeof v === 'number' && (v > 1 || v < 1) ? '' : ''}→${WIRED[k] || '❌未接线'}`);
-      console.log(`${ATTR_NAME[c.attr]} | ${c.id.padEnd(24)} | ${parts.join(' ')} | mutex=${c.mutex || '-'} tier=${c.tier}`);
-      byAttr[c.attr] = (byAttr[c.attr] || 0) + 1;
+      console.log(`${ATTR_NAME[c.attr]} | ${c.id.padEnd(24)} | ${c.initial ? '初始' : '特殊'} | ${parts.join(' ')} | mutex=${c.mutex || '-'} tier=${c.tier}`);
+      if (c.initial) byAttr[c.attr] = (byAttr[c.attr] || 0) + 1;
     }
-    console.log(`\n分类计数：${Object.entries(byAttr).map(([k, v]) => `${ATTR_NAME[k]}=${v}`).join(' ')}（合计 ${CARDS.length}）`);
+    console.log(`\n初始分类计数：${Object.entries(byAttr).map(([k, v]) => `${ATTR_NAME[k]}=${v}`).join(' ')}（合计 ${INITIAL_CARDS.length}）｜特殊 ${SPECIAL_CARDS.length}：${SPECIAL_CARDS.map((c) => c.id).join('/')}`);
     const un = CARDS.flatMap((c) => Object.keys(c.fx).filter((k) => !WIRED[k]).map((k) => `${c.id}.${k}`));
     const ph = CARDS.flatMap((c) => Object.keys(c.fx).filter((k) => (WIRED[k] || '').startsWith('⚠')).map((k) => `${c.id}.${k}`));
     console.log(`未接线键（应为 0）：${un.length ? un.join(',') : '无'}`);
     console.log(`占位键（聚合记录、引擎未建）：${ph.length ? ph.join(',') : '无'}`);
-    // 互斥组检查
+    // 互斥组检查（特殊卡不进初始池，不参与互斥）
     const groups = {};
-    for (const c of CARDS) if (c.mutex) (groups[c.mutex] = groups[c.mutex] || []).push(c.id);
+    for (const c of INITIAL_CARDS) if (c.mutex) (groups[c.mutex] = groups[c.mutex] || []).push(c.id);
     console.log(`互斥组 ${Object.keys(groups).length}：${Object.entries(groups).map(([g, ids]) => `${g}(${ids.join('/')})`).join(' ')}`);
     return;
   } else if (name === 'tune') {
