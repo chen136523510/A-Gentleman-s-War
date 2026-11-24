@@ -93,6 +93,9 @@ node tools/build-policies-json.js        # cards.js → policies.json（52 张�
 7. **服役比例接线口径**：`MilitaryTick` 自动征募仍按旧 `PeaceRecruitRate=0.5%` trickle；5% 默认/8% 常规上限/10% 强征硬顶用于成本档与 `ForceRecruit`。v27 经济盘验证后再决定是否把自动目标升到 5%（直接升会抽干建造财）。
 7. **文档头部状态/「待裁」字样 ≠ 当前事实**：盘点"未讨论/待裁"必须以 [索引-决策](../docs/06-设计/00-总纲/索引-决策.md) 与 AGENTS 的最新裁定为准，禁止直接采信文档里的"待裁/待定/待填"关键词（多为历史写作文本或拆分模板残留）。**反面案例（2026-11-24 白机）**：曾把 L2 3D 建模（11-12 已定）、政策卡保留（11-24 已定）、红灯区/起义叛乱（已定版/作废留档）、21 将档案（✅ 定稿）误报为"未讨论"。
 
+8. **文档仓同步 SSH 端口（2026-11-25 实证）**：`tools/sync-docs-repo.ps1` 强制 `-p 22`，本网络会 `Connection timed out`；改用 **443** 手动推：
+   `GIT_SSH_COMMAND='ssh -F /dev/null -o User=git -o HostName=ssh.github.com -o StrictHostKeyChecking=accept-new -p 443' git fetch/push`（文本仓路径 `G:\A Gentleman's War-docs`）；脚本本身待改为 443。
+
 ## 变更记录
 
 | 日期 | 变更 |
