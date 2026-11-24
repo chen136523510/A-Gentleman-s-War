@@ -3,8 +3,8 @@
 > **维护规则（2026-11-17 院长令：只记关键里程碑+待办）**：本文件只保留五节——①状态一屏 ②下窗口交接 ③专题指针 ④跨专题挂账 ⑤防踩坑。旧详情归档在 [`handoff-archive/`](./handoff-archive/)；设计细节查 `docs/06-设计/`，**不在本文件堆叠**。
 > ⭐ 新窗口先读本文件 + AGENTS.md；不读归档。
 > 设备：黑机全量仓 `G:\A Gentleman's War`（master，无 remote）；白机纯文档仓 `D:\product\AGW`（main，origin=GitHub）。**代码/美术/构建只黑机；白机只文档。**
-> **最后更新：2026-11-24 21:12 · 全量仓 `6c42767`（工程落库 `8b28cdf` + 文档同步）· 文档仓 `7d0550c`；本文件后续提交见 `git log`**
-> **当前状态：政策卡 52 张定版+落库 + 抵抗删除 + 复苏盘基座 + 文档同步债清零（stale=0）+ 语义回写清零（69 篇）+ 服役比例定值并接线（5%/8%/10%）+ 文档状态债清零**
+> **最后更新：2026-11-24 23:40 · 全量仓 `dd18d0f`（本窗口 L2 改动未提交）· 文档仓 `7d0550c`；本文件后续提交见 `git log`**
+> **当前状态：政策卡 52 张定版+落库 + 抵抗删除 + 复苏盘基座 + 文档同步债清零（stale=0）+ 语义回写清零（69 篇）+ 服役比例定值并接线（5%/8%/10%）+ 文档状态债清零 + **L2 城内视图修复（地形镜像/初始建筑格位/exe 资产目录）+ 建筑评审工具（145 座出图 26 张 + 样板城 23 座）**
 > **换机交接（11-24 收口）**：**新窗口必读 [`.ai/next-window.md`](./next-window.md)**（白机文档任务已清、黑机工程待办已清；余=复苏副本定稿/L3 M1/事件卡）。黑机最高优先=复苏副本定稿 + L3 M1。
 > **当前基线 = v22**（sim 侧）+ **tech.json 40 节点（11-20 grn2b/grn2c 落库）**；[sim/v24/ai.js](../sim/v24/ai.js)+[ai-swap.js](../sim/v24/ai-swap.js)（AI 盘/swap 盘）。
 
@@ -18,6 +18,7 @@
 | **文档审计（11-22）** | ✅ **77 条过时口径同步**（30 文件：38→40 节点 24 条/卡池 51 21 条/矿电状态 10 条/收费 3 条/监狱翻正 4 条/AI P2 收官 5 条/其他 10 条；历史注记 ~35 处判定保留）；代码↔数据一致性抽查全过（mandate 8 键/矿电 schema/环保卡/tech 40/fuelIn ×8/balance.ai=sim 同值/L2ArtMap 145 对） |
 | **黑机 11-20 大落库日** | ✅ **六项全绿收官**：①政策收费口径（装卡免费/冷却内改动 100 每槽/期满免费，架构 v0.7）②监狱三级翻正 active（96draft 挂起收窄至 L3 五卡+公园=6 draft）③**AI P2 五模块落库**（AIController/TechAI/BuildAI/PolicyAI/WarAI+AiLog；AiSmoke 21 绿；balance.ai 301 键纯增量；**WarAI 只落参数+纯函数——Unity 无战争引擎**）④**矿产/电网 B4.8**（fuelIn ×8 口径/核电维修/0 料停机/fuel_first/余电 10%/枯竭 50 回档/库存 5 回；**tech.json 38→40**；MineralSmoke 45 绿）⑤**外交义务底座 v0.4**（GrantPolicyCard/Mandates/违约=撕毁/补挂解 CB/累进/负财援助 100；**环保主义卡=第 51 张 event 解锁**；MandateSmoke 68 绿）⑥**美术 P3 五项全链**（Blender 修模 6 座+FBX+prefab 重导+四视角出图目检过；`ent-basket` 白线画红胶面基调微变**待院长终验**）。全回归 BUILD/SMOKE/NFACTION/POLICY/PRISON/AI/MINERAL/MANDATE/L2SelfTest 全绿 |
 | **黑机 11-24 工程落库** | ✅ **工程待办清零**：①**`policies.json` 52 张**（初始 50+特殊 2；统一 `initial/acquire/via`；`tools/build-policies-json.js` 由 `sim/data/cards.js` 生成；PolicySmoke 52 绿）②**抵抗删除落地**（`P[B→B]=√Culture×self`；删 `Resistance`/`CultureResistance`/`ResistanceCap`/`resistanceCap`/建筑字段；Build 绿）③**服役比例接线**（5%/8%/10%/批次成本 1.0/1.5/2.2；自动征募维持 trickle 0.5%，v27 经济盘后再评估；ForceRecruit 强征硬顶 10%）④**maxWars sim 对齐 1**（v26 审计+200 回复跑）⑤AI `fxParamMap/fxW` v3.0 全键；回归 **POLICY/MANDATE/BUILD/SMOKE/AI/NFACTION/MINERAL/UI 全绿** |
+| **L2 城内视图（11-24/25，未提交）** | ✅ **修复 + 城图 v5 重做 + 评审工具**：①地形 uv v 翻转修复（原先南北镜像）②初始建筑 At 回填+占格账本（原先可盖在市政厅上）+读档补实体 ③exe 分支读 `Resources/L2PrefabCatalog`（149 条；原先全红盒）④**格尺度=20m/格**（96×96=1.92km）+ **深圳 v5 路网**（主干 2 格/次级 1 格/环路，23 条）+ 街区化 + 初始建筑落街区（市政府 (42,49) 邻莲花山公园）⑤底图新增**城市肌理**（铺装/地块线/农田条垄）+ 平滑路网（人行道/标线）；Unity 加**接地阴影/轻雾/暖环境光** ⑥评审工具：摄影棚目录 145 座/13 组 + 样板城 70 座/4 图；L2SelfTest PASS、stale=0。**待裁**：13 城是否按 v5 量产 / 建筑模型色调批次 / 桥梁+城墙位是否进 L2 |
 | **AI 专题** | ✅ **P1（白机 11-19）+ P2（黑机 11-20）全线收官**；余 WarAI 调用点随战争引擎、`ai.tech.tags` 暂存 balance（tech.json 增 tags 字段后数据化迁移）；v24.1 swap 盘结论=**建议默认开启 swap**（已按 v24.1 口径落 Unity：负增益硬过滤+载体加权） |
 | **AI 友好规范** | ✅ **11-24 v1.6**（[规范](../docs/04-技术笔记/AI友好开发规范.md) · [权威源登记表](../docs/06-设计/00-总纲/文档权威源登记表.md)）：结构先于文本 + 权威源分层 + 断言测真目标 + §三 子 agent 使用范式 v2。**回写全部完成：批次1-4（18 篇）+ 语义核对（69 篇机械段清理，词表扫描 18 条）→ stale=0/机械段=0**；新增工具 `doc-sync`（结构）+ `semantic-audit`（机械段分流）+ `old-terms-scan`（过时口径词表）+ `rebuild-changedat`（hash 基线重建） |
 | **政策卡** | 收费定稿已落库（11-20）；**11-24 收口定版 + v26 盘 v1.2 全落地**：**52 张数值定版**（私有化 comm1.15/池1.025、国有化 fisc1.07/池0.975、关系声誉流 ±0.15~0.3+饱和衰减、绝对中立 rel0.3/rep0.3 且只限自身宣战）；院长终裁=贸易协定 +2/回 不动、私有化/国有化接受长期vs短期各强；**下一步=黑机 `policies.json` 落库** |
@@ -92,6 +93,7 @@
 | 23 | ~~**军事专题同步服役比例口径**~~ ✅ **11-24 定值并接线**：`serviceRatioBase=5%` / `serviceRatioCap=8%`（常规上限）/ `serviceRatioMax=10%`（强征硬顶）/ 批次成本 1.0/1.5/2.2；`MilitaryTick` 自动征募维持 trickle 0.5%（v27 经济盘后再评估），`ForceRecruit` 按批次成本+硬顶；`balance.json recruit`/索引-参数/军事文档已同步 | — |
 | 24 | **L3 建筑战斗落库**：`buildings.json` 增 `attackable/enterable/plunderable/blocksMovement/capturable/destructible/fadeWhenOccupied`；城墙摧毁→网格通行（只更新受损段）；军事基地归零→转普通建筑（掠夺 ×2 爆产出）；驻守/掠夺（Lv1/2/3=8/12/16s，受击/手动打断）；数值进 `balance.l3` | 黑机（随 M2/M3） |
 | 25 | **L3 光标/右键 UI + LOD/表现比例落库**：光标状态机（红剑/门/金币/空地/禁止；优先级 Attack>Enter/Plunder/Garrison>Select>Move）；右键驻守/掠夺/撤离；LOD 默认中景、滚轮缩放、16/5px 初值；视觉预算 6000/3000/1500/500；**待院长手绘稿/UI 专题** | 院长/黑机（随 M4/M6） |
+| 31 | **L2 v5 收尾挂账**：①深圳河对岸 45 格可建陆地不可达（planner 唯一警告；等桥梁专题）②**打包版 L2 未实测**（构建 exe → 进深圳 L2 目检 3D 建筑/地形/阴影）③其余 13 城档案未量产（等院长裁）④建筑模型色调/材质统一批次（待裁）⑤城墙位/桥梁是否进 L2 数据（L3 咽喉点，待裁） | 黑机/院长 |
 
 ## 五、防踩坑（关键）
 

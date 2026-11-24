@@ -34,7 +34,7 @@
    "changedAt": "2026-10-28"
   },
   "docs/01-需求/需求池.md": {
-   "hash": "5a612d3f855b",
+   "hash": "7ce49e16f31d",
    "changedAt": "2026-11-24"
   },
   "docs/02-决策/ADR-009-国男志引擎选型Web转Unity.md": {
@@ -58,8 +58,8 @@
    "changedAt": "2026-11-23"
   },
   "docs/03-bug/bug-log.md": {
-   "hash": "756ee3efc4e8",
-   "changedAt": "2026-11-12"
+   "hash": "b9cb61f43ad8",
+   "changedAt": "2026-11-24"
   },
   "docs/04-技术笔记/96draft接入交接单-2026-11-13.md": {
    "hash": "35a24b85e304",
@@ -90,8 +90,8 @@
    "changedAt": "2026-10-28"
   },
   "docs/04-技术笔记/L2地图规划与烘焙管线.md": {
-   "hash": "96573d20d52c",
-   "changedAt": "2026-11-11"
+   "hash": "50282181b172",
+   "changedAt": "2026-11-24"
   },
   "docs/04-技术笔记/代码规范.md": {
    "hash": "3ff2269a39b2",
@@ -346,11 +346,11 @@
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/索引-决策.md": {
-   "hash": "d4cd8c6a976a",
+   "hash": "10a8b11638c2",
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/索引-参数.md": {
-   "hash": "e219e18079b9",
+   "hash": "b5e2a3a2d07e",
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/胜利条件.md": {
@@ -462,8 +462,8 @@
    "changedAt": "2026-10-26"
   },
   "docs/06-设计/01-地图与城市/地形设计.md": {
-   "hash": "10a3b661f55b",
-   "changedAt": "2026-10-26"
+   "hash": "7119585b3e52",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/01-地图与城市/城市总表.md": {
    "hash": "dea47c4814d7",
