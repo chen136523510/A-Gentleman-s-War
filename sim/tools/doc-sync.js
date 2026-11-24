@@ -58,7 +58,11 @@ function parseDoc(abs) {
   // 同步日期（若有）
   const sync = txt.match(/同步日期[:：]\s*\**(\d{4}-\d{2}-\d{2})/);
   // contentHash：剔除 syncDate 元信息后取 md5 —— 纯元信息变更不算内容变更（防批量补 syncDate 造成假 stale）
-  const body = txt.replace(/同步日期[:：][^\n]*/g, '').replace(/·\s*同步日期[^\n]*/g, '');
+  // contentHash：剔除元信息后取 md5 —— 纯元信息变更不算内容变更
+  //  剔除①syncDate 行 ②**机械回写指针段**（bulk-pointer 生成的"权威源指针…语义待核"整段）
+  //  为什么要剔②：机械回写只是建立指向，不含实质口径；若算内容变更会让下游无限级联、并污染权威源文档
+  let body = txt.replace(/同步日期[:：][^\n]*/g, '').replace(/·\s*同步日期[^\n]*/g, '');
+  body = body.replace(/## ⚠ 权威源指针（[^\n]*机械回写[^\n]*\n(?:[^\n]*\n)*?(?=## |$)/g, '');
   const contentHash = require('crypto').createHash('md5').update(body).digest('hex').slice(0, 12);
   return { path: rel, title, version, status, syncDate: sync ? sync[1] : null, size: lines.length, links, contentHash };
 }
@@ -133,6 +137,7 @@ function exemptType(d) {
     const fn = p.split('/').pop();
     if (/^\d\d-\d\d-/.test(fn) || /-20\d\d-\d\d-\d\d\.md$/.test(fn)) return 'dated'; // 日期化交接单/方案（时点快照）
     if (/-报告\.md$/.test(fn) || /沙盘报告/.test(fn)) return 'report';                 // 沙盘/验证报告=证据
+    if (/命名名池\.md$/.test(fn)) return 'namepool';                                   // 名称池=只放名字，不承载数值/规则，无同步义务
   }
   if (p.includes('/02-决策/')) return 'adr';
   if (p.includes('/00-调研/') || p.includes('调研')) return 'research';

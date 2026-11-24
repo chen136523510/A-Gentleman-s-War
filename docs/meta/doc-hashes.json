@@ -66,7 +66,7 @@
    "changedAt": "2026-11-17"
   },
   "docs/04-技术笔记/AI友好开发规范.md": {
-   "hash": "a0194b15b7e0",
+   "hash": "95ae4d065f26",
    "changedAt": "2026-11-24"
   },
   "docs/04-技术笔记/B组交接-2026-11-18.md": {
@@ -134,52 +134,52 @@
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/AI科技细则.md": {
-   "hash": "673e8bd41915",
-   "changedAt": "2026-11-22"
+   "hash": "7629a9d04048",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/changelog.md": {
    "hash": "07e79d2f365c",
-   "changedAt": "2026-11-17"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/README.md": {
    "hash": "effdb70ac1dc",
-   "changedAt": "2026-11-22"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/一期二期范围.md": {
    "hash": "8fb27b24a0b7",
-   "changedAt": "2026-11-16"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/专题清单.md": {
-   "hash": "b7f4f694aecc",
-   "changedAt": "2026-11-23"
+   "hash": "36703b9db262",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/产品减法-政体与时代.md": {
-   "hash": "4476d5301bbe",
-   "changedAt": "2026-11-17"
+   "hash": "9eed52d16ecd",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v17a报告.md": {
    "hash": "32b38d152045",
-   "changedAt": "2026-11-10"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v18-城市与节奏分析.md": {
    "hash": "d93b66ac5ac3",
-   "changedAt": "2026-11-12"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v18报告.md": {
    "hash": "3bc928556a09",
-   "changedAt": "2026-11-12"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v19-建筑密度与环境诊断.md": {
    "hash": "890971935667",
-   "changedAt": "2026-11-12"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v20-全内容与AI倾向.md": {
    "hash": "2d8996f1f474",
-   "changedAt": "2026-11-12"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v21-可玩性节奏.md": {
    "hash": "8be379b5005b",
-   "changedAt": "2026-11-12"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v22-B1兵种.md": {
    "hash": "8cc314b147fd",
@@ -187,71 +187,71 @@
   },
   "docs/06-设计/00-总纲/全量模拟-v22-B1战斗层验证.md": {
    "hash": "344278402fef",
-   "changedAt": "2026-11-13"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v22-core白机盘.md": {
    "hash": "3c1a180bb292",
-   "changedAt": "2026-11-12"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v22-full白机盘.md": {
    "hash": "9de1fc5b7d5d",
-   "changedAt": "2026-11-12"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v22-会议时序验证.md": {
    "hash": "7d57fea48e52",
-   "changedAt": "2026-11-13"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v22-外交A1.1验证.md": {
    "hash": "f81f044bb2e1",
-   "changedAt": "2026-11-13"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v22-外交A1.2验证.md": {
    "hash": "44db5796fd77",
-   "changedAt": "2026-11-13"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v22-外交A1.3验证.md": {
    "hash": "de38ff135bb4",
-   "changedAt": "2026-11-13"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v22-外交A1.6验证.md": {
    "hash": "d66f14ebab9a",
-   "changedAt": "2026-11-16"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v22-外交A1验证.md": {
    "hash": "4f0350188f4e",
-   "changedAt": "2026-11-12"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v22-环境接入验证.md": {
    "hash": "3bb2dfd08d7f",
-   "changedAt": "2026-11-13"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v22-胜利条件验证.md": {
    "hash": "04cbb62ba733",
-   "changedAt": "2026-11-16"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v23-政策卡验证.md": {
    "hash": "f9af585e4a87",
-   "changedAt": "2026-11-17"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v24-AI盘.md": {
    "hash": "0b66adfe5001",
-   "changedAt": "2026-11-19"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v25-矿产电网盘.md": {
    "hash": "8bf57af0fa3e",
-   "changedAt": "2026-11-23"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/全量模拟-v26-政策盘.md": {
    "hash": "fe04af36ff4e",
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/政体体系.md": {
-   "hash": "9ed51c172746",
-   "changedAt": "2026-11-17"
+   "hash": "cb34ca4ea9ae",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/政策与政体.md": {
-   "hash": "b4fb3c8acb9a",
-   "changedAt": "2026-11-22"
+   "hash": "ab5dd2b61c6f",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/政策卡内容-军事.md": {
    "hash": "b6b5617ffcbd",
@@ -274,7 +274,7 @@
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/政策卡内容专题.md": {
-   "hash": "2bf6fcf46f66",
+   "hash": "b74bf1d797fc",
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/政策卡内容重塑专题.md": {
@@ -290,52 +290,56 @@
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/教学关卡设计.md": {
-   "hash": "5e14e00e0b38",
-   "changedAt": "2026-11-22"
+   "hash": "392ea239d3b7",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/数值公式总纲.md": {
    "hash": "5e937df8a63b",
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/数值公式缺口清单.md": {
-   "hash": "435a326d0277",
-   "changedAt": "2026-11-22"
+   "hash": "5fea89f1aac8",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/数值尺度重定-v22.md": {
    "hash": "55ba151f9ed1",
-   "changedAt": "2026-11-12"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/数值设计总纲.md": {
-   "hash": "36a6ab42dda5",
-   "changedAt": "2026-11-18"
+   "hash": "335fe5870b20",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/文化输出算法.md": {
-   "hash": "458779c03dfe",
+   "hash": "f34300e2ee9c",
+   "changedAt": "2026-11-24"
+  },
+  "docs/06-设计/00-总纲/文档权威源登记表.md": {
+   "hash": "17cd0d4e23f0",
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/术语表.md": {
    "hash": "e4e12a5070a2",
-   "changedAt": "2026-11-23"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/模拟规范.md": {
-   "hash": "f7f76c2a9780",
-   "changedAt": "2026-11-22"
+   "hash": "6e7bc0269af1",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/游戏定位与范围.md": {
    "hash": "74e9e09271b2",
-   "changedAt": "2026-11-16"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/游戏架构总图.md": {
    "hash": "20b27a30fe07",
-   "changedAt": "2026-11-19"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/游戏模式与副本规划.md": {
-   "hash": "634e38bb317c",
-   "changedAt": "2026-11-17"
+   "hash": "1e8687c195cf",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/环境系统.md": {
-   "hash": "a1d91f10c524",
-   "changedAt": "2026-11-13"
+   "hash": "7ecaea4e425a",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/索引-公式.md": {
    "hash": "24a793ae73b7",
@@ -350,20 +354,20 @@
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/胜利条件.md": {
-   "hash": "36f80bfe4ee1",
-   "changedAt": "2026-11-16"
+   "hash": "b3cfcb966054",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/通用旁白模板清单.md": {
-   "hash": "6d3954d22c15",
-   "changedAt": "2026-11-16"
+   "hash": "0befa578e6f8",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/阵营与世界观.md": {
    "hash": "0389f30b9d14",
-   "changedAt": "2026-11-17"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/阵营数量无关机制清单.md": {
-   "hash": "76818dc13275",
-   "changedAt": "2026-11-16"
+   "hash": "ca0d1d67b751",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/L2城内视觉需求-2026-11-11.md": {
    "hash": "892bf5425f9e",
@@ -375,11 +379,11 @@
   },
   "docs/06-设计/00-调研/人口发展调研与游戏化.md": {
    "hash": "99ab726c40e8",
-   "changedAt": "2026-11-13"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/人口政策调研.md": {
    "hash": "80f5d052f2c1",
-   "changedAt": "2026-11-12"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/典藏与宝物游戏设计调研.md": {
    "hash": "d5de1735db2e",
@@ -387,211 +391,211 @@
   },
   "docs/06-设计/00-调研/商业区游戏设计调研.md": {
    "hash": "d39089f5e821",
-   "changedAt": "2026-11-02"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/商业运作与业态调研.md": {
    "hash": "92ede0fc379e",
-   "changedAt": "2026-11-01"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/市政规划与用地结构调研.md": {
    "hash": "e7fd9eca1c6e",
-   "changedAt": "2026-10-30"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/政体历史与相性调研.md": {
    "hash": "b1ab138b16f6",
-   "changedAt": "2026-11-17"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/政策卡游戏设计调研.md": {
    "hash": "2939566a21a6",
-   "changedAt": "2026-11-22"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/文化区游戏设计调研.md": {
    "hash": "ac10f80d8d73",
-   "changedAt": "2026-11-04"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/消费力与民生关系调研.md": {
    "hash": "6f65dbb79edf",
-   "changedAt": "2026-11-02"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/消费欲望与消费信心调研.md": {
    "hash": "0a1f41cea1f6",
-   "changedAt": "2026-11-12"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/消费池真实世界运作调研.md": {
    "hash": "c1c7256beef5",
-   "changedAt": "2026-11-05"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/深圳核心区航拍结构与绿地比例参考.md": {
    "hash": "4b1d508c0833",
-   "changedAt": "2026-11-08"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/环境碳汇与DAC调研.md": {
    "hash": "fc1d6c7d95c6",
-   "changedAt": "2026-11-06"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/科技树游戏设计调研.md": {
    "hash": "a8f30b9099db",
-   "changedAt": "2026-11-03"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/空军编制与游戏先例调研.md": {
    "hash": "420e6c1670f3",
-   "changedAt": "2026-11-10"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-调研/红警式建筑建造与地图调研.md": {
    "hash": "044a98364904",
-   "changedAt": "2026-11-10"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/01-地图与城市/changelog.md": {
    "hash": "4d1d7a916e64",
-   "changedAt": "2026-11-08"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/01-地图与城市/README.md": {
    "hash": "3baabf9d1d80",
-   "changedAt": "2026-10-27"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/01-地图与城市/原型预览/README.md": {
    "hash": "6bbe4e050704",
-   "changedAt": "2026-10-26"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/01-地图与城市/地图三层架构.md": {
    "hash": "9cb43343e445",
-   "changedAt": "2026-10-26"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/01-地图与城市/地形设计.md": {
    "hash": "a2f926c414d3",
-   "changedAt": "2026-10-26"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/01-地图与城市/城市总表.md": {
-   "hash": "4d1da94cab82",
-   "changedAt": "2026-11-16"
+   "hash": "7ad9e797fef2",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/01-地图与城市/城市成长与城防.md": {
    "hash": "820609d6d126",
-   "changedAt": "2026-11-05"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/01-地图与城市/城市特色与地标.md": {
    "hash": "8d6294f55bd4",
-   "changedAt": "2026-10-27"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/01-地图与城市/探索与视野.md": {
    "hash": "e0f3335653d4",
-   "changedAt": "2026-10-28"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/01-地图与城市/连通图与航线.md": {
-   "hash": "1754e96cbe5e",
-   "changedAt": "2026-11-22"
+   "hash": "7d02ece8f37c",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/01-地图与城市/黑机协作-地图美术.md": {
-   "hash": "480f9b71c974",
-   "changedAt": "2026-10-26"
+   "hash": "58e207e83b5d",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/02-武将/changelog.md": {
    "hash": "dfe131fbd093",
-   "changedAt": "2026-11-17"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/02-武将/README.md": {
    "hash": "7f31e6da39f5",
-   "changedAt": "2026-11-17"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/02-武将/俘虏与处置.md": {
-   "hash": "2080a40d879c",
-   "changedAt": "2026-11-17"
+   "hash": "e26c4a4612fb",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/02-武将/在野与招安.md": {
-   "hash": "a7d31a57c307",
-   "changedAt": "2026-11-10"
+   "hash": "39fa3e839545",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/02-武将/属性体系.md": {
-   "hash": "d87c30e3c7e0",
-   "changedAt": "2026-11-10"
+   "hash": "8ac638426058",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/02-武将/忠诚度.md": {
-   "hash": "c2265489cc2c",
-   "changedAt": "2026-11-10"
+   "hash": "928a4f651ae2",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/02-武将/技能系统.md": {
-   "hash": "094e8f624fa3",
-   "changedAt": "2026-11-11"
+   "hash": "db7996e32859",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/02-武将/武将专题开题.md": {
-   "hash": "c41b1c392e7c",
-   "changedAt": "2026-11-11"
+   "hash": "0e7e15d173a7",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/02-武将/武将倾向特性池.md": {
-   "hash": "53325672356b",
-   "changedAt": "2026-11-12"
+   "hash": "f59c22ba0702",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/02-武将/武将名册.md": {
-   "hash": "8593291e7c2c",
-   "changedAt": "2026-11-17"
+   "hash": "64c9db2c0988",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/02-武将/武将数值基线-v0.md": {
-   "hash": "7748d4de2ee4",
-   "changedAt": "2026-11-11"
+   "hash": "a038b4f6193f",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/02-武将/武将档案-v0.md": {
-   "hash": "b8830b2f1f5a",
-   "changedAt": "2026-11-17"
+   "hash": "adda6638c534",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/changelog.md": {
    "hash": "d98fdd103ee4",
-   "changedAt": "2026-11-19"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/README.md": {
    "hash": "3e7caa19d596",
-   "changedAt": "2026-11-22"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/人口与宜居度.md": {
    "hash": "a0d709fe723d",
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/人口体系架构.md": {
-   "hash": "5d8c721afba4",
-   "changedAt": "2026-11-10"
+   "hash": "cce2fbbc01eb",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/人口数值表.md": {
-   "hash": "34a18926f0bb",
-   "changedAt": "2026-11-12"
+   "hash": "68eaf6214653",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/人口税与土地价格.md": {
-   "hash": "a91e72793c89",
-   "changedAt": "2026-11-10"
+   "hash": "c4140f8e9cb6",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/人口算法-v1.md": {
-   "hash": "e7a2984bcd19",
-   "changedAt": "2026-11-13"
+   "hash": "f0f1322bbecc",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/人口算法-沙盘报告.md": {
    "hash": "e52a3c9917ba",
-   "changedAt": "2026-10-29"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/典藏专题开题.md": {
-   "hash": "2fda90dab34f",
-   "changedAt": "2026-11-10"
+   "hash": "4782bb8c731f",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/典藏文物池-CN候选.md": {
    "hash": "a2ddb4c13ed0",
-   "changedAt": "2026-11-10"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/典藏文物池.md": {
-   "hash": "6ca18f324cea",
-   "changedAt": "2026-11-05"
+   "hash": "4f581c36dbe7",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/农业区数值.md": {
-   "hash": "555de4536635",
-   "changedAt": "2026-11-05"
+   "hash": "22c00c98a9c6",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/区域与建筑.md": {
    "hash": "572db0066718",
-   "changedAt": "2026-11-10"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/商业区公式登记.md": {
-   "hash": "39e7e34b2879",
-   "changedAt": "2026-11-12"
+   "hash": "c4e73d5f1c63",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/商业区命名名池.md": {
    "hash": "5a646e1aa9a3",
-   "changedAt": "2026-11-06"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/商业区开题.md": {
    "hash": "afe2ae61de50",
@@ -599,15 +603,15 @@
   },
   "docs/06-设计/03-内政/学院区命名名池.md": {
    "hash": "4a3f190575e9",
-   "changedAt": "2026-11-03"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/学院区开题.md": {
-   "hash": "e00ff3fd5ddb",
-   "changedAt": "2026-11-22"
+   "hash": "6014a072ef0d",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/工业区数值.md": {
-   "hash": "3b9f389f6738",
-   "changedAt": "2026-11-22"
+   "hash": "4023f419f96f",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/市政专题开题.md": {
    "hash": "fa7b57af4f6e",
@@ -615,23 +619,23 @@
   },
   "docs/06-设计/03-内政/市政区命名名池.md": {
    "hash": "e8aed3e9bf41",
-   "changedAt": "2026-11-17"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/市政建筑数值.md": {
-   "hash": "5359b76e590f",
-   "changedAt": "2026-11-22"
+   "hash": "bb00c6031ad3",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/建筑数值表.md": {
    "hash": "e29128934ccc",
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/建筑目录清理单.md": {
-   "hash": "c92db572982b",
-   "changedAt": "2026-11-13"
+   "hash": "c1c801689d7d",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/文化区命名名池.md": {
    "hash": "c06cd3070a42",
-   "changedAt": "2026-11-05"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/文化区开题.md": {
    "hash": "91d95f3b28b0",
@@ -642,48 +646,48 @@
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/消费力专题.md": {
-   "hash": "bbaf79533c80",
-   "changedAt": "2026-11-12"
+   "hash": "4db417d19a26",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/监狱专题.md": {
-   "hash": "6ccc12cd23b1",
-   "changedAt": "2026-11-22"
+   "hash": "57c2b61a7dc0",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/矿产与电网专题.md": {
-   "hash": "5f8dc6bee69a",
-   "changedAt": "2026-11-23"
+   "hash": "24fa474c7a83",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/科技树.md": {
-   "hash": "3c81f7f319c9",
-   "changedAt": "2026-11-22"
+   "hash": "d3e3ed9b28b8",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/科技节点收益标签表-2026-11-18.md": {
    "hash": "98cfc041b5c2",
-   "changedAt": "2026-11-22"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/粮食与人口算法.md": {
-   "hash": "840c8159f8cd",
-   "changedAt": "2026-11-02"
+   "hash": "d5d5071db46d",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/红灯区专题开题.md": {
-   "hash": "02166dafbc9d",
-   "changedAt": "2026-11-12"
+   "hash": "4712d672d8f1",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/红灯区专题调研.md": {
    "hash": "b9128c77325f",
-   "changedAt": "2026-11-10"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/红灯区建筑数值.md": {
-   "hash": "0585a1369f98",
-   "changedAt": "2026-11-12"
+   "hash": "06b3d5074509",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/财政B12-收支失衡分析.md": {
-   "hash": "fb1cb9ea2354",
-   "changedAt": "2026-11-13"
+   "hash": "9dbfbc3e17a9",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/财政收支全景.md": {
    "hash": "b49daa8816d8",
-   "changedAt": "2026-11-12"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/贸易最小规则.md": {
    "hash": "f5225e068740",
@@ -691,55 +695,55 @@
   },
   "docs/06-设计/03-内政/资源体系.md": {
    "hash": "831c91993b7e",
-   "changedAt": "2026-11-19"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/驻守与城态.md": {
-   "hash": "ba9fa331bbea",
-   "changedAt": "2026-11-10"
+   "hash": "e47ca55f7ed1",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/04-军事/B1战斗层接入方案-2026-11-13.md": {
    "hash": "6beb0b6341dc",
-   "changedAt": "2026-11-13"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/04-军事/changelog.md": {
    "hash": "19d639eacb84",
-   "changedAt": "2026-11-23"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/04-军事/L3引擎层裁点材料.md": {
-   "hash": "7441c7c4e8ef",
-   "changedAt": "2026-11-23"
+   "hash": "4f1b8c79325e",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/04-军事/L3战斗场景.md": {
    "hash": "07dfb77337b6",
-   "changedAt": "2026-11-11"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/04-军事/L3战斗层开题.md": {
-   "hash": "c057405ff462",
-   "changedAt": "2026-11-23"
+   "hash": "557f064e6d72",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/04-军事/README.md": {
    "hash": "dd15263bdbca",
-   "changedAt": "2026-11-10"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/04-军事/兵种与装备目录.md": {
-   "hash": "ad332e975b33",
-   "changedAt": "2026-11-12"
+   "hash": "931ea622e1db",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/04-军事/兵种数值表.md": {
    "hash": "6e8104363266",
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/04-军事/兵种生产与兵工厂数值.md": {
-   "hash": "c96a94b79b44",
-   "changedAt": "2026-11-12"
+   "hash": "5f6c56cb6e9d",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/04-军事/内政战场联动.md": {
    "hash": "81c750917e03",
-   "changedAt": "2026-11-06"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/04-军事/军事专题开题.md": {
-   "hash": "ca39d81f532f",
-   "changedAt": "2026-11-22"
+   "hash": "28891a6cc8c0",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/04-军事/军事建筑数值.md": {
    "hash": "e1262e683d41",
@@ -747,11 +751,11 @@
   },
   "docs/06-设计/04-军事/战争延长对照-2026-11-13.md": {
    "hash": "a000d97764db",
-   "changedAt": "2026-11-13"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/04-军事/战斗总述.md": {
    "hash": "2b5666e0c5b4",
-   "changedAt": "2026-11-17"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/04-军事/战斗类型.md": {
    "hash": "e4c8970ca441",
@@ -767,119 +771,119 @@
   },
   "docs/06-设计/05-外交/changelog.md": {
    "hash": "f67d5293248b",
-   "changedAt": "2026-11-16"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/05-外交/README.md": {
    "hash": "048eb8e7b8ff",
-   "changedAt": "2026-11-19"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/05-外交/关系规则与LLM.md": {
    "hash": "004a2800ba91",
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/05-外交/外交A1.6-文化与同盟收口.md": {
-   "hash": "2f8e5891e839",
-   "changedAt": "2026-11-16"
+   "hash": "79e717668ea0",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/05-外交/外交AI决策规范.md": {
-   "hash": "fe2c8157e82a",
-   "changedAt": "2026-11-17"
+   "hash": "ebddfe1ffda4",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/05-外交/外交会议体系.md": {
-   "hash": "7dfe74ad0536",
-   "changedAt": "2026-11-16"
+   "hash": "106974bd052e",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/05-外交/外交内容专题.md": {
-   "hash": "cf1c8aec3911",
-   "changedAt": "2026-11-23"
+   "hash": "d66827e9aefd",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/05-外交/外交提案与表决.md": {
-   "hash": "e4664d3124b2",
-   "changedAt": "2026-11-16"
+   "hash": "dc2dafe15978",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/05-外交/外交行动.md": {
-   "hash": "eef9505e2241",
-   "changedAt": "2026-11-22"
+   "hash": "1e275f80e3b9",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/06-事件/changelog.md": {
    "hash": "1f825888851b",
-   "changedAt": "2026-11-19"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/06-事件/README.md": {
    "hash": "10dc8120672c",
-   "changedAt": "2026-11-19"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/06-事件/事件卡专题.md": {
-   "hash": "1d83e1b73ade",
-   "changedAt": "2026-11-23"
+   "hash": "08e851b8d7fd",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/06-事件/事件卡总表.md": {
-   "hash": "298a4270bc9e",
-   "changedAt": "2026-11-23"
+   "hash": "9d8dd274eae6",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/06-事件/天灾与异族.md": {
-   "hash": "248b7ec0b897",
-   "changedAt": "2026-11-10"
+   "hash": "f02c63f7b6ff",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/06-事件/民生与消费事件.md": {
-   "hash": "28fd79a4fb00",
-   "changedAt": "2026-11-23"
+   "hash": "abf31b3d54bf",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/06-事件/起义.md": {
-   "hash": "4a759570e0ec",
-   "changedAt": "2026-11-10"
+   "hash": "8982f1950ef4",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/06-事件/起义与叛乱.md": {
-   "hash": "8d92e5acadc3",
-   "changedAt": "2026-11-10"
+   "hash": "31721c88d5ff",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/07-技术架构/changelog.md": {
    "hash": "7f7f37c14cb8",
-   "changedAt": "2026-10-29"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/07-技术架构/L1大地图HUD布局.md": {
    "hash": "7b0f0c44b7bf",
-   "changedAt": "2026-11-10"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/07-技术架构/L1开发问题记录.md": {
    "hash": "734727eeb1b0",
-   "changedAt": "2026-10-29"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/07-技术架构/L1战略层开发讨论单.md": {
    "hash": "d5ed86096444",
-   "changedAt": "2026-10-26"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/07-技术架构/L1界面与交互收集-2026-10-29.md": {
    "hash": "97e2ab6b28f1",
-   "changedAt": "2026-11-10"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/07-技术架构/README.md": {
    "hash": "c7c2e8b64f29",
-   "changedAt": "2026-11-16"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/07-技术架构/UI雏形施工单-深圳首城v1.md": {
    "hash": "8fe74da412df",
-   "changedAt": "2026-10-26"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/07-技术架构/UI雏形规划.md": {
-   "hash": "f93546134622",
-   "changedAt": "2026-11-16"
+   "hash": "889c56af6c3f",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/07-技术架构/存档设计.md": {
-   "hash": "ed609ace5650",
-   "changedAt": "2026-11-16"
+   "hash": "cca6c599f237",
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/07-技术架构/指令总线与修改器.md": {
    "hash": "1dccf905c3cc",
-   "changedAt": "2026-11-10"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/07-技术架构/架构总述.md": {
    "hash": "ccdb69588c54",
-   "changedAt": "2026-11-16"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/07-技术架构/部署与服务器.md": {
    "hash": "c687a30a1a30",
-   "changedAt": "2026-10-25"
+   "changedAt": "2026-11-24"
   },
   "docs/06-设计/changelog.md": {
    "hash": "5ff265c49867",
@@ -887,7 +891,7 @@
   },
   "docs/06-设计/README.md": {
    "hash": "26e4f53b6b35",
-   "changedAt": "2026-11-16"
+   "changedAt": "2026-11-24"
   },
   "docs/07-美术/3D画廊验收清单-2026-11-13.md": {
    "hash": "3c118e343453",
@@ -900,6 +904,10 @@
   "docs/07-美术/市政府v2-屋顶方案与施工单.md": {
    "hash": "d6886887c9f3",
    "changedAt": "2026-11-12"
+  },
+  "docs/07-美术/武将3D形象-火柴人方案.md": {
+   "hash": "355eba145567",
+   "changedAt": "2026-11-24"
   },
   "docs/07-美术/美术纪律.md": {
    "hash": "041cc714ed90",
@@ -926,7 +934,7 @@
    "changedAt": "2026-11-24"
   },
   "docs/08-百科/词条/事件.md": {
-   "hash": "c409b7a4b750",
+   "hash": "782d9cb00005",
    "changedAt": "2026-11-23"
   },
   "docs/08-百科/词条/人口与民生.md": {
@@ -966,20 +974,12 @@
    "changedAt": "2026-11-24"
   },
   "docs/08-百科/词条/贸易.md": {
-   "hash": "3a8122e80b9e",
+   "hash": "f5678d014623",
    "changedAt": "2026-11-05"
   },
   "docs/README.md": {
    "hash": "ff35c0610fff",
    "changedAt": "2026-11-22"
-  },
-  "docs/06-设计/00-总纲/文档权威源登记表.md": {
-   "hash": "17cd0d4e23f0",
-   "changedAt": "2026-11-24"
-  },
-  "docs/07-美术/武将3D形象-火柴人方案.md": {
-   "hash": "355eba145567",
-   "changedAt": "2026-11-24"
   }
  }
 }
