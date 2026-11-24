@@ -97,13 +97,25 @@ function stamp(p) {
   return t ? new Date(t * 1000).toISOString().slice(0, 10) : null;
 }
 
-// stale 判定模型（v2，语义精确）：
-//   syncDate = 文档自己声明的"我已同步到此日"承诺。**只有声明了 syncDate 的文档才有同步义务**。
+// 同步义务判定（v3，院长 11-24）：
+//   syncDate = 文档自己声明的"我已同步到此日"承诺。**只有声明了 syncDate 的规格类文档才有同步义务**。
 //   stale ⟺ 本文档头部引用的某个上游，其 git 最后提交日 > 本文档 syncDate。
-//   （不用"本文档提交时间"比较——提交≠内容同步，如只改错别字也会刷新 commit 时间）
-//   未声明 syncDate 的文档不判 stale，单列为"未声明同步义务"库存项。
+//   **类型豁免**（无同步义务，不判 stale）：changelog（流水账只增不改）/ ADR 决策档（永久历史）/
+//     调研（时点快照）/ README（导航）/ 索引表（由生成或人工活表维护）/ 需求池（活表，来源=院长口径）。
+function exemptType(d) {
+  const p = d.path;
+  if (/changelog\.md$/.test(p)) return 'changelog';
+  if (/^\d\d-\d\d-/.test(p.split('/').pop())) return 'dated';       // 日期化交接单/施工单=时点快照
+  if (p.includes('/02-决策/')) return 'adr';
+  if (p.includes('/00-调研/') || p.includes('调研')) return 'research';
+  if (/(^|\/)README\.md$/.test(p)) return 'readme';
+  if (/索引-(公式|参数|决策)\.md$/.test(p)) return 'index';
+  if (/需求池\.md$/.test(p)) return 'backlog';
+  if (/全量模拟-.*\.md$/.test(p)) return 'sim-report';  // 模拟报告=时点证据，数字是当时口径，绝不"同步"
+  return null;
+}
 function staleInfo(d) {
-  if (!d.syncDate) return [];
+  if (!d.syncDate || exemptType(d)) return [];
   const newer = [];
   const seen = new Set();
   for (const l of d.links) {
@@ -163,11 +175,15 @@ if (cmd === 'scan') {
 } else if (cmd === 'stale') {
   const only = process.argv.includes('--all') ? null : ['docs/06-设计/', 'docs/08-百科/', 'docs/01-需求/', 'docs/02-决策/'];
   const rows = docs.map((d) => ({ d, n: staleInfo(d) })).filter((x) => x.n.length && (!only || only.some((p) => x.d.path.startsWith(p))));
-  console.log(`===== stale 清单（${only ? '设计+百科+需求+决策' : '全部'}，${rows.length} 篇）=====`);
-  for (const { d, n } of rows) {
-    console.log(`${d.path}`);
-    console.log(`  最后提交 ${stamp(d.path) || '-'} ／ 更晚的源：${n.map((x) => `${x.path}(${x.date})`).join('  ')}`);
+  // 按落后天数降序（最旧的最危险），并给类型标签
+  const days = (r) => Math.max(...r.n.map((x) => (new Date(x.date) - new Date(r.d.syncDate)) / 86400000));
+  rows.sort((a, b) => days(b) - days(a));
+  console.log(`===== stale 清单（${only ? '设计+百科+需求+决策' : '全部'}，${rows.length} 篇；按落后天数降序）=====`);
+  for (const r of rows) {
+    console.log(`[落后 ${Math.round(days(r))}d] ${r.d.path}  (syncDate ${r.d.syncDate})`);
+    console.log(`   更晚的源：${r.n.map((x) => `${path.basename(x.path)}(${x.date})`).join('  ')}`);
   }
+  if (rows.length) console.log(`\n提示：模拟报告/ADR/调研/changelog/README/索引 已豁免（无同步义务）。逐篇回写后更新其 syncDate 即从本清单消失。`);
 } else if (cmd === 'who') {
   const q = (process.argv[3] || '').replace(/\\/g, '/');
   const hit = docs.find((d) => d.path.endsWith(q));

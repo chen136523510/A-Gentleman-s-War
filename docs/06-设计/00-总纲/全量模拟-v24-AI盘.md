@@ -1,6 +1,6 @@
 # 全量模拟 v24 · AI 盘（五线 AI 决策层 · 2026-11-19）
 
-> 脚本：`sim/v24/ai.js`（黑机；v22 full.js 基座只读复制 + 四线 AI 决策层）。运行：`node sim/v24/ai.js [turns] [seed] [pressure|fixed10|fixed20|warsmoke]`。
+> 脚本：`sim/v24/ai.js`（黑机；v22 full.js 基座只读复制 + 四线 AI 决策层）。运行：`node sim/v24/ai.js [turns] [seed] [pressure|fixed10|fixed20|warsmoke]`。 · 同步日期：**2026-11-19**（git 最后提交；内容回写后须更新）
 > 依据：[AI 决策专题开题](./AI决策专题开题.md) v0.3.1 §七 + [AI科技细则](./AI科技细则.md) / [AI建造细则](./AI建造细则.md) / [AI政策细则](./AI政策细则.md) / [AI战争细则](./AI战争细则.md)（B1 四篇，2026-11-18 黑机）。
 > 基线纪律：**v22 基线未动**（`sim/v22/full.js` 原样）；v24 是新盘新标定；AI 参数全部集中 `AIP` 块（对应 `balance.json ai` 组），禁内联魔法数。
 > **节点口径（B6#1 B 案）**：`tech.json` 当前 38 节点（缺 `grn2b/grn2c`），本盘按 38 建模；节点成本=tech.json 公式（2000×(1+0.15×已研)×eraMult）**归一化到 v22 科技总量 40 点**（kNorm=40/Σera序成本）——v22 科技经济标定零改动（悉尼/墨尔本城况与 v22 逐字节一致）。
