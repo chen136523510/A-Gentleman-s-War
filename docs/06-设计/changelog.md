@@ -7,6 +7,7 @@
 
 | 日期 | 轮次 | 类型 | 一句话 |
 |---|---|---|---|
+| 2026-11-24 | 黑机·工程落库 | **政策卡 52 张落库 + 抵抗删除 + 服役比例接线 + maxWars 对齐** | `policies.json` 52（初始 50+特殊 2；统一 `initial/acquire/via`；`tools/build-policies-json.js` 由 `sim/data/cards.js` 生成）；Unity 抵抗删除（`P[B→B]=√Culture_B×self`）；服役比例 5%/8%/10%+批次成本（自动征募维持 trickle 0.5%，v27 经济盘再评估）；`sim/v26` maxWars=1；回归 POLICY/MANDATE/BUILD/SMOKE/AI/NFACTION/MINERAL/UI 全绿；全量仓 `8b28cdf` |
 | 2026-11-24 | 白机·政策卡 | **收口定版：外交第10张=绝对中立 + 全池审计（普通50+特殊2=52 全定）** | **绝对中立** `absoluteNeutrality`：无法对外宣战/所有建交国关系+1/回/rep+0.5/回；互斥=外交姿态三档（和平共处×铁腕外交×绝对中立）；与不结盟/霸权/殖民不同轴不互斥。**全池审计**（内容专题 §十二）：52 张全部通过落点审计（无虚空产出）；负面卡纪律达标（军队经商/破四旧 2 张）；v26 盘验证 7 项（民生叠加/财支出叠加/关系流叠加/私有化vs国有化对照/反谍叠加/基建造价口径/绝对中立 AI）。文件：[内容专题 v3.0](00-总纲/政策卡内容专题.md) · [目录 v2.3](00-总纲/政策卡目录.md) · [重塑专题 v1.3](00-总纲/政策卡内容重塑专题.md) |
 | 2026-11-23 | 黑机·L3 | **E1~E10 全裁 + 开题 v0.3 定稿 + 建筑交互/光标/LOD** | **院长 E 系列裁定**：纯 C# Sim 域（不开 DOTS）/渲染 60fps+逻辑 30Hz/命令流/正常加速跳过/部队 A*+士兵零寻路/GPU 人群渲染+表现比例/spatial hash/逻辑主线程+表现层 SoA/三态迷雾/三层+Petra；**建筑可攻击-摧毁/占领后进入**（城墙摧毁通行、军事基地归零转普通建筑且掠夺 ×2 爆产出）；**驻守/掠夺**（8/12/16s，受击/手动打断）；**光标状态机**（红剑/门/金币/空地）；**LOD 默认中景、滚轮缩放、16/5px 初值**。文件：[L3战斗层开题 v0.3](04-军事/L3战斗层开题.md) · [L3引擎层裁点材料](04-军事/L3引擎层裁点材料.md) · [ADR-013](../02-决策/ADR-013-L3战斗层引擎架构.md) |
 | 2026-11-22 | 黑机·L3 | **L3 启动：双调研落档 + 开题 v0.2 草案（D1~D14 裁决全落）** | **院长 11-22 启动令**。机制半场调研：四游戏全拆解（WC3 克制表+护甲公式/SC 命中骰→SC2 视野门控/RA2 Verses 矩阵+0%1%负值语义/RTK12 会战制+**阵形证伪**）+借鉴清单（三层旋钮+踩坑警示）；引擎半场调研：累加器固定 tick+Sim/Presentation 双域分离、确定性纪律（float 单机可用）、**命令流回放**（lockstep 单机化）、Mono vs DOTS 量化、AI 三层（TPS+影响力图）、部队级寻路+士兵零寻路、烘焙纹理群渲、迷雾双 RT。**开题 [L3战斗层开题](04-军事/L3战斗层开题.md) v0.2 草案**：**D1~D14 院长裁决全落**——部队编制体系（番号/可选主将/趣味数据/L3 内不可拆）替代军团制；**L3 可操纵单位=部队+武将**；砍采配/战法/据点三件套（武将技能+空军+L2 现有设计顶上）；士气=乘区+UI 链（初值黑机定：0~100/60 起/主将+15/1.10·1.0·0.85·0.60）；AI 不天眼+难度=操作水平档；**L2↔L3 地图同步**；驻扎（可攻击）+电力闸门简版；容量无上限；**友伤全对局永久关**；D2 校验带 ≤10%。**E1~E10（引擎层）已记录待院长另开讨论**。文件：[RTS战斗层设计调研](../00-调研/RTS战斗层设计调研.md) · [RTS引擎实现调研](../00-调研/RTS引擎实现调研.md) · [L3战斗层开题](04-军事/L3战斗层开题.md) |
@@ -86,6 +87,14 @@
 > R10~R18 流水真值在 [`07-技术架构/changelog.md`](./07-技术架构/changelog.md)（本表只补里程碑级；模块细节查各模块 changelog）。
 
 ---
+
+## 2026-11-24 黑机 · 政策卡 52 张落库 + 抵抗删除 + 服役比例接线
+
+- 类型：实装/落库（跨模块：政策 00-总纲 / 军事 04 / 文化 00-总纲 / AI）
+- 依据：院长 11-24「开始处理工程待办」；政策卡 v3.0 / v26 盘 v1.2；抵抗删除院长令；服役比例参数授权黑机定值。
+- 变更：①`policies.json` 52 张（初始 50+特殊 2；统一 `initial/acquire/via`；`unlock.type=techCount` 早0/中10/后22；生成器 `tools/build-policies-json.js` 以 `sim/data/cards.js` 为唯一源）②Unity 抵抗删除（`CultureSystem` 去 `Resistance()`；删 `CultureResistMult`/`CultureResistance`/`ResistanceCap`/`balance.resistanceCap`/buildings 字段）③服役比例接线（5%/8%/10%+批次成本 1.0/1.5/2.2；自动征募维持 trickle 0.5%，`ForceRecruit` 强征硬顶 10%；军饷/装备/军队经商落点）④`sim/v26` maxWars=1 ⑤AI `fxParamMap/fxW` v3.0 全键并修参数名大小写查找。
+- 影响：`Assets/_Project/Data/{policies,balance,buildings}.json`、`Assets/_Project/Scripts/L1/{PolicySystem,CultureSystem,GameState,CitySettlement,DataDefinitions,PolicySmokeTest,BatchBuildTest,MandateSmokeTest}.cs`、`Assets/_Project/Scripts/L1/AI/{PolicyAI,AiSmokeTest}.cs`、`tools/build-policies-json.js`、`sim/v26/policy.js`。
+- 验收：POLICY（52 卡）/MANDATE（68 PASS）/BUILD/SMOKE/AI/NFACTION/MINERAL/UI 全绿；v26 审计 52=50+2、0 未接线；200 回合跑通。**v26 报告 errata 见 [.ai/next-window.md](../../.ai/next-window.md)（报告不回改）**。
 
 ## 2026-11-13 军事 B1 · 战斗层接入模拟器首跑
 

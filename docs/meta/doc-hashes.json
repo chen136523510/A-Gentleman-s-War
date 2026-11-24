@@ -34,8 +34,8 @@
    "changedAt": "2026-10-28"
   },
   "docs/01-需求/需求池.md": {
-   "hash": "81f9e554645b",
-   "changedAt": "2026-11-23"
+   "hash": "5a612d3f855b",
+   "changedAt": "2026-11-24"
   },
   "docs/02-决策/ADR-009-国男志引擎选型Web转Unity.md": {
    "hash": "f569d1536365",
@@ -706,7 +706,7 @@
    "changedAt": "2026-11-13"
   },
   "docs/06-设计/04-军事/changelog.md": {
-   "hash": "c3733235c5c2",
+   "hash": "b6cd966202ae",
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/04-军事/L3引擎层裁点材料.md": {
@@ -886,7 +886,7 @@
    "changedAt": "2026-10-25"
   },
   "docs/06-设计/changelog.md": {
-   "hash": "1e65a8a5b2fd",
+   "hash": "8753d6e5d912",
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/README.md": {

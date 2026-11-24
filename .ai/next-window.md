@@ -64,12 +64,18 @@
 ## 四、快速验证命令（新窗口起手自检）
 
 ```bash
+# 白机
 cd "D:\product\AGW"
 node sim/tools/doc-sync.js scan          # 全景：245 文档/断链/stale
 node sim/tools/doc-sync.js stale         # 同步债清单（按落后天数）
 node sim/tools/doc-sync.js who <文件>     # 改前查影响面
 node sim/v26/policy.js 200 1             # 教学盘（历史口径）
 node sim/v26/policy.js 200 1 --scenario=revival   # 复苏盘（基础版，待定稿）
+
+# 黑机（工程落库后）
+cd "G:\A Gentleman's War"
+node tools/build-policies-json.js        # cards.js → policies.json（52 张，勿手改 JSON）
+# Unity 批处理：-executeMethod AGW.EditorTools.PolicySmokeMenu.RunPolicySmokeBatch / AGW.EditorTools.AgwMenu.BatchAiSmoke
 ```
 
 ## 五、已知的坑（新窗口必读）
@@ -87,5 +93,6 @@ node sim/v26/policy.js 200 1 --scenario=revival   # 复苏盘（基础版，待�
 
 | 日期 | 变更 |
 |---|---|
+| 2026-11-24 | **黑机工程落库完成**：`policies.json` 52 张/抵抗删除/服役比例接线/maxWars=1；回归 POLICY/MANDATE/BUILD/SMOKE/AI/NFACTION/MINERAL/UI 全绿；下一步=复苏副本定稿 + L3 M1 |
 | 2026-11-24 | **语义回写完成版**：§1.1 更新为已完成 + 工具链四条（doc-sync/semantic-audit/old-terms-scan/rebuild-changedat）；mechanical-sync-pending 归档 |
 | 2026-11-24 | 首版：白机 stale 46 篇分组 + 5 项待确认矛盾 + 黑机 8 项 + 院长待裁 5 项 + 验证命令 + 6 条坑 |
