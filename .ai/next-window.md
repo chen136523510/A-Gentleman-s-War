@@ -5,20 +5,19 @@
 
 ## 一、白机任务（文档侧，可在当前环境做）
 
-### 1.1 语义回写（**stale 已清零，剩 69 篇"结构同步但内容待核"**）
+### 1.1 语义回写（✅ **2026-11-24 已完成：69 篇清零**）
 
-> **现状（2026-11-24 收口）**：`doc-sync stale` = **0**——全部文档的 syncDate 与权威源指针已由 `sim/tools/bulk-pointer.js` **机械同步**（脚本生成，上游由工具判定，非猜测）。
-> **但机械同步 ≠ 语义回写**：69 篇的**正文仍可能是旧口径**，只是建好了指针。清单见 [mechanical-sync-pending.md](./mechanical-sync-pending.md)（按模块分组）。
-> **每篇的处理动作**：按文档内"⚠ 权威源指针（机械生成）"段核对上游口径 → 确认/修正正文 → **删除该段提示** → 该篇完成。
+> **结果**：`doc-sync stale` = 0、机械指针段 = 0、断链 = 0。
+> **做法**：①修 `doc-sync` hash 三处污染（机械"生成"段未剔除 / `· 同步日期` 残留 / 连续空行）②`rebuild-changedat.js` 用 git 历史重建 changedAt（3m18s）③`old-terms-scan.js` + `outdated-terms.js`（18 条已裁变更点）扫描 69 篇：49 篇零命中直接删机械段、16 篇按裁定回写（52 张卡池/采配 D6/消费刺激删卡/抵抗删除/部队编制 D1）、其余历史注记判定保留。
+> **纪律（新裁定落地时）**：先把变更点加进 `sim/data/outdated-terms.js` → 跑 `node sim/tools/old-terms-scan.js` → 按 hitA/hitB 处理 → `doc-sync stale` 验收。
+> **注意**：词表只覆盖"已登记变更点"，是定位工具不是正确性证明；新增裁定必须扩词表。
 
-| 分组 | 篇数 | 建议处理顺序 |
-|---|:--:|---|
-| 03-内政 | 21 | 先（数值密集，与复苏盘/模拟相关） |
-| 00-总纲 | 15 | 次（规则/索引类，影响面大） |
-| 02-武将 | 10 | 随 21 将火柴人建模一并 |
-| 05-外交 / 06-事件 | 6+6 | 随各自系统开发 |
-| 04-军事 | 5 | 随 L3 M1 |
-| 01-地图 / 07-技术架构 / 百科 | 3+2+1 | 低优先 |
+| 工具 | 用途 |
+|---|---|
+| `node sim/tools/doc-sync.js scan/stale/gen/who` | 结构同步债（syncDate × 上游实质变更） |
+| `node sim/tools/old-terms-scan.js` | 过时口径词扫描（语义失真定位） |
+| `node sim/tools/semantic-audit.js` | 机械指针段分流（real/clear/unknown；未来再用 bulk-pointer 时复用） |
+| `node sim/tools/rebuild-changedat.js [--write]` | 用 git 历史重建 changedAt（hash 判定被污染时） |
 
 ### 1.2 待确认的文档内矛盾（B/A 组发现，需判断）
 
@@ -82,4 +81,5 @@ node sim/v26/policy.js 200 1 --scenario=revival   # 复苏盘（基础版，待�
 
 | 日期 | 变更 |
 |---|---|
+| 2026-11-24 | **语义回写完成版**：§1.1 更新为已完成 + 工具链四条（doc-sync/semantic-audit/old-terms-scan/rebuild-changedat）；mechanical-sync-pending 归档 |
 | 2026-11-24 | 首版：白机 stale 46 篇分组 + 5 项待确认矛盾 + 黑机 8 项 + 院长待裁 5 项 + 验证命令 + 6 条坑 |

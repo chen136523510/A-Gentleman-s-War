@@ -61,8 +61,12 @@ function parseDoc(abs) {
   // contentHash：剔除元信息后取 md5 —— 纯元信息变更不算内容变更
   //  剔除①syncDate 行 ②**机械回写指针段**（bulk-pointer 生成的"权威源指针…语义待核"整段）
   //  为什么要剔②：机械回写只是建立指向，不含实质口径；若算内容变更会让下游无限级联、并污染权威源文档
-  let body = txt.replace(/同步日期[:：][^\n]*/g, '').replace(/·\s*同步日期[^\n]*/g, '');
-  body = body.replace(/## ⚠ 权威源指针（[^\n]*机械回写[^\n]*\n(?:[^\n]*\n)*?(?=## |$)/g, '');
+  // 剔除元信息：syncDate 行/尾段（含「· 同步日期…」的前导分隔符，避免残留 " · " 污染 hash）
+  let body = txt.replace(/[ \t]*·[ \t]*同步日期[:：][^\n]*/g, '').replace(/同步日期[:：][^\n]*/g, '');
+  // 剔除机械指针段（两种格式：「机械生成」=bulk-pointer 第一批、「机械回写」=第二批）
+  body = body.replace(/## ⚠ 权威源指针（[^\n]*机械(?:生成|回写)[^\n]*\n(?:[^\n]*\n)*?(?=## |$)/g, '');
+  // 归一化：行尾 CRLF/行尾空白/连续空行不算内容变更（git blob 是 LF，worktree 是 CRLF；机械段删除后会多空行）
+  body = body.replace(/\r\n/g, '\n').replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n');
   const contentHash = require('crypto').createHash('md5').update(body).digest('hex').slice(0, 12);
   return { path: rel, title, version, status, syncDate: sync ? sync[1] : null, size: lines.length, links, contentHash };
 }

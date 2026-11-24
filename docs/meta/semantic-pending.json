@@ -1,0 +1,13 @@
+{
+ "schema": 1,
+ "generatedAt": "2026-11-24",
+ "note": "机械回写文档语义分流：real=上游实质变更晚于原syncDate，需核对正文；clear=正文无需改，删机械段；unknown=上游缺失信息需人工看。由 sim/tools/semantic-audit.js 生成。",
+ "total": 0,
+ "counts": {
+  "real": 0,
+  "clear": 0,
+  "unknown": 0
+ },
+ "groups": {},
+ "items": []
+}
