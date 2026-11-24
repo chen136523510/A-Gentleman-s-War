@@ -9,20 +9,27 @@
 //   财支出 upkeep 乘区（福利/医保/集采/补贴/维和 ×1.005~1.01）+ 生育补贴按人口（subsidyCost 财/人/回）+ 军队经商 milIncome 财/兵/回
 //   排放 emit 乘区（垃圾分类 ×0.95/绿色转型 ×0.90）；反谍 counterSpy（加性聚合，间谍引擎未建=占位审计）
 //   服役上限 serviceCap（pp 偏置，接征募 target）；军饷 salary 乘区 + 军费 milCost 乘区（饷+装备采购）
-//   战力 q 乘区（compositionPower）；同化 assimil 乘区（identity 收敛）；抵抗 resistPubBias（3%→4%/座级）
+//   战力 q 乘区（compositionPower）；同化 assimil 乘区（identity 收敛）；❌抵抗已删（11-24 院长令）
 //   定向关系流：relWeakest（发展援助对最弱国 +2）/relVsWeak（霸权对弱国 −0.5）/relWar（维和对交战国 +0.5）
 //   canDeclareWar（绝对中立宣战锁）；buyPriceMul（霸权强买 ×0.85）；noAlliance（不结盟，同盟创建处过滤）
 //   占位（fx 记录不结算，报告挂账）：counterSpy 侦破上限 / immigration 移民开关 / 贸易渗透与容量 / 军管底线
 // 运行：node sim/v26/policy.js [turns] [seed] [scenario]
 //   scenario: (空)=主盘 AI 自动 | vs=私有化×国有化对照 | stack=W/财/关系三组逐张叠加 | neutral=绝对中立 | infra=基建狂魔
 'use strict';
+// ===== 剧本切换（院长 2026-11-24 第 2 条：默认用自由盘/复苏副本，教学盘仅兼容历史盘）=====
+// 用法：node sim/v26/policy.js 200 1 --scenario=revival  （默认 tutorial）
+const ARGV = process.argv.slice(2);
+const SCEN_ID = ((ARGV.find((a) => a.startsWith('--scenario=')) || '').split('=')[1]) || 'tutorial';
+const SCEN = require('../data/scenarios.js').SCENARIOS[SCEN_ID];
+if (!SCEN) throw new Error('未知剧本: ' + SCEN_ID + '（可选 tutorial/revival）');
+
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const fmt = (n) => Math.round(n).toLocaleString('en-US');
 
 // ================= 参数（×8 尺度；相对值同基准表） =================
 const P = {
   turns: 200,
-  flag: { nobuild: false }, // v26 场景开关（nobuild=冻结建筑谱系，稳态数值对照）
+  flag: { nobuild: false, buildReserve: 0 }, // v26 场景开关（nobuild=冻结建筑谱系；buildReserve=AI 建造国库储备线，复苏盘启用）
   // 人口（单一自然增长公式，人口算法 §7.2）
   growthBase: 0.006, growthBalance: 1.5, growthLivExp: 1.5,
   growthCap: 0.02, // 院长 11-13 第 7 条：限速但不过度（-2%~+2%）
@@ -92,8 +99,8 @@ const P = {
   // 文化输出（文化输出算法 v1 份额收敛式；2026-11-05 院长定稿；院长 11-13 第 4 条：文化胜利=文化入侵全球并维持）
   culture: {
     convergeR: 0.05,        // 收敛速率 r（balance 留 0.03/0.05/0.08 三档）
-    resistCap: 0.5,         // 抵抗总上限 +50%（cultureResistanceCap）
-    resistPub: 0.03, resistTour: 0.05, resistEnt: 0.02, // 文化建筑抵抗（博物馆 3%/会展 5%/娱乐 2% 每座级）
+    // ❌ 抵抗系统已删除（2026-11-24 院长令「不要文化抵抗这个概念」）：防守=√Culture_B 本身
+    //   原 resistCap(0.5)/resistPub(0.03)/resistTour(0.05)/resistEnt(0.02) 全删；cultureResist() 恒 0
     gapExp: 0.5, gapCap: 2.0, // 势差乘区 clamp((Ca/Cb)^0.5, 1.0, 2.0)；门槛=攻击方有文化建筑
     invadeThreshold: 0.6, invadeRelease: 0.5, invadeHold: 5, // 完全入侵 60% 入 / 50% 出 / 持续 5 回
     victoryHold: 10,        // 文化胜利：对所有国完全入侵维持 10 回合
@@ -159,16 +166,10 @@ const ENT = {
 const TOUR = { name: '文旅线', caps: [64, 160, 320], costs: [1200, 2800, 4800], jobs: [2400, 6400, 12000], cul: [8, 16, 32], max: 3 };
 const PUB = { name: '公共文化(博物馆线)', caps: [0, 120, 320], costs: [2000, 3600, 5600], jobs: [3200, 8000, 16000], cul: [32, 48, 80], max: 3 };
 const POWERIN = { factory: 6, academy: 3, hosp: 3, police: 3, ent: 2, tour: 2, pub: 2, office: 1 };
-const CITY_INIT = [
-  ['北京', 'CN', 256000, 55, 5], ['上海', 'CN', 360000, 55, 6], ['深圳', 'CN', 320000, 50, 3],
-  ['香港', 'CN', 224000, 35, 4], ['台北', 'CN', 200000, 50, 3], ['西安', 'CN', 160000, 55, 5],
-  ['东京', 'JP', 400000, 60, 7], ['名古屋', 'JP', 208000, 55, 3], ['长崎', 'JP', 144000, 50, 3],
-  ['首尔', 'KR', 304000, 55, 4], ['仁川', 'KR', 176000, 50, 2],
-  ['悉尼', 'AU', 208000, 65, 5], ['墨尔本', 'AU', 176000, 70, 5],
-  ['达尔文', 'NONE', 48000, 40, 1],
-];
-const ADJ = { CN: ['KR', 'JP'], KR: ['CN', 'JP'], JP: ['CN', 'KR'], AU: [] }; // AU 远洋：仅强者可跨海
-const COASTAL = ['上海', '深圳', '香港', '台北', '东京', '名古屋', '长崎', '首尔', '仁川', '悉尼', '墨尔本', '达尔文']; // 沿海城（海平面三级受影响；北京/西安内陆）
+// 剧本数据（sim/data/scenarios.js）：tutorial=教学盘 14城/4阵营；revival=复苏副本 8阵营单城+6空城
+const CITY_INIT = SCEN.cities;
+const ADJ = SCEN.adj; // 剧本邻接（教学盘 AU 远洋仅强者可跨海；复苏盘环形+跨接）
+const COASTAL = SCEN.coastal; // 剧本沿海城（海平面三级受影响）
 
 // ================= 生成 =================
 function makeCities() {
@@ -188,7 +189,7 @@ function makeFactions(cities) {
   const f = {};
   for (const c of cities) {
     if (c.fac === 'NONE') continue;
-    f[c.fac] = f[c.fac] || { id: c.fac, cities: [], treasury: 12000, soldiers: 0, service: 0, tech: 0, wars: 0, allies: [], warTarget: null, policy: 'none', loyalty: 60,
+    f[c.fac] = f[c.fac] || { id: c.fac, cities: [], treasury: (SCEN.treasury || 12000), soldiers: 0, service: 0, tech: 0, wars: 0, allies: [], warTarget: null, policy: 'none', loyalty: 60,
       mainPath: 'military', // A1.6 胜利路径（每 10 回合重算）
       culture: 0, identity: {}, invasionSince: {}, lostCulture: false, // 文化存量/认同度/完全入侵计时/文化失所
       units: { inf: 0, assault: 0, special: 0, tank: 0, heli: 0, mobile: 0, heavy: 0 },
@@ -498,6 +499,10 @@ function aiBuild(c, s, F, fac, devMode, envTemp = 0, rand = () => 0.5) {
     const cost = cardCost(c, card, mods);
     // 支付能力（沿用 v22 模型：首付 10% 财 + 生产银行 1/5）
     if (c.prodBank < cost / 5 || fac.treasury < cost * 0.1) continue;
+    // v26 复苏盘财政护栏（单城国收入薄：国库低于储备线时只允许生存项 food/power/housing，
+    //   防"建造首付抽干国库"——教学盘 buildReserve=0 不生效，历史盘口径不变）
+    if (P.flag.buildReserve > 0 && fac.treasury < P.flag.buildReserve
+        && !card.roles.some((r) => r === 'food' || r === 'power' || r === 'housing')) continue;
     // 维护预算（净收入 75%；生存项放宽 90%）
     const cardMaint = cost * 0.01 * (mods.upkeep || 1);
     const budget = Ab.maintBudget * netIncome;
@@ -620,7 +625,7 @@ const AIP = {
     fxW: { tax: 30, pool: 30, income: 30, comm: 30, growth: 20, industry: 20, food: 20, tech: 20, self: 20, culEnt: 20,
       out: 20, tourCap: 20, tourIncome: 20, relFlow: 4, recruit: 10, liv: 5, upkeep: 20, capacity: 10, cost: 10, repPerTurn: 6, warThreshold: 8,
       W: 6, loyaltyFlow: 5, counterSpy: 4, serviceCap: 80, relWeakest: 4, relVsWeak: 4, relWar: 4, milIncome: 200,
-      subsidyCost: -60, resistPubBias: 10, canDeclareWar: 8, noAlliance: 2, immigration: 2, salary: 8, milCost: 12,
+      subsidyCost: -60, canDeclareWar: 8, noAlliance: 2, immigration: 2, salary: 8, milCost: 12,
       q: 15, arsenal: 10, assimil: 6, emit: 6, buyPriceMul: 15, fisc: 30 },
     // 卡解锁科技门槛（早 0 / 中 10 / 后 22）
     unlockTech: { 早: 0, 中: 10, 后: 22 },
@@ -1886,14 +1891,10 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
 // ================= 文化输出（文化输出算法 v1 份额收敛式；2026-11-05 院长定稿） =================
 // P[A→B] = √Culture_A × 距离 × 联系 × 情报(1.0，情报系统未接) × 战争衰减 × 势差乘区
 // 认同度每回向目标份额收敛 r=0.05；完全入侵 ≥60% 持续 5 回；文化胜利=对所有国完全入侵维持 10 回
+// ❌ 抵抗已取消（2026-11-24 院长令）：恒返回 0，保留签名以最小化调用面改动
+//   防守力完全来自 P[B→B] = √Culture_B（文化量本身，见文化输出算法 v1 §六）
 function cultureResist(f) {
-  const m = facMods(f);
-  let r = 0;
-  for (const c of f.cities) {
-    r += c.pub * (P.culture.resistPub + (m.resistPubBias || 0)) + c.tour * P.culture.resistTour // v26 遗产保护：resistPub 3%→4%/座级  // @hook:resistPub 文化建筑抵抗
-      + Object.values(c.ent).reduce((a, v) => a + v, 0) * P.culture.resistEnt;
-  }
-  return clamp(r, 0, P.culture.resistCap);
+  return 0;
 }
 
 function culturePressure(A, B, facs, diplo, t) {
@@ -2033,11 +2034,24 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
   let env = { carbon: 0, temp: 0, sea: 0, netZeroRun: 0, level: 0, emit: 0, recycle: 0, facEmit: {} };
   const facs = makeFactions(cities);
   const allIds = Object.keys(facs);
+
+  // 剧本覆盖：人格（复苏 8 种）/ 资源（复苏统一中等，起始池=x2）/ 科技起点（复苏赠 3 早期节点）
+  if (SCEN.leaders) Object.assign(D.leaders, SCEN.leaders);
+  if (SCEN.resources) for (const id of allIds) { const r = SCEN.resources[id]; if (r) facs[id].resources = { iron: r.iron * 2, coal: r.coal * 2, oil: r.oil * 2, uranium: (r.uranium || 0) * 2 }; }
+  if (SCEN.startTech && SCEN.startTech.length) for (const id of allIds) for (const t of SCEN.startTech) if (TECH_BY_ID[t] && !facs[id].techDone[t]) { facs[id].techDone[t] = 1; facs[id].techSpent = (facs[id].techSpent || 0) + 1; } // 免费节点折算 techSpent（f.tech 每回被 techTick 覆盖，不能直接改）
   for (const f of Object.values(facs)) {
     f.culture = f.cities.reduce((a, c) => a + c.baseCulture * 8, 0); // 城市基础文化值 ×8（文化区 v1.0）
     f.identity = Object.fromEntries(allIds.map((x) => [x, x === f.id ? 1 : 0]));
   }
   for (const c of cities) {
+    if (SCEN.buildReserve) P.flag.buildReserve = SCEN.buildReserve; // 剧本建造储备线（默认 0=不启用）
+    if (SCEN.initBuildings) {
+      // ===== 复苏副本：最小建筑（农业/居民/军营/战前学校）；空城仅农业 =====
+      const initB = c.fac === 'NONE' ? SCEN.emptyCityBuildings : SCEN.initBuildings;
+      for (const [k, v] of Object.entries(initB)) c.b[k] = v;
+      continue;
+    }
+    // ===== 教学盘（v22 基线口径，勿改）=====
     if (c.fac === 'NONE') { c.b.farm = 1; continue; }
     c.b.farm = c.fac === 'CN' ? 2 : 1; c.b.residence = 1; c.b.office = 1; c.b.street = 1; c.b.hosp = 1;
     c.b.academy = 1; // A1.2 科技拉力：开局每城一座学校（三级学院=人才主来源）
@@ -2047,7 +2061,7 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
     if (['深圳', '长崎', '首尔', '悉尼'].includes(c.name)) { c.b.arsenal = 1; c.b.airport = 1; } // A1.4 初始机场
   }
   const log = [];
-  const diplo = makeDiplo(['CN', 'JP', 'KR', 'AU']);
+  const diplo = makeDiplo(allIds); // v26 剧本化：阵营 ID 动态（禁写死 4 阵营，AGENTS §七.1）
   // warsmoke：t105 强制 JP 宣战 CN（战争路径验证钩子——U_target/战损/占领结算；不入常规盘）
   const warsmoke = process.argv[6] === 'warsmoke' || process.argv[4] === 'warsmoke';
   for (let t = 1; t <= turns; t++) {
@@ -2514,7 +2528,7 @@ function runScenario(name) {
     const s = r.snap;
     console.log(`\n—— ${r.label} ——${s.winner ? ` 胜者=${s.winner.id}(${s.winner.type} t${s.winner.t})` : s.doom ? ' 全局失败' : ' 无胜者'} | 宣战${s.wars}次 | 同盟 ${s.allies.join(' ') || '无'}`);
     console.log('阵营 | 人口 | 国库 | 兵 | W | 忠诚 | 科技 | 文化 | 卡组');
-    for (const x of ['CN', 'JP', 'KR', 'AU']) console.log(row(x, s));
+    for (const x of s.ids) console.log(row(x, s));
     console.log('财政末回 | ' + ['CN', 'JP', 'KR', 'AU'].filter((x) => s.facs[x]).map((x) => finRow(x, s)).join('\n         | '));
     if (s.facs.CN) {
       const m = s.facs.CN.mods;
@@ -2584,12 +2598,13 @@ for (const c of cities) {
   const ent = Object.values(c.ent).reduce((a, v) => a + v, 0);
   console.log(`${c.name.padEnd(4)} | ${fmt(c.P).padStart(9)} | ${fmt(c.C).padStart(8)} | ${(c.P / c.C).toFixed(2)} | ${c.b.farm} | ${c.b.plant} | ${c.b.factory} | ${ent} | ${c.tour} | ${c.pub} | ${c.b.street + c.b.mall} | ${c.b.office} | ${c.b.academy}`);
 }
-const cn = facs['CN'];
+const mainId = Object.keys(facs).find((x) => facs[x].cities.length > 0) || Object.keys(facs)[0]; // 剧本化：主观察阵营=首个存活（教学盘即 CN）
+const cn = facs[mainId];
 const cnPop = cn ? cn.cities.reduce((a, c) => a + c.P, 0) : 0;
 const survivors = Object.values(facs).filter((f) => f.cities.length > 0).length;
 console.log('\n[验收]');
-console.log(`CN 人口=${fmt(cnPop)}（初始1,520,000）| 5% 动员=${fmt(cnPop * 0.05)} | 10%=${fmt(cnPop * 0.1)}`);
-console.log(`CN 兵=${fmt(cn ? cn.soldiers : 0)} | 存活=${survivors}/4 | 国库=${fmt(cn ? cn.treasury : 0)} | 科技=${cn ? cn.tech.toFixed(0) : 0}/40`);
+console.log(`[${mainId}] 人口=${fmt(cnPop)} | 5% 动员=${fmt(cnPop * 0.05)} | 10%=${fmt(cnPop * 0.1)}`);
+console.log(`[${mainId}] 兵=${fmt(cn ? cn.soldiers : 0)} | 存活=${survivors}/${Object.keys(facs).length} | 国库=${fmt(cn ? cn.treasury : 0)} | 科技=${cn ? cn.tech.toFixed(0) : 0}/40（节点 ${cn ? Object.keys(cn.techDone).length : 0}/40）`);
 console.log(`胜利=${doom ? `全局失败（灭世 t${doom.t}）` : winner ? `${winner.id}（${winner.type} t${winner.t}）` : '无'}`);
 console.log(`\n[环境] 累计碳=${fmt(env.carbon)} | 温度指数=${env.temp.toFixed(1)} | 海平面=${env.sea.toFixed(2)}m（${env.level}级） | 净碳=${fmt(env.emit - env.recycle)}（排放${fmt(env.emit)}/回收${fmt(env.recycle)}） | 配额法案=${diplo.carbonBill ? `系数${diplo.carbonBill.ratio} 至t${diplo.carbonBill.expire}` : '无'}${stress ? '（压力盘未接环境账）' : ''}`);
 console.log('\n[文化] 阵营 | 文化存量 | 本国认同 | 最大外国 | 完全入侵(≥60%) | 失所');

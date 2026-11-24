@@ -57,7 +57,30 @@ function parseDoc(abs) {
   }
   // 同步日期（若有）
   const sync = txt.match(/同步日期[:：]\s*\**(\d{4}-\d{2}-\d{2})/);
-  return { path: rel, title, version, status, syncDate: sync ? sync[1] : null, size: lines.length, links };
+  // contentHash：剔除 syncDate 元信息后取 md5 —— 纯元信息变更不算内容变更（防批量补 syncDate 造成假 stale）
+  const body = txt.replace(/同步日期[:：][^\n]*/g, '').replace(/·\s*同步日期[^\n]*/g, '');
+  const contentHash = require('crypto').createHash('md5').update(body).digest('hex').slice(0, 12);
+  return { path: rel, title, version, status, syncDate: sync ? sync[1] : null, size: lines.length, links, contentHash };
+}
+
+
+// ---------- 内容哈希台账（changedAt 驱动的 stale 判定）----------
+const HASHES = path.join(ROOT, 'docs/meta/doc-hashes.json');
+const TODAY = new Date().toISOString().slice(0, 10);
+function loadHashes() {
+  try { return JSON.parse(fs.readFileSync(HASHES, 'utf8')); } catch (e) { return { schema: 1, docs: {} }; }
+}
+function saveHashes(h) { fs.mkdirSync(path.dirname(HASHES), { recursive: true }); fs.writeFileSync(HASHES, JSON.stringify(h, null, 1)); }
+// 返回 path → changedAt（内容最后变更日）。冷启动用 git 提交日；哈希不变则沿用旧 changedAt
+function syncHashes(docs) {
+  const h = loadHashes();
+  for (const d of docs) {
+    const old = h.docs[d.path];
+    if (!old) h.docs[d.path] = { hash: d.contentHash, changedAt: stamp(d.path) || TODAY };
+    else if (old.hash !== d.contentHash) h.docs[d.path] = { hash: d.contentHash, changedAt: TODAY };
+  }
+  saveHashes(h);
+  return h.docs;
 }
 
 // ---------- git 最后提交时间 ----------
@@ -80,6 +103,7 @@ function gitTimes() {
 const files = walk(path.join(ROOT, 'docs'));
 const docs = files.map(parseDoc);
 const times = gitTimes();
+const HASH_TABLE = syncHashes(docs);
 const byPath = new Map(docs.map((d) => [d.path, d]));
 
 // 依赖（被引用）与反查
@@ -105,7 +129,11 @@ function stamp(p) {
 function exemptType(d) {
   const p = d.path;
   if (/changelog\.md$/.test(p)) return 'changelog';
-  if (/^\d\d-\d\d-/.test(p.split('/').pop())) return 'dated';       // 日期化交接单/施工单=时点快照
+  {
+    const fn = p.split('/').pop();
+    if (/^\d\d-\d\d-/.test(fn) || /-20\d\d-\d\d-\d\d\.md$/.test(fn)) return 'dated'; // 日期化交接单/方案（时点快照）
+    if (/-报告\.md$/.test(fn) || /沙盘报告/.test(fn)) return 'report';                 // 沙盘/验证报告=证据
+  }
   if (p.includes('/02-决策/')) return 'adr';
   if (p.includes('/00-调研/') || p.includes('调研')) return 'research';
   if (/(^|\/)README\.md$/.test(p)) return 'readme';
@@ -122,7 +150,7 @@ function staleInfo(d) {
     if (l.broken || !l.inHead) continue;
     if (seen.has(l.target)) continue;
     seen.add(l.target);
-    const ds = stamp(l.target);
+    const ds = (HASH_TABLE[l.target] && HASH_TABLE[l.target].changedAt) || stamp(l.target);
     if (ds && ds > d.syncDate) newer.push({ path: l.target, date: ds });
   }
   return newer;

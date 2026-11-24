@@ -29,7 +29,7 @@ const CARDS = [
   { id: 'industrialSubsidy', attr: 'eco', tier: '中', mutex: null, fx: { industry: 1.10, upkeep: 1.005 } },                 // 产业补贴：工业×1.10（增量接入）、财支出+0.5%
   { id: 'antitrust', attr: 'eco', tier: '中', mutex: null, fx: { pool: 1.08, comm: 0.95 } },                                // 反垄断：池×1.08、商业×0.95
   // ---- 文化 10（紫）----
-  { id: 'heritageProtection', attr: 'cul', tier: '早', mutex: 'heritage', fx: { out: 1.05, resistPubBias: 0.01 } },         // 文化遗产保护：文化值+5%、resistPub 3%→4%/座级
+  { id: 'heritageProtection', attr: 'cul', tier: '早', mutex: 'heritage', fx: { out: 1.05, culEnt: 1.05 } },                // 文化遗产保护：文化值+5%、娱乐文化值+5%（抵抗删除后改纯产出双线，11-24）
   { id: 'fourOlds', attr: 'cul', tier: '早', mutex: 'heritage', fx: { out: 0.85, tech: 1.10 } },                            // 破四旧：文化×0.85、科技×1.10（第二张可感知负面）
   { id: 'tourismPowerhouse', attr: 'cul', tier: '中', mutex: null, fx: { tourCap: 1.3, tourIncome: 1.2 } },                 // 全域旅游：文旅容量×1.3、收入×1.2
   { id: 'screenSoftPower', attr: 'cul', tier: '中', mutex: null, fx: { culEnt: 1.15 } },                                    // 文化产业：娱乐线文化值 ×1.15

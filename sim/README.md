@@ -9,6 +9,7 @@
 sim/
   README.md              ← 本文件
   data/cards.js          ← 政策卡数据（一条一卡，AI 友好规范 P1：改值只改 1 行，供各版本 require）
+  data/scenarios.js      ← **剧本数据**：tutorial=教学盘（14城/4阵营，历史盘口径）/ **revival=复苏副本（8阵营单城+6空城，主副本/通用规则基准）**
   tools/doc-sync.js      ← 文档同步哨兵（scan 全景 / gen 生成 docs/meta/docs-index.json / stale 同步债 / who 影响面反查）
   v22/
     core.js              ← 白机版 v22 全量核心盘（人口/粮/消费/财政/军费五账）
@@ -49,6 +50,8 @@ sim/
 运行：
 - 标准全量盘：`node sim/v22/full.js 200 <seed>`
 - 战时压力盘：`node sim/v22/full.js 200 <seed> stress <服役率>`（如 `stress 0.02`；强制全阵营交战、跳过外交）
+- **v26 起剧本切换（院长 2026-11-24 第 2 条：全量模拟用复苏副本）**：`node sim/v26/policy.js 200 <seed> --scenario=revival`（复苏盘）/ `--scenario=tutorial`（教学盘，兼容历史盘）/ 默认 tutorial
+- **v26 场景对照**：`node sim/v26/policy.js 200 1 vs|tune|stack|finance|neutral|infra|spy|auto|audit [nobuild]`
 
 ## 四、历史脚本
 
