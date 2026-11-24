@@ -533,6 +533,7 @@ function aiBuild(c, s, F, fac, devMode, envTemp = 0, rand = () => 0.5) {
   else if (card.kind === 'pub') c.pub += 1;
   else c.b[card.key] += 1;
   fac.treasury -= cost * 0.10;
+  fac.buildSpend = (fac.buildSpend || 0) + cost * 0.10; // v26 第 4 条诊断：建造首付累计（小国财政压力来源）
   c.prodBank -= cost / 5;
   c.builtThisTurn += 1;
   c._maint = (c._maint || 0) + cost * 0.01 * (mods.upkeep || 1); // 维护追踪（预算硬约束用）
@@ -703,18 +704,18 @@ const CARDS = [
   { id: 'warIndustryFirst', attr: 'mil', tier: '中', mutex: null, fx: { arsenal: 1.15 } },                                  // 军工优先：兵工厂批次产出 ×1.15
   { id: 'armsSelfSufficiency', attr: 'mil', tier: '中', mutex: null, fx: { milCost: 0.90 } },                               // 国防自主：军饷+装备采购 ×0.9（进口开关占位）
   { id: 'martialSpirit', attr: 'mil', tier: '中', mutex: null, fx: { loyaltyFlow: 0.3 } },                                  // 国防教育：忠诚 +0.3/回（军管底线占位）
-  { id: 'nuclearDeterrence', attr: 'mil', tier: '后', mutex: null, fx: { warThreshold: 2, repPerTurn: -0.5 } },             // 核威慑：被宣战阈值+2、rep−0.5/回
-  { id: 'disarmament', attr: 'mil', tier: '后', mutex: null, fx: { serviceCap: -0.02, repPerTurn: 0.3, relFlow: 0.5 } },    // 裁军：上限−2pp、rep/关系↑
-  { id: 'militaryBusiness', attr: 'mil', tier: '中', mutex: null, fx: { milIncome: 0.01, q: 0.90, loyaltyFlow: -0.3, repPerTurn: -0.3 } }, // 军队经商：0.01财/兵/回、q×0.9（唯一强负面）
+  { id: 'nuclearDeterrence', attr: 'mil', tier: '后', mutex: null, fx: { warThreshold: 2, repPerTurn: -0.2 } },             // 核威慑：被宣战阈值+2、rep−0.2/回（v1.1 降档）
+  { id: 'disarmament', attr: 'mil', tier: '后', mutex: null, fx: { serviceCap: -0.02, repPerTurn: 0.2, relFlow: 0.2 } },    // 裁军：上限−2pp、rep/关系↑（降档）
+  { id: 'militaryBusiness', attr: 'mil', tier: '中', mutex: null, fx: { milIncome: 0.01, q: 0.90, loyaltyFlow: -0.3, repPerTurn: -0.2 } }, // 军队经商：0.01财/兵/回、q×0.9（唯一强负面）
   { id: 'electronicGreatWall', attr: 'mil', tier: '后', mutex: 'digital', fx: { tech: 0.97, counterSpy: 1 } },              // 电子长城：科技−3%、反谍+1（互联网乘数失效占位）
-  { id: 'peacekeeping', attr: 'mil', tier: '中', mutex: null, fx: { repPerTurn: 0.5, relWar: 0.5, upkeep: 1.005 } },        // 维和行动：rep+0.5、对交战国关系+0.5、财支出+0.5%
+  { id: 'peacekeeping', attr: 'mil', tier: '中', mutex: null, fx: { repPerTurn: 0.3, relWar: 0.2, upkeep: 1.005 } },        // 维和行动：rep+0.3、对交战国关系+0.2、财支出+0.5%（降档）
   // ---- 经济 10（黄）----
   { id: 'taxCut', attr: 'eco', tier: '早', mutex: 'tax', fx: { tax: 0.85, pool: 1.08, W: 1 } },                            // 减税：税−15%、池+8%、W+1
   { id: 'taxHike', attr: 'eco', tier: '中', mutex: 'tax', fx: { tax: 1.20, pool: 0.95, W: -1 } },                           // 增税：税+20%、池−5%、W−1
   { id: 'birthSubsidy', attr: 'eco', tier: '早', mutex: 'population', fx: { growth: 1.12, subsidyCost: 0.0025 } },          // 生育补贴：g×1.12、人口半数补贴 0.0025财/人/回
   { id: 'birthControl', attr: 'eco', tier: '中', mutex: 'population', fx: { liv: 5, growth: 0.85 } },                       // 优生优育：宜居+5、g×0.85
-  { id: 'privatization', attr: 'eco', tier: '中', mutex: 'industry', fx: { comm: 1.10, pool: 1.05 } },                      // 私有化：商业×1.10、池×1.05（不扣财收——同轴抵消已修）
-  { id: 'stateIndustry', attr: 'eco', tier: '中', mutex: 'industry', fx: { fisc: 1.10, pool: 0.95 } },                       // 国有化：总财收×1.10（税+商业，v26 口径修正）、池×0.95
+  { id: 'privatization', attr: 'eco', tier: '中', mutex: 'industry', fx: { comm: 1.15, pool: 1.025 } },                     // 私有化：商业×1.15、池×1.025（v1.2：池±5% 在建造盘有复利放大，幅度减半保留方向）
+  { id: 'stateIndustry', attr: 'eco', tier: '中', mutex: 'industry', fx: { fisc: 1.07, pool: 0.975 } },                      // 国有化：总财收×1.07、池×0.975（v1.2 同上）
   { id: 'infraBlitz', attr: 'eco', tier: '早', mutex: null, fx: { cost: 0.90 } },                                           // 基建狂魔：建筑造价 ×0.9（v2.4 院长口径）
   { id: 'welfareState', attr: 'eco', tier: '中', mutex: null, fx: { W: 3, upkeep: 1.005 } },                                // 福利国家：W+3、财支出+0.5%
   { id: 'industrialSubsidy', attr: 'eco', tier: '中', mutex: null, fx: { industry: 1.10, upkeep: 1.005 } },                 // 产业补贴：工业×1.10（增量接入）、财支出+0.5%
@@ -728,19 +729,19 @@ const CARDS = [
   { id: 'civicEducation', attr: 'cul', tier: '早', mutex: null, fx: { out: 1.05, assimil: 1.15 } },                         // 义务教育：文化值+5%、同化×1.15
   { id: 'culturalCensorship', attr: 'cul', tier: '中', mutex: 'speech', fx: { self: 1.2, out: 0.90, W: -3 } },              // 言论管制：自压×1.2、输出−10%、W−3
   { id: 'doubleReduction', attr: 'cul', tier: '中', mutex: null, fx: { W: 3, tech: 0.97 } },                                // 教育双减：W+3、科技−3%
-  { id: 'nationalism', attr: 'cul', tier: '中', mutex: null, fx: { relFlow: -0.5, loyaltyFlow: 1, serviceCap: 0.01 } },     // 民族主义：关系−0.5/回、本国城忠诚+1/回、上限+1pp（外籍惩罚占位）
-  { id: 'feminism', attr: 'cul', tier: '中', mutex: null, fx: { repPerTurn: 0.3, comm: 0.97, industry: 0.97, loyaltyFlow: -0.5 } }, // 女权主义：rep+0.3、工业商业×0.97、忠诚−0.5
-  // ---- 外交 10（绿 · §5.12 三线）----
-  { id: 'goodNeighbor', attr: 'dip', tier: '早', mutex: 'diploPosture', fx: { relFlow: 0.5 } },                             // 和平共处（温和）：建交国关系 +0.5/回
-  { id: 'toughDiplomacy', attr: 'dip', tier: '中', mutex: 'diploPosture', fx: { warThreshold: 1, relFlow: -0.3 } },         // 铁腕外交（强硬）：宣战阈值+1、关系−0.3/回
-  { id: 'tradeProtection', attr: 'dip', tier: '中', mutex: 'tradeRegime', fx: { relFlow: -0.5 } },                          // 贸易保护（中性）：渗透↓（双向，sim 无渗透系统=占位）
+  { id: 'nationalism', attr: 'cul', tier: '中', mutex: null, fx: { relFlow: -0.3, loyaltyFlow: 1, serviceCap: 0.01 } },     // 民族主义：关系−0.3/回（降档）、本国城忠诚+1/回、上限+1pp
+  { id: 'feminism', attr: 'cul', tier: '中', mutex: null, fx: { repPerTurn: 0.2, comm: 0.97, industry: 0.97, loyaltyFlow: -0.5 } }, // 女权主义：rep+0.2（降档）、工业商业×0.97、忠诚−0.5
+  // ---- 外交 10（绿 · §5.12 三线；v1.1 关系/声誉流全类降档——院长 11-24 第 1 条）----
+  { id: 'goodNeighbor', attr: 'dip', tier: '早', mutex: 'diploPosture', fx: { relFlow: 0.2 } },                             // 和平共处（温和）：建交国关系 +0.2/回
+  { id: 'toughDiplomacy', attr: 'dip', tier: '中', mutex: 'diploPosture', fx: { warThreshold: 1, relFlow: -0.2 } },         // 铁腕外交（强硬）：宣战阈值+1、关系−0.2/回
+  { id: 'tradeProtection', attr: 'dip', tier: '中', mutex: 'tradeRegime', fx: { relFlow: -0.3 } },                          // 贸易保护（中性）：渗透↓（双向，sim 无渗透系统=占位）
   { id: 'nonAligned', attr: 'dip', tier: '中', mutex: 'alliance', fx: { warThreshold: 1, noAlliance: 1 } },                 // 不结盟运动（中性）：不进同盟、阈值+1
-  { id: 'foreignAid', attr: 'dip', tier: '早', mutex: null, fx: { relWeakest: 2, repPerTurn: 0.5, upkeep: 1.01 } },         // 发展援助（温和）：最弱国关系+2/回、rep+0.5、财支出+1%
-  { id: 'multilateralism', attr: 'dip', tier: '中', mutex: null, fx: { repPerTurn: 0.3, relFlow: 0.3 } },                   // 多边主义（温和）：rep+0.3、关系+0.3/回
-  { id: 'hegemony', attr: 'dip', tier: '中', mutex: null, fx: { relVsWeak: -0.5, buyPriceMul: 0.85, repPerTurn: -0.3 } },   // 霸权主义（强硬）：对弱国关系−0.5、采购价×0.85、rep−0.3
-  { id: 'colonialism', attr: 'dip', tier: '中', mutex: null, fx: { out: 1.10, repPerTurn: -0.5 } },                         // 殖民主义（强硬）：对弱国输出×1.1（近似 out）、rep−0.5（渗透×1.2 占位）
-  { id: 'absoluteNeutrality', attr: 'dip', tier: '中', mutex: 'diploPosture', fx: { canDeclareWar: 1, relFlow: 1, repPerTurn: 0.5 } }, // 绝对中立：无法宣战、关系+1/回、rep+0.5
-  { id: 'customsUnion', attr: 'dip', tier: '后', mutex: 'tradeRegime', fx: { comm: 1.05, relFlow: -0.5 } },                 // 自贸协定：渗透/容量 sim 近似 comm×1.05、非同盟关系−0.5/回
+  { id: 'foreignAid', attr: 'dip', tier: '早', mutex: null, fx: { relWeakest: 1.0, repPerTurn: 0.3, upkeep: 1.01 } },         // 发展援助（温和）：最弱国关系+1/回（降档）、rep+0.3、财支出+1%
+  { id: 'multilateralism', attr: 'dip', tier: '中', mutex: null, fx: { repPerTurn: 0.2, relFlow: 0.15 } },                   // 多边主义（温和）：rep+0.2、关系+0.15/回（降档）
+  { id: 'hegemony', attr: 'dip', tier: '中', mutex: null, fx: { relVsWeak: -0.3, buyPriceMul: 0.85, repPerTurn: -0.2 } },   // 霸权主义（强硬）：对弱国关系−0.3/回（降档）、采购价×0.85、rep−0.2
+  { id: 'colonialism', attr: 'dip', tier: '中', mutex: null, fx: { out: 1.10, repPerTurn: -0.3 } },                         // 殖民主义（强硬）：对弱国输出×1.1（近似 out）、rep−0.3（降档）
+  { id: 'absoluteNeutrality', attr: 'dip', tier: '中', mutex: 'diploPosture', fx: { canDeclareWar: 1, relFlow: 0.3, repPerTurn: 0.3 } }, // 绝对中立：无法宣战（仅自身）、关系+0.3/回、rep+0.3（降档）
+  { id: 'customsUnion', attr: 'dip', tier: '后', mutex: 'tradeRegime', fx: { comm: 1.05, relFlow: -0.3 } },                 // 自贸协定：渗透/容量 sim 近似 comm×1.05、非同盟关系−0.3/回（降档）
   // ---- 通用 10（白）----
   { id: 'civilServiceReform', attr: 'gen', tier: '早', mutex: null, fx: { upkeep: 0.85 } },                                 // 公务员改革：市政维护 ×0.85
   { id: 'antiCorruption', attr: 'gen', tier: '中', mutex: null, fx: { loyaltyFlow: 1 } },                                   // 反腐倡廉：忠诚 +1/回（最强档；腐败事件免疫占位）
@@ -792,6 +793,10 @@ function mutexConflict(f, card) {
     if ((CARD_BY_ID[id] || {}).mutex === card.mutex) return true;
   return false;
 }
+// v26 院长第 3/7 条：政策 AI 评分接入"阵营状态 + 对手外交视野"（外交政策默认可见）
+// CARD_CTX 由 policyPressureTick 每回合设置（{facs, diplo}）；同质化根因=v25 评分只有静态 fxW 权重，
+// 不含财政承受力/人口/军队规模/W 边际/关系饱和度 → 4 阵营永远选同一套高分卡（数值平衡是横截面问题，同质化是评分函数缺状态项）。
+let CARD_CTX = null;
 function cardGain(f, card, mods) {
   const L = D.leaders[f.id] || {};
   let g = 0;
@@ -812,6 +817,44 @@ function cardGain(f, card, mods) {
   if (pathAff[card.attr] === mainPath) g *= AIP.policy.pathMult;
   // 谨慎人格惩罚高风险卡
   if ((card.fx.warThreshold || 0) > 0) g *= 1 - 0.5 * (L.caution || 0.5);
+
+  // ==== v26 阵营状态门控（院长 11-24 第 3 条：要基于自己阵营情况选政策）====
+  const pop = f.cities.reduce((a, c) => a + c.P, 0);
+  const sol = f.soldiers || 0;
+  const net = f.netIncomeLast != null ? f.netIncomeLast : 0;
+  const ft = f.financeTrace || {};
+  const exp = (ft.upkeep || 0) + (ft.salary || 0) + (ft.officers || 0) + (ft.policyCost || 0);
+  const afford = clamp(net / Math.max(1, exp), 0, 1.5); // 净收支/总支出（<1=赤字边缘）
+  // ① 财政承受力：支出型卡（upkeep>1 / subsidyCost）按余量打折——小国不抄大国的福利包
+  const spendCard = (card.fx.upkeep || 1) > 1 || (card.fx.subsidyCost || 0) > 0;
+  if (spendCard) g *= 0.55 + 0.45 * Math.min(afford, 1);
+  // ② 人口规模：服役比例类卡按兵源基数（小国收益小）
+  if (card.fx.serviceCap) g *= clamp(pop / 1e6, 0.35, 1.25);
+  // ③ 军队规模：战力/军工/军饷/军队经商类按现役兵力（无军队=无感）
+  if (card.fx.q || card.fx.milIncome || card.fx.arsenal || card.fx.salary) g *= clamp(sol / 8000, 0.4, 1.2);
+  // ④ 民生 W 边际递减：已高 W 再叠 W 卡收益递减；高 W 时压制类（W<0）更可接受
+  const W0 = f.W != null ? f.W : 60;
+  if ((card.fx.W || 0) > 0) g *= W0 >= 70 ? 0.45 : W0 >= 62 ? 0.8 : 1;
+  if ((card.fx.W || 0) < 0) g *= W0 >= 70 ? 1.15 : 1;
+  // ⑤ 关系饱和度：正向关系流卡在关系已高时减分（避免"关系全满还堆关系卡"）
+  const dip = CARD_CTX && CARD_CTX.diplo;
+  if (dip && (card.fx.relFlow || 0) > 0) {
+    const others = Object.keys(dip.rel[f.id] || {}).filter((x) => CARD_CTX.facs[x] && CARD_CTX.facs[x].cities.length > 0);
+    const avg = others.length ? others.reduce((a, x) => a + dip.rel[f.id][x], 0) / others.length : 0;
+    g *= avg >= 70 ? 0.5 : avg >= 50 ? 0.85 : 1;
+  }
+  // ⑥ 对手外交感知（院长第 7 条：外交政策默认可见 → 可按对手姿态反制）
+  if (dip) {
+    const foes = Object.keys(dip.rel[f.id] || {}).filter((x) => x !== f.id && CARD_CTX.facs[x] && CARD_CTX.facs[x].cities.length > 0);
+    let threat = 0, harmless = 0;
+    for (const x of foes) {
+      const mx = facMods(CARD_CTX.facs[x]);
+      if ((mx.relVsWeak || 0) < 0 || mx.warThreshold > 0 || (mx.relFlow || 0) < 0) threat++; // 对手强硬（霸权/殖民/铁腕）
+      if (mx.canDeclareWar) harmless++; // 对手弃武（绝对中立）
+    }
+    if ((card.fx.relFlow || 0) > 0 || card.fx.canDeclareWar) g *= 1 + 0.12 * threat; // 对手强硬 → 我方走温和/中立
+    if (card.fx.warThreshold || (card.fx.relVsWeak || 0) < 0) g *= 1 + 0.12 * harmless; // 对手弃武 → 我方敢强硬
+  }
   return g;
 }
 
@@ -830,8 +873,9 @@ function applyForceCards(f) {
   f.pressure = 0; // 压制 AI 换卡冲动（另在评估入口跳过 forced 阵营）
   return true;
 }
-function policyPressureTick(t, facs, rand, log) {
+function policyPressureTick(t, facs, rand, log, diplo) {
   const Pp = AIP.policy;
+  CARD_CTX = { facs, diplo: diplo || null }; // v26 状态门控 + 对手外交视野（院长第 3/7 条）
   for (const f of Object.values(facs)) {
     if (!f.cities.length) continue;
     if (FORCE_CARDS[f.id]) { applyForceCards(f); continue; } // v26 强制卡组：整组锁定
@@ -1536,7 +1580,10 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
   for (const f of Object.values(facs)) {
     if (!f.cities.length) { f.atWar = false; continue; }
     const fm0 = facMods(f);
-    diplo.rep[f.id] = clamp(diplo.rep[f.id] + (fm0.repPerTurn || 0), 0, 100);
+    // v26 政策声誉流饱和衰减：正值按 (1−rep/100)、负值按 (rep/100) 衰减——高分不再免费堆高、低声誉不再无限下滑
+    const r0 = diplo.rep[f.id];
+    const sat = (fm0.repPerTurn || 0) >= 0 ? clamp(1 - r0 / 100, 0, 1) : clamp(r0 / 100, 0, 1);
+    diplo.rep[f.id] = clamp(r0 + (fm0.repPerTurn || 0) * sat, 0, 100);
   }
   // 战争状态：交战成员 + 守方盟友（防御性参战，动员潜力直接计入守方）
   for (const f of Object.values(facs)) {
@@ -1688,11 +1735,16 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
     const atWar = diplo.war && ((diplo.war.a === a && diplo.war.b === b) || (diplo.war.a === b && diplo.war.b === a));
     if (!atWar) {
       const ma = facMods(facs[a]);
-      let flow = 0.05 + (ma.relFlow || 0);
-      if (b === weakest) flow += (ma.relWeakest || 0);
-      if (dipPow(a) > 2 * dipPow(b)) flow += (ma.relVsWeak || 0);
-      if (atWarIds.has(b)) flow += (ma.relWar || 0);
-      diplo.rel[a][b] = clamp(diplo.rel[a][b] * 0.99 + flow, -100, 100);
+      const rel0 = diplo.rel[a][b];
+      // v26 政策关系流边际递减（院长第 1 条降档配套）：关系越高，政策流的边际贡献越小
+      // —— 防止政策卡把关系推过条约阈值后触发贸易协定 +2/回 的正反馈封顶（根因不在卡，在基线规则；
+      //    但卡侧必须不自带饱和，否则多卡叠加必然打满）
+      const satMult = clamp(1 - Math.max(0, rel0) / 100, 0, 1);
+      let flow = 0.05 + (ma.relFlow || 0) * satMult;
+      if (b === weakest) flow += (ma.relWeakest || 0) * satMult;
+      if (dipPow(a) > 2 * dipPow(b)) flow += (ma.relVsWeak || 0) * (1 - satMult);
+      if (atWarIds.has(b)) flow += (ma.relWar || 0) * satMult;
+      diplo.rel[a][b] = clamp(rel0 * 0.99 + flow, -100, 100);
       if (hasTreaty(diplo, 'trade', a, b, t)) diplo.rel[a][b] = clamp(diplo.rel[a][b] + D.trade.relPerTurn, -100, 100);
     }
   }
@@ -1737,8 +1789,8 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
           - 0.30 * (1 - Math.min(pr, 1.5) / 1.5) * L.caution
           - 0.25 * intervene * L.caution - (cb ? 0 : 0.15 * 0.5)
           + 0.20 * L.aggression + (adj ? 0.10 : -0.15);
-        // v26 目标持绝对中立卡：宣战成本上升（国际声誉代价，AI 侧评估）
-        if (facMods(facs[b]).canDeclareWar) U -= 0.25 * L.caution;
+        // v26 绝对中立口径（院长 11-24 第 6 条）：**只限制自身宣战，不提供"不被宣战"保护**——
+        // 原 v26 初版"目标持卡→宣战成本上升 U−0.25"已删除（与院长口径冲突）；被宣战仍可应战。
         if (cb) U += 0.30;
         // v24 进攻时机加成（AI战争细则 §4.1）：目标被制裁 / 本国和平后段；多线 N/A（sim 单战争制）
         if (sanctionActive(diplo, b, 'econ', t) || sanctionActive(diplo, b, 'cb', t)) U += AIP.war.timingSanction;
@@ -2242,7 +2294,7 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       }
     }
     // ==== 政策 AI（v24 · 变动因子驱动，全阵营；单回合 ≤1 次评估）====
-    policyPressureTick(t, facs, rand, log);
+    policyPressureTick(t, facs, rand, log, diplo);
     // ==== 环境账（全球碳 → 温度 → 海平面；环境系统 §十一；压力盘不接）====
     if (!stress) {
       let emit = 0, recycle = 0;
