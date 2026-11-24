@@ -692,74 +692,11 @@ const TECH_COST_REF = (() => {
   return total;
 })();
 
-// ================= 政策卡 52 张（政策卡内容专题 v3.0 收口：普通 50；attr: mil军/eco经/cul文/dip外/gen通） =================
-// fx 键=主公式落点（接线见 facMods）；加性键（bias）=W/liv/loyaltyFlow/relFlow/repPerTurn/warThreshold/
-//   counterSpy/serviceCap/canDeclareWar/noAlliance/relWeakest/relVsWeak/relWar/milIncome/subsidyCost/resistPubBias/immigration；
-//   其余为乘性（mult）。占位键（聚合审计、引擎未建）：counterSpy/immigration/贸易渗透类。
-// 数值=白机建议值（内容专题 v3.0 各卡表），本盘验证后定版。
-const CARDS = [
-  // ---- 军事 10（红）----
-  { id: 'conscription', attr: 'mil', tier: '早', mutex: 'militaryDoctrine', fx: { serviceCap: 0.02, q: 1.03 } },            // 全民服役：上限+2pp、q+3%
-  { id: 'volunteerService', attr: 'mil', tier: '中', mutex: 'militaryDoctrine', fx: { serviceCap: -0.02, q: 1.10, salary: 1.25 } }, // 志愿兵役：上限−2pp、q+10%、军饷档↑
-  { id: 'warIndustryFirst', attr: 'mil', tier: '中', mutex: null, fx: { arsenal: 1.15 } },                                  // 军工优先：兵工厂批次产出 ×1.15
-  { id: 'armsSelfSufficiency', attr: 'mil', tier: '中', mutex: null, fx: { milCost: 0.90 } },                               // 国防自主：军饷+装备采购 ×0.9（进口开关占位）
-  { id: 'martialSpirit', attr: 'mil', tier: '中', mutex: null, fx: { loyaltyFlow: 0.3 } },                                  // 国防教育：忠诚 +0.3/回（军管底线占位）
-  { id: 'nuclearDeterrence', attr: 'mil', tier: '后', mutex: null, fx: { warThreshold: 2, repPerTurn: -0.2 } },             // 核威慑：被宣战阈值+2、rep−0.2/回（v1.1 降档）
-  { id: 'disarmament', attr: 'mil', tier: '后', mutex: null, fx: { serviceCap: -0.02, repPerTurn: 0.2, relFlow: 0.2 } },    // 裁军：上限−2pp、rep/关系↑（降档）
-  { id: 'militaryBusiness', attr: 'mil', tier: '中', mutex: null, fx: { milIncome: 0.01, q: 0.90, loyaltyFlow: -0.3, repPerTurn: -0.2 } }, // 军队经商：0.01财/兵/回、q×0.9（唯一强负面）
-  { id: 'electronicGreatWall', attr: 'mil', tier: '后', mutex: 'digital', fx: { tech: 0.97, counterSpy: 1 } },              // 电子长城：科技−3%、反谍+1（互联网乘数失效占位）
-  { id: 'peacekeeping', attr: 'mil', tier: '中', mutex: null, fx: { repPerTurn: 0.3, relWar: 0.2, upkeep: 1.005 } },        // 维和行动：rep+0.3、对交战国关系+0.2、财支出+0.5%（降档）
-  // ---- 经济 10（黄）----
-  { id: 'taxCut', attr: 'eco', tier: '早', mutex: 'tax', fx: { tax: 0.85, pool: 1.08, W: 1 } },                            // 减税：税−15%、池+8%、W+1
-  { id: 'taxHike', attr: 'eco', tier: '中', mutex: 'tax', fx: { tax: 1.20, pool: 0.95, W: -1 } },                           // 增税：税+20%、池−5%、W−1
-  { id: 'birthSubsidy', attr: 'eco', tier: '早', mutex: 'population', fx: { growth: 1.12, subsidyCost: 0.0025 } },          // 生育补贴：g×1.12、人口半数补贴 0.0025财/人/回
-  { id: 'birthControl', attr: 'eco', tier: '中', mutex: 'population', fx: { liv: 5, growth: 0.85 } },                       // 优生优育：宜居+5、g×0.85
-  { id: 'privatization', attr: 'eco', tier: '中', mutex: 'industry', fx: { comm: 1.15, pool: 1.025 } },                     // 私有化：商业×1.15、池×1.025（v1.2：池±5% 在建造盘有复利放大，幅度减半保留方向）
-  { id: 'stateIndustry', attr: 'eco', tier: '中', mutex: 'industry', fx: { fisc: 1.07, pool: 0.975 } },                      // 国有化：总财收×1.07、池×0.975（v1.2 同上）
-  { id: 'infraBlitz', attr: 'eco', tier: '早', mutex: null, fx: { cost: 0.90 } },                                           // 基建狂魔：建筑造价 ×0.9（v2.4 院长口径）
-  { id: 'welfareState', attr: 'eco', tier: '中', mutex: null, fx: { W: 3, upkeep: 1.005 } },                                // 福利国家：W+3、财支出+0.5%
-  { id: 'industrialSubsidy', attr: 'eco', tier: '中', mutex: null, fx: { industry: 1.10, upkeep: 1.005 } },                 // 产业补贴：工业×1.10（增量接入）、财支出+0.5%
-  { id: 'antitrust', attr: 'eco', tier: '中', mutex: null, fx: { pool: 1.08, comm: 0.95 } },                                // 反垄断：池×1.08、商业×0.95
-  // ---- 文化 10（紫）----
-  { id: 'heritageProtection', attr: 'cul', tier: '早', mutex: 'heritage', fx: { out: 1.05, resistPubBias: 0.01 } },         // 文化遗产保护：文化值+5%、resistPub 3%→4%/座级
-  { id: 'fourOlds', attr: 'cul', tier: '早', mutex: 'heritage', fx: { out: 0.85, tech: 1.10 } },                            // 破四旧：文化×0.85、科技×1.10（第二张可感知负面）
-  { id: 'tourismPowerhouse', attr: 'cul', tier: '中', mutex: null, fx: { tourCap: 1.3, tourIncome: 1.2 } },                 // 全域旅游：文旅容量×1.3、收入×1.2
-  { id: 'screenSoftPower', attr: 'cul', tier: '中', mutex: null, fx: { culEnt: 1.15 } },                                    // 文化产业：娱乐线文化值 ×1.15
-  { id: 'academicFreedom', attr: 'cul', tier: '中', mutex: 'speech', fx: { tech: 1.05, out: 1.05 } },                       // 百家争鸣：科技+5%、输出+5%
-  { id: 'civicEducation', attr: 'cul', tier: '早', mutex: null, fx: { out: 1.05, assimil: 1.15 } },                         // 义务教育：文化值+5%、同化×1.15
-  { id: 'culturalCensorship', attr: 'cul', tier: '中', mutex: 'speech', fx: { self: 1.2, out: 0.90, W: -3 } },              // 言论管制：自压×1.2、输出−10%、W−3
-  { id: 'doubleReduction', attr: 'cul', tier: '中', mutex: null, fx: { W: 3, tech: 0.97 } },                                // 教育双减：W+3、科技−3%
-  { id: 'nationalism', attr: 'cul', tier: '中', mutex: null, fx: { relFlow: -0.3, loyaltyFlow: 1, serviceCap: 0.01 } },     // 民族主义：关系−0.3/回（降档）、本国城忠诚+1/回、上限+1pp
-  { id: 'feminism', attr: 'cul', tier: '中', mutex: null, fx: { repPerTurn: 0.2, comm: 0.97, industry: 0.97, loyaltyFlow: -0.5 } }, // 女权主义：rep+0.2（降档）、工业商业×0.97、忠诚−0.5
-  // ---- 外交 10（绿 · §5.12 三线；v1.1 关系/声誉流全类降档——院长 11-24 第 1 条）----
-  { id: 'goodNeighbor', attr: 'dip', tier: '早', mutex: 'diploPosture', fx: { relFlow: 0.2 } },                             // 和平共处（温和）：建交国关系 +0.2/回
-  { id: 'toughDiplomacy', attr: 'dip', tier: '中', mutex: 'diploPosture', fx: { warThreshold: 1, relFlow: -0.2 } },         // 铁腕外交（强硬）：宣战阈值+1、关系−0.2/回
-  { id: 'tradeProtection', attr: 'dip', tier: '中', mutex: 'tradeRegime', fx: { relFlow: -0.3 } },                          // 贸易保护（中性）：渗透↓（双向，sim 无渗透系统=占位）
-  { id: 'nonAligned', attr: 'dip', tier: '中', mutex: 'alliance', fx: { warThreshold: 1, noAlliance: 1 } },                 // 不结盟运动（中性）：不进同盟、阈值+1
-  { id: 'foreignAid', attr: 'dip', tier: '早', mutex: null, fx: { relWeakest: 1.0, repPerTurn: 0.3, upkeep: 1.01 } },         // 发展援助（温和）：最弱国关系+1/回（降档）、rep+0.3、财支出+1%
-  { id: 'multilateralism', attr: 'dip', tier: '中', mutex: null, fx: { repPerTurn: 0.2, relFlow: 0.15 } },                   // 多边主义（温和）：rep+0.2、关系+0.15/回（降档）
-  { id: 'hegemony', attr: 'dip', tier: '中', mutex: null, fx: { relVsWeak: -0.3, buyPriceMul: 0.85, repPerTurn: -0.2 } },   // 霸权主义（强硬）：对弱国关系−0.3/回（降档）、采购价×0.85、rep−0.2
-  { id: 'colonialism', attr: 'dip', tier: '中', mutex: null, fx: { out: 1.10, repPerTurn: -0.3 } },                         // 殖民主义（强硬）：对弱国输出×1.1（近似 out）、rep−0.3（降档）
-  { id: 'absoluteNeutrality', attr: 'dip', tier: '中', mutex: 'diploPosture', fx: { canDeclareWar: 1, relFlow: 0.3, repPerTurn: 0.3 } }, // 绝对中立：无法宣战（仅自身）、关系+0.3/回、rep+0.3（降档）
-  { id: 'customsUnion', attr: 'dip', tier: '后', mutex: 'tradeRegime', fx: { comm: 1.05, relFlow: -0.3 } },                 // 自贸协定：渗透/容量 sim 近似 comm×1.05、非同盟关系−0.3/回（降档）
-  // ---- 通用 10（白）----
-  { id: 'civilServiceReform', attr: 'gen', tier: '早', mutex: null, fx: { upkeep: 0.85 } },                                 // 公务员改革：市政维护 ×0.85
-  { id: 'antiCorruption', attr: 'gen', tier: '中', mutex: null, fx: { loyaltyFlow: 1 } },                                   // 反腐倡廉：忠诚 +1/回（最强档；腐败事件免疫占位）
-  { id: 'realNameSystem', attr: 'gen', tier: '中', mutex: null, fx: { counterSpy: 1, W: -1 } },                             // 网络实名制：反谍+1、W−1
-  { id: 'immigrationLimit', attr: 'gen', tier: '早', mutex: null, fx: { immigration: 1 } },                                 // 移民管制：入境开关（sim 无移民=占位）
-  { id: 'greenTransition', attr: 'gen', tier: '后', mutex: null, fx: { emit: 0.90, industry: 0.97 } },                      // 绿色转型：排放×0.90、工业×0.97
-  { id: 'universalHealthcare', attr: 'gen', tier: '中', mutex: null, fx: { W: 3, upkeep: 1.005 } },                         // 全民医保：W+3、财支出+0.5%
-  { id: 'delayedRetirement', attr: 'gen', tier: '中', mutex: null, fx: { W: -2, loyaltyFlow: -0.3, comm: 1.05, industry: 1.05 } }, // 延迟退休：W−2、忠诚−0.3、产出×1.05
-  { id: 'drugProcurement', attr: 'gen', tier: '中', mutex: null, fx: { W: 2, liv: 1, growth: 1.05, upkeep: 1.005 } },       // 药品集采：W+2、宜居+1、g×1.05、财支出+0.5%
-  { id: 'foodSecurity', attr: 'gen', tier: '早', mutex: null, fx: { food: 1.10 } },                                         // 耕地红线（四裁移入通用）：粮产 ×1.10
-  { id: 'wasteSorting', attr: 'gen', tier: '早', mutex: null, fx: { liv: 2, emit: 0.95 } },                                 // 垃圾分类（四裁移入通用）：宜居+2、排放×0.95
-];
-// 特殊 2（不进初始卡组，不参与 AI 装卡；§12.1 审计占位）：
-//   carbonQuota 碳排放配额：UN 提案发卡（sim 侧=已有 carbonBill 法案机制承载，签约口径 ×0.8）
-//   environmentalProtection 环境保护政策：event 解锁，污染建筑产出 ×0.7（发电效率不算产出、不参与 ×0.7——11-23 院长定）
-const CARD_BY_ID = Object.fromEntries(CARDS.map((c) => [c.id, c]));
-const ATTR_NAME = { mil: '军', eco: '经', cul: '文', dip: '外', gen: '通' };
-const SLOTS_PER_ATTR = 2;
+// ================= 政策卡 52 张（数据外置 · AI 友好规范 P1）=================
+// 数据源：sim/data/cards.js（一条一卡、id 在最左、改值只改 1 行，不碰本文件）
+// 特殊 2 张不进 AI 卡池：carbonQuota（UN 提案发卡，sim 由 carbonBill 法案承载）· environmentalProtection（event：污染建筑产出 ×0.7，发电不参与）
+const { CARDS, CARD_BY_ID, ATTR_NAME, SLOTS_PER_ATTR } = require('../data/cards.js');
+
 
 // ================= 政策：效果聚合（全阵营；落点=主公式 ×8 尺度） =================
 // v26 键分派：BIAS_KEYS 加性（+=），SWITCH_KEYS 布尔（||），其余乘性（*=）
@@ -1582,7 +1519,7 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
     const fm0 = facMods(f);
     // v26 政策声誉流饱和衰减：正值按 (1−rep/100)、负值按 (rep/100) 衰减——高分不再免费堆高、低声誉不再无限下滑
     const r0 = diplo.rep[f.id];
-    const sat = (fm0.repPerTurn || 0) >= 0 ? clamp(1 - r0 / 100, 0, 1) : clamp(r0 / 100, 0, 1);
+    const sat = (fm0.repPerTurn || 0) >= 0 ? clamp(1 - r0 / 100, 0, 1) : clamp(r0 / 100, 0, 1);  // @hook:rep 声誉流+饱和衰减
     diplo.rep[f.id] = clamp(r0 + (fm0.repPerTurn || 0) * sat, 0, 100);
   }
   // 战争状态：交战成员 + 守方盟友（防御性参战，动员潜力直接计入守方）
@@ -1739,7 +1676,7 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
       // v26 政策关系流边际递减（院长第 1 条降档配套）：关系越高，政策流的边际贡献越小
       // —— 防止政策卡把关系推过条约阈值后触发贸易协定 +2/回 的正反馈封顶（根因不在卡，在基线规则；
       //    但卡侧必须不自带饱和，否则多卡叠加必然打满）
-      const satMult = clamp(1 - Math.max(0, rel0) / 100, 0, 1);
+      const satMult = clamp(1 - Math.max(0, rel0) / 100, 0, 1);  // @hook:relation 关系流+饱和衰减
       let flow = 0.05 + (ma.relFlow || 0) * satMult;
       if (b === weakest) flow += (ma.relWeakest || 0) * satMult;
       if (dipPow(a) > 2 * dipPow(b)) flow += (ma.relVsWeak || 0) * (1 - satMult);
@@ -1953,7 +1890,7 @@ function cultureResist(f) {
   const m = facMods(f);
   let r = 0;
   for (const c of f.cities) {
-    r += c.pub * (P.culture.resistPub + (m.resistPubBias || 0)) + c.tour * P.culture.resistTour // v26 遗产保护：resistPub 3%→4%/座级
+    r += c.pub * (P.culture.resistPub + (m.resistPubBias || 0)) + c.tour * P.culture.resistTour // v26 遗产保护：resistPub 3%→4%/座级  // @hook:resistPub 文化建筑抵抗
       + Object.values(c.ent).reduce((a, v) => a + v, 0) * P.culture.resistEnt;
   }
   return clamp(r, 0, P.culture.resistCap);
@@ -2002,7 +1939,7 @@ function cultureTick(t, facs, diplo, ids) {
     const press = {};
     for (const A of alive) if (A !== B) { press[A] = culturePressure(A, B, facs, diplo, t); total += press[A]; }
     const id = fb.identity;
-    const convR = P.culture.convergeR * (facMods(fb).assimil || 1); // v26 义务教育：同化（自份额收敛）×1.15
+    const convR = P.culture.convergeR * (facMods(fb).assimil || 1); // v26 义务教育：同化（自份额收敛）×1.15  // @hook:assimil 同化乘区
     id[B] = (id[B] || 0) + convR * (self / total - (id[B] || 0));
     for (const A of alive) if (A !== B) id[A] = (id[A] || 0) + P.culture.convergeR * ((press[A] || 0) / total - (id[A] || 0));
     // 死国份额清零 + Σ 归一（差额回本国）
@@ -2040,7 +1977,7 @@ function compositionPower(f, targetBranch) {
     const c = targetBranch && P.counter[u.branch] ? (P.counter[u.branch][targetBranch] || 1) : 1;
     p += n * u.q * c;
   }
-  return p * (1 + f.tech * 0.01) * (facMods(f).q || 1); // v26 政策战力乘区（全民服役+3%/志愿+10%/军队经商−10%）
+  return p * (1 + f.tech * 0.01) * (facMods(f).q || 1); // v26 政策战力乘区（全民服役+3%/志愿+10%/军队经商−10%）  // @hook:q 战力乘区
 }
 function warRatio(A, B) {
   const atk = compositionPower(A, dominantBranch(B));
@@ -2179,12 +2116,12 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       }
       if (econHit) incomeSum *= 0.7;
       if (diplo.un && diplo.un.leader === f.id) incomeSum *= D.un.leaderTrade; // A1.6 常任理事国贸易优势
-      incomeSum *= (mods.comm || 1);                                   // v26 商业乘区（私有化/反垄断/女权/延迟退休/自贸）
-      incomeSum += indOut * ((mods.industry || 1) - 1);                // v26 工业乘区增量接入（无卡=0 不扰基线；产业补贴/女权/延迟退休）
+      incomeSum *= (mods.comm || 1);                                   // v26 商业乘区（私有化/反垄断/女权/延迟退休/自贸）  // @hook:comm 商业乘区
+      incomeSum += indOut * ((mods.industry || 1) - 1);                // v26 工业乘区增量接入（无卡=0 不扰基线；产业补贴/女权/延迟退休）  // @hook:industry 工业增量乘区
       // v26 总财收乘区（国有化 fisc×1.10：税+商业整体；口径修正——只乘税项会使国企增益相对私有化不可感知）
-      taxSum *= (mods.fisc || 1); incomeSum *= (mods.fisc || 1);
+      taxSum *= (mods.fisc || 1); incomeSum *= (mods.fisc || 1);  // @hook:fisc 总财收乘区
       // v26 民生 W（简化主式：人口算法-v1 §五；sim 未建治安/治理/财富项）+ 忠诚轨迹（ΔLoyalty=民生流+卡忠诚流）
-      f.W = clamp(50 + 0.28 * (avgL - 50) + 0.22 * (F - 50) + mods.W, 0, 100);
+      f.W = clamp(50 + 0.28 * (avgL - 50) + 0.22 * (F - 50) + mods.W, 0, 100);  // @hook:W 民生主式（人口算法-v1 §五 简化）
       const wFlow = f.W < 40 ? -0.15 * Math.pow(40 - f.W, 1.1) : (f.W > 55 ? 0.15 * Math.pow(f.W - 55, 0.8) : 0);
       f.loyalty = clamp((f.loyalty || 60) + clamp(wFlow + (mods.loyaltyFlow || 0), -10, 5), 0, 100);
       // ==== 资源收入：v25 已由 settleMineralPower 结算（档位/煤矿扩产/铀/合成燃料）====
@@ -2204,7 +2141,7 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       // v26 服役比例上限（§2.0 院长口径）：政策 pp 偏置按"默认 5% 服役比例"折算成相对乘区
       // （+2pp=+40% 兵源 / −2pp=−40%）；不直接加 pp——sim 和平期 svcBase=0.5% 与 §2.0 默认 5% 是两套尺度
       const svcBase = f.atWar ? (stress ? stressService : P.warService) : P.peaceService;
-      const svcCap = clamp(svcBase * (1 + (mods.serviceCap || 0) / 0.05), 0.002, 0.20);
+      const svcCap = clamp(svcBase * (1 + (mods.serviceCap || 0) / 0.05), 0.002, 0.20);  // @hook:serviceCap 服役比例上限
       const target = Math.min(popTotal * svcCap * (disarmHit ? 0.5 : 1) * (f.lostCulture ? P.culture.lostRecruit : 1), 2000000);
       let total = totalUnits(f);
       // A1.4 征募费（P0 出口，自定 1 财/兵；v22 兵员 ×8 与国库口径折中）
@@ -2268,15 +2205,15 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       }
       f.soldiers = totalUnits(f);
       // v26 军费：军饷乘区（志愿兵役×1.25 档 / 国防自主×0.90）+ 军队经商收入（milIncome 财/兵/回）
-      const salary = f.soldiers * P.soldierSalary * (disarmHit ? 1.2 : 1) * (mods.salary || 1) * (mods.milCost || 1);
-      const milIncome = f.soldiers * (mods.milIncome || 0); // 军队经商：规模越大收益越高（唯一强负面卡的收益侧）
+      const salary = f.soldiers * P.soldierSalary * (disarmHit ? 1.2 : 1) * (mods.salary || 1) * (mods.milCost || 1);  // @hook:salary 军饷乘区
+      const milIncome = f.soldiers * (mods.milIncome || 0); // 军队经商：规模越大收益越高（唯一强负面卡的收益侧）  // @hook:milIncome 军队经商收益
       // 俸禄（回归公式 32×8=256/将/回；每城 2 将）
       const salaryOfficers = f.cities.length * P.generalsPerCity * P.salaryPerGeneral;
       // 人口政策成本（补贴：1 财/千人/回）
       const policyCost = f.policy === 'subsidy' ? f.cities.reduce((a, c) => a + c.P, 0) / 1000 * P.policy.subsidyCostPer1000 : 0;
       // v26 生育补贴（经-05 院长口径：按人口一半补贴 0.0025 财/人/回）+ 财支出乘区（福利/医保/集采/补贴/维和/援助）
-      const birthCost = f.cities.reduce((a, c) => a + c.P, 0) * (mods.subsidyCost || 0);
-      const upkeepPolicy = upkeepSum * ((mods.upkeep || 1) - 1); // v26 财支出增量（无卡=0）
+      const birthCost = f.cities.reduce((a, c) => a + c.P, 0) * (mods.subsidyCost || 0);  // @hook:subsidyCost 生育补贴支出
+      const upkeepPolicy = upkeepSum * ((mods.upkeep || 1) - 1); // v26 财支出增量（无卡=0）  // @hook:upkeep 财支出乘区
       f.treasury += taxSum + incomeSum + milIncome - upkeepSum - upkeepPolicy - salary - salaryOfficers - policyCost - birthCost;
       f.netIncomeLast = taxSum + incomeSum + milIncome - upkeepSum - upkeepPolicy - salary - salaryOfficers - policyCost - birthCost; // v24 建造维护预算基准（v26 含政策支出）
       f.financeTrace = { tax: taxSum, income: incomeSum, milIncome, upkeep: upkeepSum + upkeepPolicy, salary, officers: salaryOfficers, policyCost: policyCost + birthCost }; // v26 报告用
@@ -2595,6 +2532,43 @@ function runScenario(name) {
     const exp = (ft.upkeep || 0) + (ft.salary || 0) + (ft.officers || 0) + (ft.policyCost || 0);
     const net = (ft.tax || 0) + (ft.income || 0) - exp;
     console.log(`${r.label.padEnd(12)} | ${fmt(f.pop).padStart(9)} | ${fmt(f.treasury).padStart(9)} | ${fmt(ft.tax || 0).padStart(6)} | ${fmt(ft.income || 0).padStart(6)} | ${fmt(exp).padStart(7)} | ${fmt(net).padStart(7)} | ${(f.W || 0).toFixed(1)} | ${(f.loyalty || 0).toFixed(1)} | ${fmt(f.culture || 0)} | ${f.buildings}`);
+  }
+  // ================= [ASSERT] 机器判定（AI 友好规范 P5：AI 只看结论行，明细已在上表）=================
+  {
+    const b = results.find((r) => r.label.includes('无卡')) || results[0];
+    const netOf = (x) => { const t = x.ft || {}; return (t.tax || 0) + (t.income || 0) - (t.upkeep || 0) - (t.salary || 0) - (t.officers || 0) - (t.policyCost || 0); };
+    const gn = (label) => { const r = results.find((x) => x.label === label);
+      if (!r || !b || !b.snap.facs.CN) return null;
+      return netOf(r.snap.facs.CN) / Math.max(1, Math.abs(netOf(b.snap.facs.CN))) - 1; };
+    let fails = 0;
+    const chk = (ok, msg) => { console.log(`[ASSERT] ${ok ? 'PASS' : 'FAIL'} ${msg}`); if (!ok) fails++; };
+    const last = results[results.length - 1];
+    if (name === 'vs' || name === 'finance') {
+      const pv = gn('私有化'), si2 = gn('国有化');
+      if (pv != null) chk(pv > 0.03 && pv < 0.35, `私有化增益带内 ${(pv * 100).toFixed(1)}% (期望 3~35%)`);
+      if (si2 != null) chk(si2 > -0.08 && si2 < 0.35, `国有化增益带内 ${(si2 * 100).toFixed(1)}% (期望 -8~35%；建造盘单seed噪声±10pp，稳健值看 nobuild)`);
+    }
+    if (name === 'stack' && b.snap.facs.CN) {
+      const dW = last.snap.facs.CN.W - b.snap.facs.CN.W;
+      chk(dW > 4 && dW < 9, `W叠加线性 +${dW.toFixed(1)} (期望 4~9)`);
+    }
+    if (name === 'finance' && b.snap.facs.CN) {
+      const sp = results.filter((r) => r.label.startsWith('财支出')).pop() || last;
+      // 口径：断言**乘区**（mods.upkeep）而非 upkeep 总额——总额含 W 卡抬高人口→建筑增长的二阶项（实测 11% vs 乘区 3.6%）
+      const upMul = sp.snap.facs.CN.mods.upkeep || 1;
+      chk(upMul > 1.02 && upMul < 1.05, `财支出乘区 ×${upMul.toFixed(4)} (期望 1.02~1.05，组=${sp.label})`);
+    }
+    if (name === 'spy') chk(last.snap.facs.CN.mods.counterSpy === 2, `反谍聚合=2 (实=${last.snap.facs.CN.mods.counterSpy})`);
+    if (name === 'infra') chk(last.snap.facs.CN.buildings > b.snap.facs.CN.buildings, `基建狂魔建筑↑ ${b.snap.facs.CN.buildings}→${last.snap.facs.CN.buildings}`);
+    if (name === 'neutral') {
+      const an = results.find((r) => r.label === '绝对中立');
+      chk(!!(an && an.snap.facs.CN.mods.canDeclareWar === 1), '绝对中立宣战锁生效');
+      chk(!!(an && an.snap.rep.CN > 60 && an.snap.rep.CN < 100), `绝对中立 rep 未饱和 ${an ? an.snap.rep.CN : '-'} (期望 60~99)`);
+    }
+    const negs = [];
+    for (const r of results) for (const [x, f] of Object.entries(r.snap.facs)) if (f.treasury < -1e6) negs.push(`${r.label}.${x}`);
+    chk(negs.length === 0, `无深度破产 (${negs.join(',') || '无'})`);
+    console.log(`[ASSERT] 汇总：${fails === 0 ? '全 PASS' : fails + ' 项 FAIL'}`);
   }
 }
 if (scenario) { runScenario(scenario); process.exit(0); }
