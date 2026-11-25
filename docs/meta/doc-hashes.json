@@ -34,8 +34,8 @@
    "changedAt": "2026-10-28"
   },
   "docs/01-需求/需求池.md": {
-   "hash": "7ce49e16f31d",
-   "changedAt": "2026-11-24"
+   "hash": "de84ba9af088",
+   "changedAt": "2026-11-25"
   },
   "docs/02-决策/ADR-009-国男志引擎选型Web转Unity.md": {
    "hash": "f569d1536365",
@@ -58,8 +58,8 @@
    "changedAt": "2026-11-23"
   },
   "docs/03-bug/bug-log.md": {
-   "hash": "b9cb61f43ad8",
-   "changedAt": "2026-11-24"
+   "hash": "868414b77bb5",
+   "changedAt": "2026-11-25"
   },
   "docs/04-技术笔记/96draft接入交接单-2026-11-13.md": {
    "hash": "35a24b85e304",
@@ -334,8 +334,8 @@
    "changedAt": "2026-11-19"
   },
   "docs/06-设计/00-总纲/游戏模式与副本规划.md": {
-   "hash": "3b593c04b7b4",
-   "changedAt": "2026-11-17"
+   "hash": "d7cba3a537e2",
+   "changedAt": "2026-11-25"
   },
   "docs/06-设计/00-总纲/环境系统.md": {
    "hash": "4d7987b77bea",
@@ -346,12 +346,12 @@
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/00-总纲/索引-决策.md": {
-   "hash": "10a8b11638c2",
-   "changedAt": "2026-11-24"
+   "hash": "e6bf290ee11e",
+   "changedAt": "2026-11-25"
   },
   "docs/06-设计/00-总纲/索引-参数.md": {
-   "hash": "b5e2a3a2d07e",
-   "changedAt": "2026-11-24"
+   "hash": "3b5a1c377657",
+   "changedAt": "2026-11-25"
   },
   "docs/06-设计/00-总纲/胜利条件.md": {
    "hash": "c2cbf37565ba",
@@ -366,8 +366,8 @@
    "changedAt": "2026-11-17"
   },
   "docs/06-设计/00-总纲/阵营数量无关机制清单.md": {
-   "hash": "ac9309f3aba9",
-   "changedAt": "2026-11-16"
+   "hash": "0bcbe31c9d90",
+   "changedAt": "2026-11-25"
   },
   "docs/06-设计/00-调研/L2城内视觉需求-2026-11-11.md": {
    "hash": "701a0b5ad7a2",
@@ -514,7 +514,7 @@
    "changedAt": "2026-11-10"
   },
   "docs/06-设计/02-武将/技能系统.md": {
-   "hash": "4c7933df9cae",
+   "hash": "e748b322879b",
    "changedAt": "2026-11-25"
   },
   "docs/06-设计/02-武将/武将专题开题.md": {
@@ -522,7 +522,7 @@
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/02-武将/武将倾向特性池.md": {
-   "hash": "db5ce0b3e524",
+   "hash": "827859cb9538",
    "changedAt": "2026-11-25"
   },
   "docs/06-设计/02-武将/武将名册.md": {
