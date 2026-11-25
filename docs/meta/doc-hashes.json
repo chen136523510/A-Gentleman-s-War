@@ -34,7 +34,7 @@
    "changedAt": "2026-10-28"
   },
   "docs/01-需求/需求池.md": {
-   "hash": "38a2512eecd6",
+   "hash": "e7434ebfdd6b",
    "changedAt": "2026-11-25"
   },
   "docs/02-决策/ADR-009-国男志引擎选型Web转Unity.md": {
@@ -58,7 +58,7 @@
    "changedAt": "2026-11-23"
   },
   "docs/03-bug/bug-log.md": {
-   "hash": "868414b77bb5",
+   "hash": "b3de329c0b85",
    "changedAt": "2026-11-25"
   },
   "docs/04-技术笔记/96draft接入交接单-2026-11-13.md": {
@@ -886,8 +886,8 @@
    "changedAt": "2026-10-25"
   },
   "docs/06-设计/changelog.md": {
-   "hash": "8753d6e5d912",
-   "changedAt": "2026-11-24"
+   "hash": "5e90c2381704",
+   "changedAt": "2026-11-25"
   },
   "docs/06-设计/README.md": {
    "hash": "3de7ac1da7d7",
@@ -898,8 +898,8 @@
    "changedAt": "2026-11-13"
   },
   "docs/07-美术/3D资产工作流.md": {
-   "hash": "0c165bd31bfc",
-   "changedAt": "2026-11-18"
+   "hash": "e0d2a1a1987b",
+   "changedAt": "2026-11-25"
   },
   "docs/07-美术/市政府v2-屋顶方案与施工单.md": {
    "hash": "b6683308ce1d",
@@ -914,8 +914,8 @@
    "changedAt": "2026-11-13"
   },
   "docs/07-美术/美术资产登记-3D建筑.md": {
-   "hash": "8e64348b7775",
-   "changedAt": "2026-11-20"
+   "hash": "0206ad4554b4",
+   "changedAt": "2026-11-25"
   },
   "docs/07-美术/美术资产登记-L1城市贴图.md": {
    "hash": "576c804ec723",
@@ -1007,6 +1007,10 @@
   },
   "docs/06-设计/03-内政/居民区数值.md": {
    "hash": "54b5cd797306",
+   "changedAt": "2026-11-25"
+  },
+  "docs/07-美术/L2建筑区色与细节规范.md": {
+   "hash": "b75c4cbec390",
    "changedAt": "2026-11-25"
   }
  }
