@@ -176,7 +176,7 @@ const COASTAL = SCEN.coastal; // 剧本沿海城（海平面三级受影响）
 function makeCities() {
   return CITY_INIT.map(([name, fac, pop, q, cul], i) => ({
     name, fac, origFac: fac, P: pop, C: pop * 1.5, C0: pop * 1.5, q, baseCulture: cul, // 城市基础文化值（文化区数值 v1.0 压低档）；origFac=复国原属
-    capital: i < 14 && CITY_INIT.slice(0, i + 1).filter((x) => x[1] === fac).length === 1 && fac !== 'NONE', // 首都=阵营首城
+    capital: fac !== 'NONE' && CITY_INIT.slice(0, i + 1).filter((x) => x[1] === fac).length === 1, // 首都=阵营首城（2026-11-25 去 i<14 硬编码，AGENTS §七.1） // 首都=阵营首城
     coastal: COASTAL.includes(name),
     _maint: 0,
     b: { residence: 0, farm: 0, coal: 0, plant: 0, nuclear: 0, hydro: 0, solar: 0, factory: 0, arsenal: 0, airport: 0, aaGun: 0, street: 0, mall: 0, office: 0, academy: 0, hosp: 0, police: 0, ccs: 0 },
@@ -509,6 +509,9 @@ function aiBuild(c, s, F, fac, devMode, envTemp = 0, rand = () => 0.5) {
     const budget = Ab.maintBudget * netIncome;
     const survival = card.roles.some((r) => r === 'food' || r === 'power' || r === 'housing');
     if (curMaint + cardMaint > (survival ? Ab.surviveBudget : Ab.maintBudget) * netIncome && !survival) continue;
+    // 复苏盘财政护栏（院长 11-25：不得长期负财政）——净收入<0 且国库低于 reserve 时暂停非生存建造
+    const bg = SCEN.aiBuildGuard;
+    if (bg && (fac.netIncomeLast || 0) < 0 && fac.treasury < bg.minTreasury && !survival) continue;
     let U = 0;
     for (const r of card.roles) {
       const gw = Ab.gapWeight[r] * (r === 'military' && fac.atWar ? Ab.warMilitaryMult : 1);
@@ -2222,16 +2225,17 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       // v26 军费：军饷乘区（志愿兵役×1.25 档 / 国防自主×0.90）+ 军队经商收入（milIncome 财/兵/回）
       const salary = f.soldiers * P.soldierSalary * (disarmHit ? 1.2 : 1) * (mods.salary || 1) * (mods.milCost || 1);  // @hook:salary 军饷乘区
       const milIncome = f.soldiers * (mods.milIncome || 0); // 军队经商：规模越大收益越高（唯一强负面卡的收益侧）  // @hook:milIncome 军队经商收益
-      // 俸禄（回归公式 32×8=256/将/回；每城 2 将）
-      const salaryOfficers = f.cities.length * P.generalsPerCity * P.salaryPerGeneral;
+      // 俸禄（回归公式 32×8=256/将/回；默认每城 2 将；剧本可覆盖——复苏 21 将/16 城=1.3125）
+      const salaryOfficers = f.cities.length * (SCEN.generalsPerCity || P.generalsPerCity) * P.salaryPerGeneral;
       // 人口政策成本（补贴：1 财/千人/回）
       const policyCost = f.policy === 'subsidy' ? f.cities.reduce((a, c) => a + c.P, 0) / 1000 * P.policy.subsidyCostPer1000 : 0;
       // v26 生育补贴（经-05 院长口径：按人口一半补贴 0.0025 财/人/回）+ 财支出乘区（福利/医保/集采/补贴/维和/援助）
-      const birthCost = f.cities.reduce((a, c) => a + c.P, 0) * (mods.subsidyCost || 0);  // @hook:subsidyCost 生育补贴支出
+      const birthCost = f.cities.reduce((a, c) => a + c.P, 0) * 0.5 * (mods.subsidyCost || 0);  // @hook:subsidyCost 生育补贴支出
       const upkeepPolicy = upkeepSum * ((mods.upkeep || 1) - 1); // v26 财支出增量（无卡=0）  // @hook:upkeep 财支出乘区
       f.treasury += taxSum + incomeSum + milIncome - upkeepSum - upkeepPolicy - salary - salaryOfficers - policyCost - birthCost;
       f.netIncomeLast = taxSum + incomeSum + milIncome - upkeepSum - upkeepPolicy - salary - salaryOfficers - policyCost - birthCost; // v24 建造维护预算基准（v26 含政策支出）
       f.financeTrace = { tax: taxSum, income: incomeSum, milIncome, upkeep: upkeepSum + upkeepPolicy, salary, officers: salaryOfficers, policyCost: policyCost + birthCost }; // v26 报告用
+      if (process.env.AGW_FT && t % 25 === 0) console.error('[FT]', 't' + t, f.id, 'tre=' + Math.round(f.treasury), 'sol=' + Math.round(f.soldiers), JSON.stringify(f.financeTrace));
       // 学院链科技产出（Lv1/2/3 = 10/16/24）；经济制裁 ×0.7；政策乘区（学术自由/开放社会等）
       const tw = techTick(t, f, diplo, rand, log, econHit, env.temp);
       if (tw.techWin && !winner) {
