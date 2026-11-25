@@ -34,7 +34,7 @@
    "changedAt": "2026-10-28"
   },
   "docs/01-需求/需求池.md": {
-   "hash": "fb301bc55b2c",
+   "hash": "cd9492d32f8c",
    "changedAt": "2026-11-25"
   },
   "docs/02-决策/ADR-009-国男志引擎选型Web转Unity.md": {
@@ -514,7 +514,7 @@
    "changedAt": "2026-11-10"
   },
   "docs/06-设计/02-武将/技能系统.md": {
-   "hash": "f2e2c79f2176",
+   "hash": "ff1e63383e69",
    "changedAt": "2026-11-25"
   },
   "docs/06-设计/02-武将/武将专题开题.md": {
@@ -534,7 +534,7 @@
    "changedAt": "2026-11-25"
   },
   "docs/06-设计/02-武将/武将档案-v0.md": {
-   "hash": "d8433859d263",
+   "hash": "0f3e2b120f2a",
    "changedAt": "2026-11-25"
   },
   "docs/06-设计/03-内政/changelog.md": {
@@ -982,7 +982,7 @@
    "changedAt": "2026-11-22"
   },
   "docs/00-调研/固定大地图沙盒棋盘设计调研.md": {
-   "hash": "f1736adaedc3",
+   "hash": "f86cc8f491a7",
    "changedAt": "2026-11-25"
   }
  }
