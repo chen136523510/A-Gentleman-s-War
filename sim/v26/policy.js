@@ -2225,7 +2225,7 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       // v26 军费：军饷乘区（志愿兵役×1.25 档 / 国防自主×0.90）+ 军队经商收入（milIncome 财/兵/回）
       const salary = f.soldiers * P.soldierSalary * (disarmHit ? 1.2 : 1) * (mods.salary || 1) * (mods.milCost || 1);  // @hook:salary 军饷乘区
       const milIncome = f.soldiers * (mods.milIncome || 0); // 军队经商：规模越大收益越高（唯一强负面卡的收益侧）  // @hook:milIncome 军队经商收益
-      // 俸禄（回归公式 32×8=256/将/回；默认每城 2 将；剧本可覆盖——复苏 21 将/16 城=1.3125）
+      // 俸禄 13×8=104/将/回（v25 修正；默认每城 2 将；剧本可覆盖——复苏 21 将/16 城=1.3125）
       const salaryOfficers = f.cities.length * (SCEN.generalsPerCity || P.generalsPerCity) * P.salaryPerGeneral;
       // 人口政策成本（补贴：1 财/千人/回）
       const policyCost = f.policy === 'subsidy' ? f.cities.reduce((a, c) => a + c.P, 0) / 1000 * P.policy.subsidyCostPer1000 : 0;
