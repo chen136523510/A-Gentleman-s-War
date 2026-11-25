@@ -111,7 +111,9 @@ const REVIVAL = {
   startTech: ['mil1', 'ai1', 'grn1'], // 科技起点=主科技树早期（3 节点免费）
   buildReserve: 0, // AI 建造储备线（实测无效：阻断商业建筑→消费池无法变现→国库更差；保留开关供极端场景）
   generalsPerCity: 1.3125, // 21 将 / 16 城（8 大统领各驻 1 城 + 13 将每空城至少 1、余 5 随机；俸禄折算口径）
-  officerPlan: { leaders: 8, othersPerCityMin: 1, othersRandom: true, initialFree: 0 }, // 21 将全在地图，开局无在野
+  // 2026-11-25 院长令：8 大统领在职；其余 13 将**全部在野、分布在 16 城**（8 空城各至少 1 + 余 5 随机）
+  //   在野实体化到城市（有 city），只能由该城控制者招募；空城需先占领（占领需武将领军；开局仅大统领→原城空虚）
+  officerPlan: { leaders: 8, othersStatus: 'free', emptyCityFirst: true, othersRandom: true },
   aiBuildGuard: { minTreasury: 60000 }, // 院长 11-25：不得长期负财政——净收入<0 且国库<6万时暂停非生存建造
   treasury: 50000, // 起步国库（11-25 院长令：不得长期负财政；v27 对照=6万/9万仍亏→根因是 AI 花费纪律，另立护栏）
 };
