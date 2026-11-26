@@ -294,8 +294,8 @@
    "changedAt": "2026-11-25"
   },
   "docs/06-设计/00-总纲/数值公式总纲.md": {
-   "hash": "3569333d6a4a",
-   "changedAt": "2026-11-25"
+   "hash": "b602ed0bac60",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/00-总纲/数值公式缺口清单.md": {
    "hash": "7d9f88f5a300",
@@ -318,8 +318,8 @@
    "changedAt": "2026-11-25"
   },
   "docs/06-设计/00-总纲/术语表.md": {
-   "hash": "37a4643fa4c1",
-   "changedAt": "2026-11-25"
+   "hash": "24e1a31c5718",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/00-总纲/模拟规范.md": {
    "hash": "ea342cd2be79",
@@ -346,12 +346,12 @@
    "changedAt": "2026-11-25"
   },
   "docs/06-设计/00-总纲/索引-决策.md": {
-   "hash": "053ed7ce492f",
-   "changedAt": "2026-11-25"
+   "hash": "bc61f0727074",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/00-总纲/索引-参数.md": {
-   "hash": "cff86d99a6ef",
-   "changedAt": "2026-11-25"
+   "hash": "c5ffe2cfb183",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/00-总纲/胜利条件.md": {
    "hash": "c2cbf37565ba",
@@ -510,24 +510,24 @@
    "changedAt": "2026-11-25"
   },
   "docs/06-设计/02-武将/忠诚度.md": {
-   "hash": "662dd4fbd094",
-   "changedAt": "2026-11-10"
+   "hash": "f8d38f4ff259",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/02-武将/技能系统.md": {
    "hash": "ff1e63383e69",
    "changedAt": "2026-11-25"
   },
   "docs/06-设计/02-武将/武将专题开题.md": {
-   "hash": "f0a5115175cb",
-   "changedAt": "2026-11-25"
+   "hash": "065a831aa8e8",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/02-武将/武将倾向特性池.md": {
    "hash": "68d0012adf15",
    "changedAt": "2026-11-25"
   },
   "docs/06-设计/02-武将/武将名册.md": {
-   "hash": "485b2d3562a0",
-   "changedAt": "2026-11-25"
+   "hash": "0d6165a58ccc",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/02-武将/武将数值基线-v0.md": {
    "hash": "16055560ffa4",
@@ -550,8 +550,8 @@
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/人口体系架构.md": {
-   "hash": "0b60741884e1",
-   "changedAt": "2026-11-10"
+   "hash": "73343ccff337",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/03-内政/人口数值表.md": {
    "hash": "925ac96cfce4",
@@ -562,8 +562,8 @@
    "changedAt": "2026-11-25"
   },
   "docs/06-设计/03-内政/人口算法-v1.md": {
-   "hash": "228ec077a80b",
-   "changedAt": "2026-11-13"
+   "hash": "b165a6f05c7b",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/03-内政/人口算法-沙盘报告.md": {
    "hash": "121257151f68",
@@ -622,8 +622,8 @@
    "changedAt": "2026-11-17"
   },
   "docs/06-设计/03-内政/市政建筑数值.md": {
-   "hash": "34cfd2efb057",
-   "changedAt": "2026-11-22"
+   "hash": "dec898f7070a",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/03-内政/建筑数值表.md": {
    "hash": "a4bc13405345",
@@ -646,12 +646,12 @@
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/03-内政/消费力专题.md": {
-   "hash": "0fdb99e1d707",
-   "changedAt": "2026-11-25"
+   "hash": "91ded759b44b",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/03-内政/监狱专题.md": {
-   "hash": "b44592c2191d",
-   "changedAt": "2026-11-22"
+   "hash": "32e2b7ae5622",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/03-内政/矿产与电网专题.md": {
    "hash": "8a6c5df56555",
@@ -666,8 +666,8 @@
    "changedAt": "2026-11-22"
   },
   "docs/06-设计/03-内政/粮食与人口算法.md": {
-   "hash": "e896867690e5",
-   "changedAt": "2026-11-02"
+   "hash": "317941648554",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/03-内政/红灯区专题开题.md": {
    "hash": "fce9381fc0ed",
@@ -786,8 +786,8 @@
    "changedAt": "2026-11-16"
   },
   "docs/06-设计/05-外交/外交AI决策规范.md": {
-   "hash": "2b824c956642",
-   "changedAt": "2026-11-17"
+   "hash": "2f92f21c3604",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/05-外交/外交会议体系.md": {
    "hash": "79f44e13e6d9",
@@ -802,40 +802,40 @@
    "changedAt": "2026-11-16"
   },
   "docs/06-设计/05-外交/外交行动.md": {
-   "hash": "58c61eb12490",
-   "changedAt": "2026-11-22"
+   "hash": "09a5729d7483",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/06-事件/changelog.md": {
    "hash": "c6bd297b48c7",
    "changedAt": "2026-11-24"
   },
   "docs/06-设计/06-事件/README.md": {
-   "hash": "6c7f51f39d3f",
-   "changedAt": "2026-11-25"
+   "hash": "3e9f2b7615de",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/06-事件/事件卡专题.md": {
-   "hash": "a1680cbe1ad9",
-   "changedAt": "2026-11-23"
+   "hash": "0c2283a10a28",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/06-事件/事件卡总表.md": {
-   "hash": "ff66b720ab95",
-   "changedAt": "2026-11-25"
+   "hash": "a0b21976fb85",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/06-事件/天灾与异族.md": {
    "hash": "6f265b343a4f",
    "changedAt": "2026-11-10"
   },
   "docs/06-设计/06-事件/民生与消费事件.md": {
-   "hash": "de4cbf31ccac",
-   "changedAt": "2026-11-24"
+   "hash": "29f80f71cd4d",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/06-事件/起义.md": {
-   "hash": "fbb8e3ea7909",
-   "changedAt": "2026-11-10"
+   "hash": "0c7b0a824e14",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/06-事件/起义与叛乱.md": {
-   "hash": "01252aaaa199",
-   "changedAt": "2026-11-10"
+   "hash": "9034b108126a",
+   "changedAt": "2026-11-26"
   },
   "docs/06-设计/07-技术架构/changelog.md": {
    "hash": "4e5a45133c09",
@@ -934,8 +934,8 @@
    "changedAt": "2026-11-25"
   },
   "docs/08-百科/词条/事件.md": {
-   "hash": "bbd0f777dcd5",
-   "changedAt": "2026-11-25"
+   "hash": "4e91e5a07b1f",
+   "changedAt": "2026-11-26"
   },
   "docs/08-百科/词条/人口与民生.md": {
    "hash": "5d00bf530337",
@@ -954,8 +954,8 @@
    "changedAt": "2026-11-25"
   },
   "docs/08-百科/词条/外交.md": {
-   "hash": "244a3a9c8235",
-   "changedAt": "2026-11-24"
+   "hash": "5aaa4af5a41e",
+   "changedAt": "2026-11-26"
   },
   "docs/08-百科/词条/政策卡.md": {
    "hash": "b511b9da90db",
