@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-11-26 黑机 · 打包版 L2 洋红修复（BUG-G020）+ 全量 exe 就绪
+
+- **现象**：院长实机进深圳 L2 → 全屏洋红 + UI；`Player.log` = `ArgumentNullException: shader` @ `L2CityView.Build`（地形材质创建即抛，整城不生成）。根因=运行期 `Shader.Find("Universal Render Pipeline/Unlit/Lit")` 在 player 被裁剪返回 null（编辑器可用≠打包可用；"打包版 L2 未实测"挂账本次才暴露）。
+- **修复**：①新增 `Assets/_Project/Resources/L2Runtime/L2Unlit.mat` / `L2Lit.mat`（材质资产引用 shader → 随包）；②`L2CityView` 7 处 `Shader.Find` 改 `L2RuntimeMaterials.New()`（Resources 模板拷贝，取不到时退 `Sprites/Default`，不再抛异常）；③`AgwDataBuild` 构建前置 `L2RuntimeMaterialBuilder.Ensure()`。**走过的弯路（已回退）**：把 URP/Lit 加进 Always Included Shaders → 全变体 **884,736**，实测 12 分钟只编 4.2 万（≈4 小时），必须用 Resources 材质引用。
+- **构建**：主工程 batch `AgwMenu.BuildOnly` 成功 → `Builds/Win64/AGW.exe`（186 MB，含 11-26 区色/细节 pass + 事件卡 13 卡/收押内嵌）。
+- **打包自检（新增）**：`AGW.exe -agwshot-l2` = 启动→CN 开局→进深圳 L2→截图→退出（`L1MapBuilder` 只负责进 L2，截图在独立 `AutoShotL2`，因 L1 组件进 L2 会 SetActive(false)）。**实机验证通过** → `Builds/Win64/agw-shot-l2.png`（地形/初始建筑/建造目录/监狱入口正常，无洋红无异常）。
+- **验收**：院长 11-27 从「开始界面 → CN → L1 → 深圳 L2」全量验收。
+
+---
+
 ## 2026-11-26 黑机 · 事件卡 13 张落库 + 监狱内嵌市政府 + L2 样板城重出图
 
 - **事件卡引擎落库**（事件卡专题 v1.1 / [内容库 v1.0](docs/06-设计/06-事件/事件卡内容库.md)）：`events.json` 落 **13 卡**（普通 7/特殊 4/历史 2）——`card` 块含 `grade/interaction/appearAt/scope/unique/cooldown/triggerChance/mechanicKey`，`trigger` 用条件 DSL（turnRange/welfare/loyalty/growthStall/growthAbove/employment/tech/flag/any），`effects` 支持旧数组（机制事件）与新 `{ongoing,instant}` 对象（自定义 Converter 分流）；概率/冷却取 **v27 校准值**（口红 15%/60、报复 15%/70、低欲望 6%/80、彩票 15%/60、婴儿潮冷却 40）。

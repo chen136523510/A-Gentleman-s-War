@@ -7,6 +7,7 @@
 
 | 编号 | 一句话 | 日期 |
 |---|---|---|
+| BUG-G020 | **打包 exe 进 L2 全屏洋红**：`Player.log` 报 `ArgumentNullException: shader` @ `L2CityView.Build`——运行期 `Shader.Find("Universal Render Pipeline/Unlit/Lit")` 在 player 被裁剪返回 null，地形材质创建即抛异常中止，整座城不生成（紫屏+UI）。**已修（11-26）**：`Resources/L2Runtime/L2Unlit.mat`/`L2Lit.mat`（材质引用 shader→随包）+ 7 处改 `L2RuntimeMaterials.New()`（模板拷贝，Sprites/Default 兜底）+ 构建前置 Ensure。教训：①运行期 `Shader.Find` 找 URP shader 在 player 必裁剪（编辑器可用≠打包可用）②勿用 Always Included Shaders 兜 URP——URP/Lit 全变体 **884,736**，实测 12 分钟只编 4.2 万（≈4 小时），必须用 Resources 材质引用 ③打包版 L2 必须每次实机过 | 2026-11-26 |
 | BUG-G019 | **L2 相机操作反向 + 最远缩放露虚空**（院长验收）：WASD 按世界轴而非视角、中键/左键拖拽方向反、滚轮方向反、`max dist=320` 把地图外背景拉进画面。**已修（11-26）**：WASD 视角相对、左/中键抓取语义、上滚=拉近、限距 1.25 图 + 目标锁图内 + 四边外延裙边/兜底地面。教训：3D 轨道相机必须"目标锁界 + 背景外延"，不能只靠限距 | 2026-11-26 |
 | BUG-G018 | **L2 沙盒在无 Main Camera 的恢复/空白场景黑屏**：`L2CityView.SnapshotAndSetupCamera` 无相机时直接 `return` → Game 视图全黑、无提示。**已修（11-26）**：无相机时自建 `L2Camera`（tag=MainCamera，随沙盒销毁）。教训：菜单/命令行生成的预览必须自带相机兜底，不能依赖"当前场景恰好有 Main Camera" | 2026-11-26 |
 | BUG-G017 | **生育补贴按全人口计费（口径=半数人口）**：`sim/v26/policy.js` birthCost=`人口×subsidyCost`，文档/代码注释均写"人口一半 × 0.0025 财/人/回"→单城 24 万人=**594 财/回**（占收入 61%），装上"生育补贴"卡的阵营（复苏 F2 等）长期负财政（t200 −7,564）。**已修（11-25）**：`×0.5`；修后复苏 4 seed×8 阵营 200 回合终局**全正**（最低 4,592）、教程盘不变。教训：政策卡"成本类"效果必须用财流水（`financeTrace`）逐项对账，不能只看终局国库 | 2026-11-25 |
