@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-11-26 黑机 · 事件卡 13 张落库 + 监狱内嵌市政府 + L2 样板城重出图
+
+- **事件卡引擎落库**（事件卡专题 v1.1 / [内容库 v1.0](docs/06-设计/06-事件/事件卡内容库.md)）：`events.json` 落 **13 卡**（普通 7/特殊 4/历史 2）——`card` 块含 `grade/interaction/appearAt/scope/unique/cooldown/triggerChance/mechanicKey`，`trigger` 用条件 DSL（turnRange/welfare/loyalty/growthStall/growthAbove/employment/tech/flag/any），`effects` 支持旧数组（机制事件）与新 `{ongoing,instant}` 对象（自定义 Converter 分流）；概率/冷却取 **v27 校准值**（口红 15%/60、报复 15%/70、低欲望 6%/80、彩票 15%/60、婴儿潮冷却 40）。
+- **EventCardSystem（新文件，解释器不写卡名分支）**：三节点触发（turnStart 即时 / preSettle+turnEnd → pending 下回合初生效）；普通卡=机制呈现（起义走 `mechanicKey` 回调、破产/婴儿潮自动判定）；特殊卡=条件→概率→逐卡冷却+全局吞吐 1/回+最小间隔 10；持续到期自动恢复；instant（民生/文化值）+ ongoing（街/商场/娱乐/文旅/消费池乘区、民生治安偏置）全部落主公式（BUG-G014）。
+- **效果落点接线**：`CitySettlement` 新增 `EventModifiers`（商业街/商场按新字段 `recoveryClass` 分桶加权乘区，无卡时基线不变；娱乐/文旅/消费池/民生治安偏置）；`balance.json` 新增 `eventCard` 组（globalMax/minInterval/effectCap/welfareBiasCap/domainBoostWeight）；GameState 新增 `pendingEvents/eventCards/eventCardCooldown/eventCardLastTurn/eventUniqueFired/EventPopHistory/EventIncomeHistory` 存档字段（旧档缺省空）。
+- **监狱内嵌市政府（院长 11-26 令）**：删 `prison/prisonLv2/prisonLv3` 三卡（buildings 144 条）；`jail*` 字段迁 `cityHall`（2 将档）+ 新增 **cityHallLv2/Lv3**（市政府升级线，jail 4/8 将、劝降 1.2/1.5、对话 4/3、劫狱 10/20、处决 ×0.5）；`scenario-tutorial` 上海初始去 prison（自带 cityHall 即可收押）；`PrisonDefOf` 收押档改读市政府链；L2ArtMap 增 cityHallLv2/3（v2c/v3-refined）并删 prison 映射；达尔文无市政府=无收押（例外保留）。
+- **烟雾/回归**：新增 `EventCardSmokeMenu`（24 项：13 卡配比/pending→生效/分桶加权 0.95/到期恢复/instant/条件 DSL/破产普通卡/存档读回）**ALL PASS**；`PrisonSmokeMenu` 改市政府档 **15 项全绿**；隔离工程回归 **BUILD 209 PASS/SMOKE/MINERAL 45/NFACTION/UI/AI/POLICY 52/MANDATE 68 全绿**。
+- **L2 视觉验收出图**：主编辑器被旧会话占用（不杀进程），改在隔离工程副本重渲染样板城 → `tmp/l2-demo-shots/{overview,cbd,residential}.png`（347 座/区色/细节 pass 均在图上）。
+- **同步脚本**：`tools/sync-docs-repo.ps1` SSH 端口 22→**443**（11-25 实证 22 超时；脚本待改项销账）。
+
+---
+
 ## 2026-11-27 白机 · A1 建筑数值表 §三 重排 + 事件卡降概率加冷却
 
 - **A1 重排完成（院长令「一一处理」）**：建筑数值表 §三 按各数值篇权威源逐节重排——①§3.2 居民区 8 型→**3 线 9 建筑**（居民区数值 v1.0）②§3.5 商业中心→**五类**（商业区开题 v1.0+消费力 v1.0+贸易 v1.0 港口容量）③§3.6 学院→**三树**（学院区开题 v1.0；C0 权威=tech.json 2000）④§3.7/3.9 军事/城墙旧值标注废止（权威=军事建筑数值）⑤§一/§2.1/§十三 清退旧 8 型引用+18 项定性核对（六区建议值与数值篇一致、无需回改）⑥索引-参数 techC0Base 500→2000（冲突 #11 销账）。

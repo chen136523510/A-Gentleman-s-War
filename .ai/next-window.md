@@ -74,7 +74,7 @@
 | 1 | ~~**`policies.json` 52 张落库**~~ ✅ **11-24 完成**（初始 50 + 特殊 2，统一 `initial/acquire/via`；`tools/build-policies-json.js` 由 `sim/data/cards.js` 生成；PolicySmoke 52 绿） | 数据源=`sim/data/cards.js`；改值后重跑生成器 | — |
 | 2 | ~~**复苏副本定稿**~~ ✅ **11-25 定稿（院长 10 条 + 澄清 2 条）**：16 城（8 初始+8 空城，现代名）/8 大统领随机/三路线叙事（**非限定**：AI 默认追求胜利，A9 偏安型不求胜）/13 将全部在野分布 16 城/国库 5 万+不得负财政/BUG-G017 修复（4 seed×8 全正）。**余黑机**：①复苏地图**单独出图**（调研 §四/§五：不贴 sprite/城市=建成区肌理/城界运行时画）②Unity `ScenarioDefinition` 接线（16 城/名池/颜色/将分布）③**空城占领建模**（sim 现无，v27：只建"武将带队进驻→归属切换→邻接重算"事件链，**不建费用/围城计时**）④**城界多边形顶点表**（16 城+教学 14 城，美术数据归黑机） | [副本规划 v0.3](../docs/06-设计/00-总纲/游戏模式与副本规划.md) · [地图调研 §五](../docs/00-调研/固定大地图沙盒棋盘设计调研.md) · `sim/data/scenarios.js` | 高 |
 | 3 | L3 M1 施工（BattleSimManager+30Hz tick+命令流+4060 压测） | [L3战斗层开题](../06-设计/04-军事/L3战斗层开题.md) v0.3（D1~D14/E1~E10） | 高 |
-| 4 | 事件卡落库（events.json 3 卡 + EventSystem + 卡面 UI） | [事件卡专题](../06-设计/06-事件/事件卡专题.md) v1.0 | 中 |
+| 4 | ~~事件卡落库~~ ✅ **11-26 完成（黑机）**：`events.json` **13 卡**（内容库 v1.0）+ `EventCardSystem`（三节点/pending/逐卡冷却/全局吞吐；条件 DSL；instant+ongoing 落主公式；存档字段）+ `balance.eventCard`；EventCardSmoke 24 项 ALL PASS。**余=卡面 UI**（等院长手绘稿） | 专题 v1.1 · 内容库 v1.0 | 中 |
 | 5 | ~~`balance.json` 同步抵抗参数删除~~ ✅ **11-24 完成**（`CultureSystem`/`DataDefinitions`/`buildings.json`/`balance.json` 全删；`P[B→B]=√Culture_B×self`；Build 绿） | 与白机已对齐 | — |
 | 6 | 21 将火柴人建模（1 基底 + 装饰件） | [武将3D形象-火柴人方案](../07-美术/武将3D形象-火柴人方案.md) | 中 |
 | 7 | ~~`maxWarsPerFaction` sim=2 → 1 统一~~ ✅ **11-24 完成**（`sim/v26/policy.js` 对齐 1；审计+200 回复跑） | AI战争细则 L95 | — |
