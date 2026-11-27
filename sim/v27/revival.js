@@ -55,16 +55,18 @@ const P = {
   // 军（B1 v1.2：批次制；1 批 = 8,000 兵；轻 1 回合/批、重 2 回合/批）
   soldierSalary: 0.05, peaceService: 0.005, warService: 0.10, stressService: 0.02,
   batchSize: 8000,
+  // WarAI 宣战潜力比门槛（11-27 院长裁"上调进攻性"：1.30/1.60→1.02/1.08——八足鼎立 pr 恒 0.98~1.02（实测），倍数门槛均衡局无解；决策主体=U 公式）
+  warAdjTh: 1.02, warFarTh: 1.08, warTreasFloor: 20000, // 11-27 财政刹车：国库 <2 万不主动宣战（seed2 F4 战争烧穿负财政的护栏）
   units: {
     inf:     { name: '普通步兵', branch: 'step', q: 1.00, turns: 0, wealth: 0,     iron: 0,   coal: 0,   oil: 0 },
-    assault: { name: '突击步兵', branch: 'step', q: 1.00, turns: 1, wealth: 1920,  iron: 64,  coal: 0,   oil: 0 },
-    special: { name: '特种小队', branch: 'step', q: 1.05, turns: 1, wealth: 3840,  iron: 64,  coal: 0,   oil: 16 },
+    assault: { name: '反装甲步兵', branch: 'step', q: 1.00, turns: 1, wealth: 1920,  iron: 64,  coal: 0,   oil: 0 }, // v1.1 命名（原突击步兵/攻坚步兵）
+    special: { name: '特种部队', branch: 'step', q: 1.05, turns: 1, wealth: 3840,  iron: 64,  coal: 0,   oil: 16 }, // v1.1 命名（原特种小队）
     tank:    { name: '坦克',     branch: 'cav',  q: 1.00, turns: 2, wealth: 12800, iron: 512, coal: 128, oil: 256 },
     heli:    { name: '武装直升机', branch: 'cav', q: 1.00, turns: 2, wealth: 12800, iron: 384, coal: 128, oil: 320 },
     mobile:  { name: '机动炮兵', branch: 'bow',  q: 1.00, turns: 1, wealth: 3200,  iron: 256, coal: 64,  oil: 0 },
     heavy:   { name: '重炮兵',   branch: 'bow',  q: 1.00, turns: 2, wealth: 6400,  iron: 512, coal: 128, oil: 0 },
   },
-  counter: { step: { cav: 1.5, bow: 0.7 }, cav: { bow: 1.5, step: 0.7 }, bow: { step: 1.5, cav: 0.7 } },
+  counter: { step: { cav: 1.3, bow: 1.0 }, cav: { bow: 1.3, step: 1.0 }, bow: { step: 1.3, cav: 1.0 } }, // v1.1（11-27）：1.5/0.7→1.30/1.00（剩 50% 锚点）；装甲对抗（轻步对坦克 0.894/反装甲 1.20）待 L1 战争引擎细化
   // 资源（v25：基础矿场满档产出，受矿脉档位系数；油按 v22 石油表，铁/煤按“2 座矿场/城 × 48/回”估）
   // uranium=铀矿（仅西安/悉尼；1 座矿=48/回 ×8 假设值，专题未给数值；JP/KR 无铀靠进口）
   resources: {
@@ -101,7 +103,7 @@ const P = {
   policy: { subsidyCostPer1000: 1, subsidyMult: 1.12, limitMult: 0.85 },
   // 外交
   // 11-24 对齐 AI 战争细则 `ai.war.maxWars=1`（v26 报告为 2 口径历史基线；sim 结构上单场战争，改动应不敏感）
-  warStart: 100, warEvery: 20, maxWarsPerFaction: 1, allyRatio: 0.6, joinWarRatio: 2.0, allyDefense: 1.5,
+  warStart: 40, warEvery: 20, maxWarsPerFaction: 1, allyRatio: 0.6, joinWarRatio: 2.0, allyDefense: 1.5, // 11-27：100→40（原与 un.start=100 撞车=战争窗口 0，0 战争根因）
   // 文化输出（文化输出算法 v1 份额收敛式；2026-11-05 院长定稿；院长 11-13 第 4 条：文化胜利=文化入侵全球并维持）
   culture: {
     convergeR: 0.05,        // 收敛速率 r（balance 留 0.03/0.05/0.08 三档）
@@ -137,7 +139,7 @@ const P = {
 // ================= 建筑谱系（×8；上限/成本/岗位/产出） =================
 const B = {
   residence: { name: '居民楼', cap: 96000, cost: 2000, prod: 320, upkeep: 0.01, jobs: 0, max: 4 },
-  farm:      { name: '农田', cost: 2400, prod: 480, upkeep: 0.01, yield: 320, max: 3 },
+  farm:      { name: '农田', cost: 2400, prod: 480, upkeep: 0.01, yield: 240, max: 3 }, // B1A-17：40→30 粮（v22 ×8 = 240）
   coal:      { name: '煤矿', cost: 1600, prod: 320, upkeep: 0.01, jobs: 4800, poll: 4, max: 2, res: 48 }, // v25：res=煤/回/座（×8，扩产）
   plant:     { name: '火电', cost: 2400, prod: 480, upkeep: 0.01, jobs: 3200, power: 40, poll: 3, max: 3, fuel: 'coal' }, // v25：耗煤 16/回（P.mineral.fuelIn）
   nuclear:   { name: '核电', cost: 12000, prod: 960, upkeep: 0.01, jobs: 1600, power: 80, max: 2, fuel: 'uranium', techReq: 'grn6' }, // v25：耗铀 8/回，每 10 运转维修 1 回
@@ -854,7 +856,7 @@ const D = {
   // A1.6 文化与同盟收口（2026-11-16 院长裁：最小复国 + UN 全票 + 联合进攻/经济制裁）
   trade: { minRel: 20, term: 24, link: 0.20, relPerTurn: 2 },      // 贸易协定/航线（贸易最小规则 v0.2：关系 +2/回）
   econAlly: { minRel: 40, term: 24, link: 0.10, max: 1 },          // 经济同盟（每类限 1 盟友）
-  un: { start: 100, charterCd: 20, electionEvery: 25, voteThreshold: 0.45, abstainWindow: 0.12, charterRatio: 2 / 3, leaderTrade: 1.15 },
+  un: { start: 120, charterCd: 20, electionEvery: 25, voteThreshold: 0.45, abstainWindow: 0.12, charterRatio: 2 / 3, leaderTrade: 1.15 }, // 11-27：100→120（让战争窗口 t40~120 先行=先争霸后建 UN）
   revive: { wait: 3, militiaRate: 0.03, rep: 30, relYes: 100, relKiller: -100, cooldown: 10 },
   culturePush: { cost: 30000, duration: 20, mult: 4.0, cooldown: 25, relDrop: 0 }, // A1.6 文化推广（周期性文化攻势）
   allianceMeeting: { cd: 5, voteThreshold: 0.50, relFail: 5 },
@@ -1825,9 +1827,10 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
     f.atWar = at;
     f.peaceStreak = at ? 0 : (f.peaceStreak || 0) + 1; // v24 进攻时机（和平后段）用
   }
-  // 外交决策用"动员潜力"（人口×10%）而非当前士兵——避免战争动员 10% vs 和平 0.5% 的 20 倍误判
+  // 外交决策用"动员潜力"而非当前士兵——避免战争动员 10% vs 和平 0.5% 的 20 倍误判
+  // 11-27：+国库×0.03（纯人口口径下八足鼎立 pr≈1.0 恒不满足宣战门槛=0 战争数学根因；国库 7~37 万差异给 pr 真实波动）
   const dipPower = {};
-  for (const x of ids) dipPower[x] = facs[x].cities.reduce((a, c) => a + c.P, 0) * 0.10;
+  for (const x of ids) dipPower[x] = facs[x].cities.reduce((a, c) => a + c.P, 0) * 0.10 + (facs[x].treasury || 0) * 0.03;
 
   // ---- 战争结算（A1.1：支持多国联军 sideA/sideB；开战后 warMinTurns 判定一次）----
   if (diplo.war) {
@@ -2002,6 +2005,7 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
       const cb = sanctionCb(diplo, a, b, t); // A1.2：参与制裁国对目标有合法战争 CB
       const pr = (dipPower[a] || 0) / Math.max(1, dipPower[b] || 0);
       const adj = (ADJ[a] || []).includes(b);
+      if (process.env.AGW_DEBUG_WAR && t % 20 === 0 && a < b) console.log(`[DBG t${t}] ${a}→${b} pr=${pr.toFixed(3)} adj=${adj} unLocked=${!!(diplo.un && diplo.un.members.includes(a) && diplo.un.members.includes(b))} rel=${R.toFixed(0)}`);
       // 宣战 U（A1 §6.1；A1.1：制裁 CB 门槛 0.8、U+0.3、无声誉代价）
       // A1.6 UN 和平锁：成员国之间禁止宣战
       const unLocked = !!(diplo.un && diplo.un.members.includes(a) && diplo.un.members.includes(b));
@@ -2010,16 +2014,17 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
         if (facMods(facs[a]).canDeclareWar) continue;
         const repFactor = diplo.rep[b] < 30 ? 0.80 : 1;
         const wt = (facMods(facs[a]).warThreshold || 0) * 0.15; // v24 政策宣战阈值偏置（强硬外交/核威慑）
-        if (pr < (cb ? 0.80 : (adj ? 1.30 : 1.60) * repFactor) + wt) continue;
+        if (pr < (cb ? 0.80 : (adj ? P.warAdjTh : P.warFarTh) * repFactor) + wt) continue; // 11-27：门槛参数化+下调（上调进攻性）
         const prActual = warRatio(facs[a], facs[b]); // v24 实际战力比（动员口径，区别于潜力比 pr）
         if (prActual < AIP.war.warFloor) continue; // AI 不在 pr<1.0 开战（AI战争细则 §八；不送人头）
+        if ((facs[a].treasury || 0) < P.warTreasFloor) continue; // 11-27 财政刹车：国库过低不主动宣战（防战争烧穿负财政）
         const feasibility = clamp(pr * 0.8, 0, 1.5) / 1.5;
         const threat = clamp((dipPower[b] / Math.max(1, dipPower[a])) * 0.4, 0, 1);
         const intervene = diplo.treaties.filter((x) => x.type === 'ally' && !x.dead && x.expire > t && (x.a === b || x.b === b)).length * 0.35;
         let U = 0.30 * 0.6 + 0.15 * 0.5 + 0.25 * feasibility + 0.20 * threat
           - 0.30 * (1 - Math.min(pr, 1.5) / 1.5) * L.caution
           - 0.25 * intervene * L.caution - (cb ? 0 : 0.15 * 0.5)
-          + 0.20 * L.aggression + (adj ? 0.10 : -0.15);
+          + 0.30 * L.aggression + (adj ? 0.10 : -0.15); // 11-27：进攻性权重 0.20→0.30（上调进攻性）
         // v26 绝对中立口径（院长 11-24 第 6 条）：**只限制自身宣战，不提供"不被宣战"保护**——
         // 原 v26 初版"目标持卡→宣战成本上升 U−0.25"已删除（与院长口径冲突）；被宣战仍可应战。
         if (cb) U += 0.30;
@@ -3124,7 +3129,7 @@ console.log(`\n[v25 矿电] 口径=fuel_first | 档位50回/档(深井100回) | 
     A.push(['贸易收入非负', negTrade.length === 0, negTrade.join(',')]);
     // A6 粮安/生存：200 回终局无饿死（F<20 视为饥荒）
     const famine = idsAll.filter((x) => facs[x].cities.length && false); // F 为全局值，此处以终局 F 判定在下方
-    A.push(['八足鼎立存活 8 阵营', idsAll.filter((x) => facs[x].cities.length > 0).length === 8, `存活=${idsAll.filter((x) => facs[x].cities.length > 0).length}`]);
+    A.push(['八足鼎立存活 ≥6（战争盘容许吞并）', idsAll.filter((x) => facs[x].cities.length > 0).length >= 6, `存活=${idsAll.filter((x) => facs[x].cities.length > 0).length}`]); // 11-27：===8→>=6（战争盘灭国=争霸正常节奏，复国机制兜底；原=和平盘口径）
     console.log('\n[v27 ASSERT]');
     let pass = 0;
     for (const [name, ok, detail] of A) {
