@@ -59,12 +59,12 @@ const P = {
   warAdjTh: 1.02, warFarTh: 1.08, warTreasFloor: 20000, // 11-27 财政刹车：国库 <2 万不主动宣战（seed2 F4 战争烧穿负财政的护栏）
   units: {
     inf:     { name: '民兵', branch: 'step', q: 0.80, turns: 0, wealth: 0,     iron: 0,   coal: 0,   oil: 0 }, // 11-27 拟改名+降 q（方案待院长定）
-    assault: { name: '反装甲步兵', branch: 'step', q: 1.00, turns: 1, wealth: 1920,  iron: 0,  coal: 0,   oil: 0 }, // 11-27 去资源：只花财+回合
-    special: { name: '特种部队', branch: 'step', q: 1.05, turns: 1, wealth: 3840,  iron: 0,  coal: 0,   oil: 0 }, // 11-27 去资源
+    assault: { name: '反装甲步兵', branch: 'step', q: 1.00, turns: 1, wealth: 3200,  iron: 0,  coal: 0,   oil: 0 }, // 11-27 完全平衡：轻档统一 400 财/批（×8=3200） // 11-27 去资源：只花财+回合
+    special: { name: '特种部队', branch: 'step', q: 1.05, turns: 1, wealth: 3200,  iron: 0,  coal: 0,   oil: 0 }, // 11-27 完全平衡：轻档统一 // 11-27 去资源
     tank:    { name: '坦克',     branch: 'cav',  q: 1.00, turns: 2, wealth: 12800, iron: 0, coal: 0, oil: 0 }, // 11-27 去资源
     heli:    { name: '武装直升机', branch: 'cav', q: 1.00, turns: 2, wealth: 12800, iron: 0, coal: 0, oil: 0 }, // 11-27 去资源
-    mobile:  { name: '机动炮兵', branch: 'bow',  q: 1.00, turns: 1, wealth: 3200,  iron: 0, coal: 0,  oil: 0 }, // 11-27 去资源
-    heavy:   { name: '重炮兵',   branch: 'bow',  q: 1.00, turns: 2, wealth: 6400,  iron: 512, coal: 128, oil: 0 },
+    mobile:  { name: '机动炮兵', branch: 'bow',  q: 1.00, turns: 1, wealth: 3200,  iron: 0, coal: 0,  oil: 0 }, // 轻档统一 3200 // 11-27 去资源
+    heavy:   { name: '重炮兵',   branch: 'bow',  q: 1.00, turns: 2, wealth: 12800, iron: 0, coal: 0, oil: 0 }, // 11-27 完全平衡：重档统一 1600 财/批（×8=12800）+去资源
   },
   counter: { step: { cav: 1.3, bow: 1.0 }, cav: { bow: 1.3, step: 1.0 }, bow: { step: 1.3, cav: 1.0 } }, // v1.1（11-27）：1.5/0.7→1.30/1.00（剩 50% 锚点）；装甲对抗（轻步对坦克 0.894/反装甲 1.20）待 L1 战争引擎细化
   // 资源（v25：基础矿场满档产出，受矿脉档位系数；油按 v22 石油表，铁/煤按“2 座矿场/城 × 48/回”估）
@@ -90,7 +90,7 @@ const P = {
     depletionRateMult: 0.5,         // grn2b 深井后：100 回/档
     oilWellMult: 1.3,               // grn2b：油田产出 ×1.3
     shortageMode: 'fuel_first',     // fuel_first | proportional（§十 #1 裁：fuel_first）
-    fuelIn: { plant: 16, nuclear: 8 }, // ×8 引擎口径（设计值 2/1）
+    fuelIn: { plant: 16, nuclear: 8, plantOil: 12 }, // ×8 引擎口径（设计值 2/1）；plantOil=12（11-27 火电双燃料：16 煤↔12 油热值）
     nuclearMaintenanceEvery: 10,    // 每运转 10 回维修 1 回（不耗铀/不产电/维护照付）
     coalToOilRate: 0.3,             // 1 煤 = 0.3 油（grn2c）
     coalToOilCapPerFactory: 16,     // ×8（设计值 2 煤/回/厂）
@@ -619,7 +619,14 @@ function settleMineralPower(t, facs, env) {
     const uranSat = uranDemand > 0 ? Math.min(1, (f.resources.uranium || 0) / uranDemand) : 1;
     f.resources.coal = Math.max(0, (f.resources.coal || 0) - coalDemand * coalSat);
     f.resources.uranium = Math.max(0, (f.resources.uranium || 0) - uranDemand * uranSat);
+    // 11-27 火电双燃料（院长裁：石油=火力燃料替代煤）：煤优先，缺口自动切油（16 煤↔12 油热值）
+    const coalGap = coalDemand * (1 - coalSat);
+    const oilDemand = coalGap * P.mineral.fuelIn.plantOil / P.mineral.fuelIn.plant;
+    const oilSat = oilDemand > 0 ? Math.min(1, (f.resources.oil || 0) / oilDemand) : 1;
+    f.resources.oil = Math.max(0, (f.resources.oil || 0) - oilDemand * oilSat);
+    f._fuelSat = coalDemand > 0 ? coalSat + (1 - coalSat) * oilSat : 1; // 火电综合燃料满足率
     ms.fuelCoalUsed += coalDemand * coalSat; ms.fuelUranUsed += uranDemand * uranSat;
+    ms.fuelOilUsed = (ms.fuelOilUsed || 0) + oilDemand * oilSat;
     ms.coalDemandSum += coalDemand; ms.uranDemandSum += uranDemand;
     if (coalDemand > 0 && coalSat < 1) ms.coalGapTurns += 1;
     if (uranDemand > 0 && uranSat < 1) ms.uraniumGapTurns += 1;
@@ -634,7 +641,7 @@ function settleMineralPower(t, facs, env) {
     const cityP = [];
     for (const c of f.cities) {
       const { employmentRate } = cityLabor(c);
-      const S = (c.b.plant * P.power.plant * coalSat
+      const S = (c.b.plant * P.power.plant * f._fuelSat
         + (c.nuclearRepair ? 0 : c.b.nuclear * P.power.nuclear * uranSat)
         + c.b.hydro * P.power.hydro + c.b.solar * P.power.solar) * employmentRate;
       const D = cityPowerDemand(c) * employmentRate;
@@ -856,7 +863,7 @@ const D = {
   // A1.6 文化与同盟收口（2026-11-16 院长裁：最小复国 + UN 全票 + 联合进攻/经济制裁）
   trade: { minRel: 20, term: 24, link: 0.20, relPerTurn: 2 },      // 贸易协定/航线（贸易最小规则 v0.2：关系 +2/回）
   econAlly: { minRel: 40, term: 24, link: 0.10, max: 1 },          // 经济同盟（每类限 1 盟友）
-  un: { start: 120, charterCd: 20, electionEvery: 25, voteThreshold: 0.45, abstainWindow: 0.12, charterRatio: 2 / 3, leaderTrade: 1.15 }, // 11-27：100→120（让战争窗口 t40~120 先行=先争霸后建 UN）
+  un: { electionEvery: 25, voteThreshold: 0.45, abstainWindow: 0.12, leaderTrade: 1.15 }, // 11-27：UN 开局成立（外交背景板）；start/charterCd/charterRatio 随宪章流程删除
   revive: { wait: 3, militiaRate: 0.03, rep: 30, relYes: 100, relKiller: -100, cooldown: 10 },
   culturePush: { cost: 30000, duration: 20, mult: 4.0, cooldown: 25, relDrop: 0 }, // A1.6 文化推广（周期性文化攻势）
   allianceMeeting: { cd: 5, voteThreshold: 0.50, relFail: 5 },
@@ -1300,7 +1307,8 @@ function makeDiplo(ids) {
     sanctions: [], coalitionCd: {}, sanctionCd: 0, napCd: {},
     aggression: Object.fromEntries(ids.map((x) => [x, 0])), // A1.2 侵略记录（滚动 30 回合）
     extinct: [], meetingCd: {}, initiated: {}, // A1.5 会议：灭国事由/发起冷却/每回合 1 次
-    un: null, unCd: 0, reviveCd: {}, jointCd: {}, econMeetCd: {}, tradeCd: {}, econAllyCd: {}, // A1.6 文化与同盟收口
+    un: { founded: 0, members: ids.slice(), leader: null, nextElection: 25 }, // 11-27 院长裁：UN 默认开局成立（外交背景板；宪章成立流程删除）
+    unCd: 999, reviveCd: {}, jointCd: {}, econMeetCd: {}, tradeCd: {}, econAllyCd: {},
     culturePush: {}, pushCd: {}, // A1.6 文化推广
     lastSanction: {} }; // A1.2 同类制裁冷却：key=`${target}:${type}`
 }
@@ -1669,41 +1677,7 @@ function a1_6Phase(t, facs, diplo, dipPower, ids, rand, log) {
     }
   }
 
-  // ---- ② UN 宪章（存活阵营 ≥2/3 同意；弃权不算；可在战争期发起，通过=全球停战+和平锁）----
-  diplo.unCd = diplo.unCd || 0;
-  if (!diplo.un && t >= D.un.start && diplo.unCd <= t) {
-    const allAlive = allIds.every((x) => facs[x] && facs[x].cities.length > 0);
-    if (allAlive) {
-      // 发起人：非军事路径中"最有人缘"者（关系总和+rep；文化路径小幅加分）——避免被单一低关系对象卡死
-      const score = (x) => alive.reduce((s, y) => s + (y === x ? 0 : diplo.rel[x][y]), 0)
-        + 0.3 * diplo.rep[x] + (facs[x].mainPath === 'culture' ? 20 : 0);
-      const cands = alive.filter((x) => facs[x].mainPath !== 'military').sort((a, b) => score(b) - score(a));
-      const initiator = cands[0];
-      if (initiator) {
-        const votes = [`${initiator}:同意`]; let yes = 1, abstain = 0;
-        for (const Y of alive) {
-          if (Y === initiator) continue;
-          const L = D.leaders[Y] || {};
-          const u = 0.35 + 0.30 * (diplo.rep[initiator] / 100) + 0.30 * (diplo.rel[Y][initiator] / 100)
-            - 0.35 * (L.aggression || 0.5) + (atWarAny(Y) ? 0.25 : 0) + 0.10 * (L.culture || 0.5);
-          if (u >= D.un.voteThreshold) { yes++; votes.push(`${Y}:同意`); }
-          else if (u >= D.un.voteThreshold - D.un.abstainWindow) { abstain++; votes.push(`${Y}:弃权`); }
-          else votes.push(`${Y}:反对`);
-        }
-        const need = Math.ceil(alive.length * D.un.charterRatio); // ≥2/3（弃权不算）
-        if (yes >= need) {
-          // 11-27 院长裁：UN 不做停战设计（俄乌同为成员仍交战）——删"全球停战+和平锁"，允许局部热战
-          diplo.un = { founded: t, members: alive.slice(), leader: null, nextElection: t + D.un.electionEvery };
-          log.push({ t, event: `联合国成立：${initiator} 提出宪章——${votes.join(' ')} → 通过（同意${yes}/需${need}，弃权${abstain}不计入；国际平台开启=常任理事国选举/文化平台，不做停战管控）` });
-        } else {
-          diplo.rep[initiator] = clamp(diplo.rep[initiator] - D.meetingFailRep, 0, 100);
-          diplo.unCd = t + D.un.charterCd;
-          log.push({ t, event: `联合国宪章：${initiator} 提案——${votes.join(' ')} → 未通过（同意${yes}/需${need}，弃权${abstain}不计入；发起国 rep −${D.meetingFailRep}）` });
-        }
-      }
-    }
-  }
-
+  // ---- ② UN 宪章流程已删（11-27 院长裁：UN 默认开局成立=外交背景板；选举见下）----
   // ---- ③ 常任理事国选举（每 25 回；每国 1 票、不投自己；第一轮相对多数，未过半则空位）----
   if (diplo.un && t >= diplo.un.nextElection) {
     const members = diplo.un.members.filter((x) => facs[x] && facs[x].cities.length > 0);
