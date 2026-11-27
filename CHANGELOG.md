@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-11-27 黑机 · 白机定版内容落库（UN 全删 / 兵种 v1.1 / 科技 v28 / 火电双燃料）
+
+- **UN/常任理事国全删落地（方案 A）**：删 `VictoryChecker.UnRules` 与 `ScenarioUnOverride`；`scenario.json`/`scenario-tutorial.json` 去 `victoryOverrides.un`；`balance.json` 去 `un`/`env.unGreen`/AI `unElection` 脉冲；`policies.json` 碳排放配额 `via=proposal`（任一阵营提案）；NFactionSmoke 去 UN 门槛/选举断言；文化胜利保持存活阵营全入侵+60%+维持 10 回。
+- **兵种数值表 v1.1**：`balance.b1.units` 改名（反装甲步兵/特种部队）+ 轻档统一 3,200 财/1,000 兵/1 回、重档 12,800 财/2 回；生产去铁/煤/油（字段置 0，`ReserveArsenal`/选型自动归零）；克制 1.30/1.00 + 装甲对抗 0.894/1.20；`military.militiaQ=0.80`（初始兵=民兵）。
+- **伤兵机制定版**：删 L1 `MilitaryTick` 伤兵恢复（兵营 30%/基地 20%/无 15% 作废）；balance 改 L3 四档参数（医院 10/20/30/40、进驻基地 20/市政府 15、脱战 5%），L3 实装时消费。
+- **科技胜利 v28**：`tech.json` 增 `incomeScale=2.0`/入场券本线 10+他线各 3/工程 2,000 财+6,000 生产/产能流每城 64+工厂×64（Unity 工厂=重工业）；GameState 新增 `UltimateProjectTick`（入场券→工程进度→财按进度分摊→建成）；`VictoryChecker.CheckTech` 改 v28 判定（不再要求全科技）；BatchBuildTest +2 断言（入场券/工程建成）。
+- **经济/建筑**：火电 `fuelBackup.oil=12`（缺煤自动切油，16 煤↔12 油热值）+ `AllocateFuelWithBackup`（proportional 模式择一防双耗）；市政府维护 0→4（Lv2 7/Lv3 10）；牧场净产 ×0.75（养牛 272/72、养猪 296/80、牧羊 256/40、养鸡 240/48）。
+- **回归全绿**：BUILD（含 v28 断言）/SMOKE/NFACTION/MINERAL（46 项，含双燃料）/POLICY/AI/MANDATE（68）/UI/EVENTCARD/PRISON；6 个 JSON 语法校验通过。
+- 文档：AGENTS.md 去 UN 表述；未改美术/场景/打包。
+
+---
+
 ## 2026-11-27 白机六号 · 伤兵口径漂移修复 + 吞并盘 v28b（文化节奏验证）
 
 - **伤兵口径漂移修复**（接手五号窗口指令 4"检查口径漂移"的复核产出）：三处"城中有医院→恢复减半"旧文（武将专题开题 F2/术语表/间谍接口）统一为"**部署医院**"（L2 武将部署动作，与裁定 8/索引-决策对齐——同文件 L35"部署医院"与 F2"城中有医院"自相矛盾）；军事开题议题区旧讨论（回营 30%/脱战缓回 10 回）加作废标记；词表 +1 防复发；下游 6 篇 syncDate 刷新（e2406bb）。
