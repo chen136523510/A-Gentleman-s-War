@@ -350,8 +350,8 @@
    "changedAt": "2026-11-26"
   },
   "docs/06-设计/00-总纲/索引-参数.md": {
-   "hash": "c2a38f221669",
-   "changedAt": "2026-11-26"
+   "hash": "164d059120d9",
+   "changedAt": "2026-11-27"
   },
   "docs/06-设计/00-总纲/胜利条件.md": {
    "hash": "c2cbf37565ba",
@@ -726,12 +726,12 @@
    "changedAt": "2026-11-10"
   },
   "docs/06-设计/04-军事/兵种与装备目录.md": {
-   "hash": "0f7f483a9e3d",
-   "changedAt": "2026-11-12"
+   "hash": "a15c7ae4d179",
+   "changedAt": "2026-11-27"
   },
   "docs/06-设计/04-军事/兵种数值表.md": {
-   "hash": "2f205b3abbc5",
-   "changedAt": "2026-11-25"
+   "hash": "cd2aea8027c5",
+   "changedAt": "2026-11-27"
   },
   "docs/06-设计/04-军事/兵种生产与兵工厂数值.md": {
    "hash": "01aae833fd04",
@@ -818,16 +818,16 @@
    "changedAt": "2026-11-26"
   },
   "docs/06-设计/06-事件/事件卡总表.md": {
-   "hash": "0d38c6fb12cd",
-   "changedAt": "2026-11-26"
+   "hash": "33f19a5bbc20",
+   "changedAt": "2026-11-27"
   },
   "docs/06-设计/06-事件/天灾与异族.md": {
    "hash": "6f265b343a4f",
    "changedAt": "2026-11-10"
   },
   "docs/06-设计/06-事件/民生与消费事件.md": {
-   "hash": "deebacca02c6",
-   "changedAt": "2026-11-26"
+   "hash": "0a41b16a87c0",
+   "changedAt": "2026-11-27"
   },
   "docs/06-设计/06-事件/起义.md": {
    "hash": "0c7b0a824e14",
@@ -934,8 +934,8 @@
    "changedAt": "2026-11-25"
   },
   "docs/08-百科/词条/事件.md": {
-   "hash": "d9b1365f792d",
-   "changedAt": "2026-11-26"
+   "hash": "47f7d98fcb18",
+   "changedAt": "2026-11-27"
   },
   "docs/08-百科/词条/人口与民生.md": {
    "hash": "5d00bf530337",
@@ -946,8 +946,8 @@
    "changedAt": "2026-11-24"
   },
   "docs/08-百科/词条/军事.md": {
-   "hash": "92db45de9c54",
-   "changedAt": "2026-11-23"
+   "hash": "271b57892d93",
+   "changedAt": "2026-11-27"
   },
   "docs/08-百科/词条/城市与建筑.md": {
    "hash": "ff238627266d",
