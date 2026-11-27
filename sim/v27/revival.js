@@ -58,12 +58,12 @@ const P = {
   // WarAI 宣战潜力比门槛（11-27 院长裁"上调进攻性"：1.30/1.60→1.02/1.08——八足鼎立 pr 恒 0.98~1.02（实测），倍数门槛均衡局无解；决策主体=U 公式）
   warAdjTh: 1.02, warFarTh: 1.08, warTreasFloor: 20000, // 11-27 财政刹车：国库 <2 万不主动宣战（seed2 F4 战争烧穿负财政的护栏）
   units: {
-    inf:     { name: '普通步兵', branch: 'step', q: 1.00, turns: 0, wealth: 0,     iron: 0,   coal: 0,   oil: 0 },
-    assault: { name: '反装甲步兵', branch: 'step', q: 1.00, turns: 1, wealth: 1920,  iron: 64,  coal: 0,   oil: 0 }, // v1.1 命名（原突击步兵/攻坚步兵）
-    special: { name: '特种部队', branch: 'step', q: 1.05, turns: 1, wealth: 3840,  iron: 64,  coal: 0,   oil: 16 }, // v1.1 命名（原特种小队）
-    tank:    { name: '坦克',     branch: 'cav',  q: 1.00, turns: 2, wealth: 12800, iron: 512, coal: 128, oil: 256 },
-    heli:    { name: '武装直升机', branch: 'cav', q: 1.00, turns: 2, wealth: 12800, iron: 384, coal: 128, oil: 320 },
-    mobile:  { name: '机动炮兵', branch: 'bow',  q: 1.00, turns: 1, wealth: 3200,  iron: 256, coal: 64,  oil: 0 },
+    inf:     { name: '民兵', branch: 'step', q: 0.80, turns: 0, wealth: 0,     iron: 0,   coal: 0,   oil: 0 }, // 11-27 拟改名+降 q（方案待院长定）
+    assault: { name: '反装甲步兵', branch: 'step', q: 1.00, turns: 1, wealth: 1920,  iron: 0,  coal: 0,   oil: 0 }, // 11-27 去资源：只花财+回合
+    special: { name: '特种部队', branch: 'step', q: 1.05, turns: 1, wealth: 3840,  iron: 0,  coal: 0,   oil: 0 }, // 11-27 去资源
+    tank:    { name: '坦克',     branch: 'cav',  q: 1.00, turns: 2, wealth: 12800, iron: 0, coal: 0, oil: 0 }, // 11-27 去资源
+    heli:    { name: '武装直升机', branch: 'cav', q: 1.00, turns: 2, wealth: 12800, iron: 0, coal: 0, oil: 0 }, // 11-27 去资源
+    mobile:  { name: '机动炮兵', branch: 'bow',  q: 1.00, turns: 1, wealth: 3200,  iron: 0, coal: 0,  oil: 0 }, // 11-27 去资源
     heavy:   { name: '重炮兵',   branch: 'bow',  q: 1.00, turns: 2, wealth: 6400,  iron: 512, coal: 128, oil: 0 },
   },
   counter: { step: { cav: 1.3, bow: 1.0 }, cav: { bow: 1.3, step: 1.0 }, bow: { step: 1.3, cav: 1.0 } }, // v1.1（11-27）：1.5/0.7→1.30/1.00（剩 50% 锚点）；装甲对抗（轻步对坦克 0.894/反装甲 1.20）待 L1 战争引擎细化
@@ -1414,7 +1414,7 @@ function applyLoss(f, ratio) {
 // A1.2 §15.1 包围网：侵略者触发红线 → 其余国家按人格掷骰决定是否联合围殴（不背刺条约对象）
 function coalitionCheck(t, facs, diplo, dipPower, ids, rand, log) {
   if (t < P.warStart) return;
-  if (diplo.un) return; // A1.6 UN 和平锁：联合国成立后不再有包围网战争
+  // 11-27：UN 和平锁已删（不做停战设计）——包围网战争不受 UN 成立影响，允许局部热战
   for (const X of ids) {
     if (!facs[X] || facs[X].cities.length === 0) continue;
     const others = ids.filter((x) => x !== X && facs[x] && facs[x].cities.length > 0);
@@ -1692,14 +1692,9 @@ function a1_6Phase(t, facs, diplo, dipPower, ids, rand, log) {
         }
         const need = Math.ceil(alive.length * D.un.charterRatio); // ≥2/3（弃权不算）
         if (yes >= need) {
-          if (diplo.war) {
-            const w = diplo.war;
-            for (const x of (w.sideA || [w.a])) for (const y of (w.sideB || [w.b])) signPeace(t, facs, diplo, x, y);
-            diplo.war = null;
-          }
-          for (const f of Object.values(facs)) f.atWar = false;
+          // 11-27 院长裁：UN 不做停战设计（俄乌同为成员仍交战）——删"全球停战+和平锁"，允许局部热战
           diplo.un = { founded: t, members: alive.slice(), leader: null, nextElection: t + D.un.electionEvery };
-          log.push({ t, event: `联合国成立：${initiator} 提出宪章——${votes.join(' ')} → 通过（同意${yes}/需${need}，弃权${abstain}不计入；全球停战，和平锁生效）` });
+          log.push({ t, event: `联合国成立：${initiator} 提出宪章——${votes.join(' ')} → 通过（同意${yes}/需${need}，弃权${abstain}不计入；国际平台开启=常任理事国选举/文化平台，不做停战管控）` });
         } else {
           diplo.rep[initiator] = clamp(diplo.rep[initiator] - D.meetingFailRep, 0, 100);
           diplo.unCd = t + D.un.charterCd;
@@ -2005,11 +2000,10 @@ function diploTick(t, facs, diplo, fpower, ids, rand, log, env) {
       const cb = sanctionCb(diplo, a, b, t); // A1.2：参与制裁国对目标有合法战争 CB
       const pr = (dipPower[a] || 0) / Math.max(1, dipPower[b] || 0);
       const adj = (ADJ[a] || []).includes(b);
-      if (process.env.AGW_DEBUG_WAR && t % 20 === 0 && a < b) console.log(`[DBG t${t}] ${a}→${b} pr=${pr.toFixed(3)} adj=${adj} unLocked=${!!(diplo.un && diplo.un.members.includes(a) && diplo.un.members.includes(b))} rel=${R.toFixed(0)}`);
+      if (process.env.AGW_DEBUG_WAR && t % 20 === 0 && a < b) console.log(`[DBG t${t}] ${a}→${b} pr=${pr.toFixed(3)} adj=${adj} rel=${R.toFixed(0)}`);
       // 宣战 U（A1 §6.1；A1.1：制裁 CB 门槛 0.8、U+0.3、无声誉代价）
-      // A1.6 UN 和平锁：成员国之间禁止宣战
-      const unLocked = !!(diplo.un && diplo.un.members.includes(a) && diplo.un.members.includes(b));
-      if (!unLocked && !ally && !peace && !nap && t >= P.warStart && t >= (diplo.cooldown[a].war || 0)) {
+      // 11-27：UN 成员国禁宣战锁已删（不做停战设计，允许局部热战）
+      if (!ally && !peace && !nap && t >= P.warStart && t >= (diplo.cooldown[a].war || 0)) {
         // v26 绝对中立：canDeclareWar=false → 本国不得主动宣战（AI 侧同锁；被宣战仍可应战）
         if (facMods(facs[a]).canDeclareWar) continue;
         const repFactor = diplo.rep[b] < 30 ? 0.80 : 1;
