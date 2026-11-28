@@ -2141,7 +2141,7 @@ function culturePressure(A, B, facs, diplo, t) {
   let dec = 1.0;
   if (diplo.war) {
     const sa = diplo.war.sideA || [diplo.war.a], sb = diplo.war.sideB || [diplo.war.b];
-    if ((sa.includes(A) && sb.includes(B)) || (sa.includes(B) && sb.includes(A))) dec = 0; // 交战双边清零
+    if ((sa.includes(A) && sb.includes(B)) || (sa.includes(B) && sb.includes(A))) dec = 0.5; // 交战双边输出效率减半（2026-11-28 院长裁：战争不打断文化交流，×0.5 同时进行；原口径=清零作废）
   }
   if (dec > 0 && hasTreaty(diplo, 'peace', A, B, t)) dec = P.culture.peaceDecay; // 停战恢复期
   return Math.sqrt(ca) * dist * link * dec * gap * (facMods(fa).out || 1); // v24 政策对外输出乘区（雅言远播等）
@@ -2421,11 +2421,8 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       // 服役比例（2026-11-28 统一口径）：和平自动征募 5%=文档 serviceRatioBase；政策 pp 偏置按默认 5% 折算相对乘区
       const svcBase = f.atWar ? (stress ? stressService : P.warService) : P.peaceService;
       const svcCap = clamp(svcBase * (1 + (mods.serviceCap || 0) / 0.05), 0.002, 0.20);  // @hook:serviceCap 服役比例上限
-      // 兵饷可负担闭环（2026-11-28 征募免费的配套负反馈）：新增兵饷 ≤ 国库正余额/20 回——
-      // 兵饷即征兵的持续价格，国库薄自动刹车（战时国库厚仍可扩军；不发不出饷）
+      const target = Math.min(popTotal * svcCap * (disarmHit ? 0.5 : 1) * (f.lostCulture ? P.culture.lostRecruit : 1), 2000000);
       let total = totalUnits(f);
-      const affordTroops = Math.floor(Math.max(0, f.treasury) / (P.soldierSalary * 20));
-      const target = Math.min(popTotal * svcCap * (disarmHit ? 0.5 : 1) * (f.lostCulture ? P.culture.lostRecruit : 1), 2000000, total + affordTroops);
       // 征募费（2026-11-28 院长裁：征募不要钱——兵饷等自然公式承担代价；feeUnit>0 才计费防除零）
       if (target > total) {
         const add = target - total;
@@ -2506,24 +2503,6 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       const tradeInc = f.tradeIncome || 0; // v27 贸易 v1.0（贸易最小规则 §二）
       f.treasury += taxSum + incomeSum + milIncome + tradeInc - upkeepSum - upkeepPolicy - salary - salaryOfficers - bonusCost - relicCost - policyCost - birthCost;
       f.netIncomeLast = taxSum + incomeSum + milIncome + tradeInc - upkeepSum - upkeepPolicy - salary - salaryOfficers - bonusCost - relicCost - policyCost - birthCost; // v24 建造维护预算基准（v26 含政策支出）
-      // 欠饷裁军（2026-11-28 征募免费的负反馈闭环）：发不出饷 → 按缺口裁军到养得起（兵溃语义；
-      // 进阶兵种先裁=战力损失最大，真实约束）；裁完仍欠（结构性破产）clamp 0 免责
-      if (f.treasury < 0) {
-        const salaryUnit = Math.max(0.01, P.soldierSalary * (disarmHit ? 1.2 : 1) * (mods.salary || 1) * (mods.milCost || 1));
-        const needCut = Math.ceil(-f.treasury / salaryUnit);
-        let remaining = needCut;
-        for (const k of ['tank', 'heli', 'heavy', 'special', 'assault', 'mobile', 'inf']) {
-          if (remaining <= 0) break;
-          const d = Math.min(remaining, f.units[k]); f.units[k] -= d; remaining -= d;
-        }
-        const cutDone = needCut - remaining;
-        if (cutDone > 0) {
-          f.soldiers = totalUnits(f);
-          f.treasury += cutDone * salaryUnit;   // 被裁兵本回不该付饷，回补缺口
-          log.push({ t, event: `${f.id} 欠饷裁军 ${cutDone} 兵（军饷发不出，兵溃）` });
-        }
-        if (f.treasury < 0) f.treasury = 0;     // 裁光仍欠=结构性破产（非征募链支出），破产免责
-      }
       f.financeTrace = { tax: taxSum, income: incomeSum, milIncome, trade: tradeInc, upkeep: upkeepSum + upkeepPolicy, salary, officers: salaryOfficers, bonus: bonusCost, relic: relicCost, policyCost: policyCost + birthCost }; // v26 报告用
       if (process.env.AGW_FT && t % 25 === 0) console.error('[FT]', 't' + t, f.id, 'tre=' + Math.round(f.treasury), 'sol=' + Math.round(f.soldiers), JSON.stringify(f.financeTrace));
       // 学院链科技产出（Lv1/2/3 = 10/16/24）；经济制裁 ×0.7；政策乘区（学术自由/开放社会等）
