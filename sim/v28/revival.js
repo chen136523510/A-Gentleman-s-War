@@ -3042,9 +3042,9 @@ console.log(`\n[v25 矿电] 口径=fuel_first | 档位50回/档(深井100回) | 
     const evAll = log.filter((r) => r.event && r.event.startsWith('【事件卡'));
     const evH = evAll.filter((r) => r.event.includes('自立门户') || r.event.includes('韩流'));
     A.push([`事件卡触发 ${evAll.length} 张；历史卡不进复苏（实 ${evH.length}）`, evH.length === 0, `特殊/普通=${evAll.length}`]);
-    // A4 国库/资源无负池
+    // A4 国库负值监控（2026-11-28 院长裁 N5：征募免费+养兵要钱=自然代价，国库负值=破产语义允许，AI 决策/兵饷自然约束——不再作 FAIL 断言；降级为信息行保留可见性）
     const negTre = idsAll.filter((x) => facs[x].treasury < -1e-6);
-    A.push(['国库无负值', negTre.length === 0, negTre.join(',')]);
+    A.push(['国库负值=破产语义允许（信息行）', true, negTre.length ? negTre.map((x) => `${x}:${Math.round(facs[x].treasury)}`).join(',') : '无']);
     // A5 贸易 v1.0：无负贸易收入
     const negTrade = idsAll.filter((x) => (facs[x].tradeIncome || 0) < -1e-6);
     A.push(['贸易收入非负', negTrade.length === 0, negTrade.join(',')]);
