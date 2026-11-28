@@ -7,6 +7,8 @@
 
 | 编号 | 一句话 | 日期 |
 |---|---|---|
+| BUG-G022 | **L2 裙边颜色南北颠倒**（修 G021 探针时发现）：11-24 修地形 uv v 翻转（BUG-G015①）时 `EdgeColor` 采样行号未同向翻转——GetPixels32 的 y=h−1 行=PNG 顶行=数据北缘，原 case 0（北）却采 y=2（PNG 底行=南缘）→ 北裙边挂海色/南裙边挂陆色，东西正确。低俯仰看不出来，全图视野四裙边同屏才显形。**已修（11-28）**：case 0↔1 行号对调+注释锚点。教训：uv/采样行号语义必须与翻转修复联动改，出图目检要带"方向敏感"的地图（海陆分界）才验得出 | 2026-11-28 |
+| BUG-G021 | **L2 滚轮拉远屏幕上方大片灰绿空白**（BUG-G019 残留漏洞，院长 11-28 报）：G019 修复只做了"目标锁界+背景外延"两维，缩放上限 `Size×1.25` 写死与俯仰角无联动——右键拉低俯仰到 20° 后滚轮拉远，视锥上缘俯角仅剩 1°，光线落地 ~2350m 超出 farClip/裙边（0.9 图）/fogEnd，背景色+雾色合成大片空白。**已修（11-28）**：缩放与俯仰联动钳制（`MaxDistFor(el)`=视锥上缘光线必须落在裙边实面内，拉远受阻自动缓动抬俯仰→自然停在斜俯视全图）+ 默认视野改全图入画（`FitDist(55°)`，院长令）+ 裙边兜底四向对称（原 BackdropUnder 南侧缺口）+ 雾距随拟合视野缩放（fit×2.0/×4.5）+ V 键复位全图。教训：3D 轨道相机"不露虚空"是三维问题——**目标锁界+背景外延+俯仰×视锥联动**，缺一不可；上限必须是"覆盖几何"的函数，不能写死距离 | 2026-11-28 |
 | BUG-G020 | **打包 exe 进 L2 全屏洋红**：`Player.log` 报 `ArgumentNullException: shader` @ `L2CityView.Build`——运行期 `Shader.Find("Universal Render Pipeline/Unlit/Lit")` 在 player 被裁剪返回 null，地形材质创建即抛异常中止，整座城不生成（紫屏+UI）。**已修（11-26）**：`Resources/L2Runtime/L2Unlit.mat`/`L2Lit.mat`（材质引用 shader→随包）+ 7 处改 `L2RuntimeMaterials.New()`（模板拷贝，Sprites/Default 兜底）+ 构建前置 Ensure。教训：①运行期 `Shader.Find` 找 URP shader 在 player 必裁剪（编辑器可用≠打包可用）②勿用 Always Included Shaders 兜 URP——URP/Lit 全变体 **884,736**，实测 12 分钟只编 4.2 万（≈4 小时），必须用 Resources 材质引用 ③打包版 L2 必须每次实机过 | 2026-11-26 |
 | BUG-G019 | **L2 相机操作反向 + 最远缩放露虚空**（院长验收）：WASD 按世界轴而非视角、中键/左键拖拽方向反、滚轮方向反、`max dist=320` 把地图外背景拉进画面。**已修（11-26）**：WASD 视角相对、左/中键抓取语义、上滚=拉近、限距 1.25 图 + 目标锁图内 + 四边外延裙边/兜底地面。教训：3D 轨道相机必须"目标锁界 + 背景外延"，不能只靠限距 | 2026-11-26 |
 | BUG-G018 | **L2 沙盒在无 Main Camera 的恢复/空白场景黑屏**：`L2CityView.SnapshotAndSetupCamera` 无相机时直接 `return` → Game 视图全黑、无提示。**已修（11-26）**：无相机时自建 `L2Camera`（tag=MainCamera，随沙盒销毁）。教训：菜单/命令行生成的预览必须自带相机兜底，不能依赖"当前场景恰好有 Main Camera" | 2026-11-26 |
@@ -29,6 +31,33 @@
 | BUG-G001 | 手写 C# 两连编译错致 Unity Safe Mode：①TextAsset 无隐式布尔被三元使用②AgwMenu 用 BuildResult 漏 using UnityEditor.Build.Reporting——教训：无本地编译器时必须跑类型-命名空间静态审计（tools/audit-csharp-usings.py 已转正） | 2026-10-25 |
 
 ---
+
+## BUG-G022 · L2 裙边颜色南北颠倒
+
+- 发现时间：2026-11-28（修 BUG-G021 出图探针时发现）
+- 环境：`L2CityView.BuildBackdrop → EdgeColor`；出图 `tmp/l2-3d-shots/overview.png`
+- 现象：全图视野下北裙边呈海色、南裙边呈陆色（顶部海带接陆地、底部裙边是海色）。
+- 根因：BUG-G015① 修地形 uv v 翻转时本函数采样行号未同向修——`LoadImage` 后 `GetPixels32` 的 y=h−1 行=PNG 顶行=数据北缘，原 case 0（北）却采 y=2（PNG 底行=南缘）；东西方向 x 不翻转故正确。
+- 修复：case 0↔1 采样行对调，注释锚定行号语义。
+- 教训：uv/采样行号语义必须与翻转修复联动改；目检出图要选"方向敏感"的地图（海陆分界）才验得出颜色颠倒。
+
+## BUG-G021 · L2 滚轮拉远屏幕上方大片灰绿空白（BUG-G019 残留漏洞）
+
+- 发现时间：2026-11-28（院长报图）
+- 环境：`L2CityView` 轨道相机（96×96 图，FOV 38°，俯仰可拖 20°~78°）
+- 现象：滚轮拉远后屏幕上方约 60% 是灰绿空白（背景色/雾色混合），地图只占下方。
+- 根因：G019 修复只锁"目标点+背景外延"两维；缩放上限 `Size×1.25=120` 写死、与俯仰角无联动——低俯仰（20°）拉远时视锥上缘俯角仅 1°，上缘光线落地 ~2350m：超 farClip（背景色）、超裙边 0.9 图（虚空）、超 fogEnd 249.6（雾色），三色近同合成大片空白。
+- 修复：①`MaxDistFor(el)`——缩放上限改为俯仰的函数（视锥上缘光线必须落在裙边实面内），拉远受阻自动缓动抬俯仰，连续滚轮自然停在斜俯视全图；右键拉低俯仰同步收缩距离；②默认视野=全图入画（`FitDist(55°)`，2026-11-28 院长令）；③`L2BackdropUnder` 四向对称外延（原 z 起点在地图内部、南侧有缺口）；④雾距随拟合视野缩放（fit×2.0/×4.5，首版 ×1.5 实证裙边远端被洗灰）；⑤V 键复位全图；farClip ≥1500 保险。
+- 教训：3D 轨道相机"不露虚空"是三维问题——目标锁界+背景外延+**俯仰×视锥联动**，缺一不可；任何相机上限都应写成"覆盖几何"的函数而非写死距离。
+
+## BUG-G020 · 打包 exe 进 L2 全屏洋红
+
+- 发现时间：2026-11-26
+- 环境：打包 exe（`Builds/Win64/AGW.exe`）+ L2CityView 材质创建
+- 现象：编辑器 L2 正常，打包 exe 进 L2 全屏洋红，Player.log 报 `ArgumentNullException: shader`。
+- 根因：运行期 `Shader.Find("Universal Render Pipeline/Unlit/Lit")` 在 player 被裁剪返回 null，材质创建即抛异常，Build 中止整城不生成。
+- 修复：`Resources/L2Runtime/L2Unlit.mat`/`L2Lit.mat` 材质资产（引用 shader 随包）；7 处材质创建改 `L2RuntimeMaterials.New()`（模板拷贝 + Sprites/Default 兜底）；构建前置 Ensure。
+- 教训：①运行期 Shader.Find 找 URP shader 在 player 必裁剪（编辑器可用≠打包可用）②勿用 Always Included Shaders 兜 URP（全变体 88 万+，编译数小时）③打包版 L2 必须每次实机自检（`-agwshot-l2`）。
 
 ## BUG-G019 · L2 相机操作反向 + 最远缩放露虚空
 
