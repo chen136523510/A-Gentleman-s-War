@@ -41,7 +41,7 @@ const P = {
   // 科技胜利（院长 11-13 "科技拉力你来收束"）：率先建成任一终极工程 = 科技胜利
   // 终极工程（v28 院长裁"按生产力来进行"）：2,000 财 + 6,000 生产，产能流弹性工期（生产力高则回合少）——判定见 AIP.tech.projectCost
 
-  recruitFee: 8, // A1.4 征募费（财/兵；院长 2026-11-13 裁定：8 财/兵）
+  recruitFee: 0, // 征募费（财/兵）：院长 2026-11-28 裁"征募不要钱"——兵饷等自然公式承担代价（原 8 财/兵=11-13 裁，作废）
   buyPrice: { iron: 1.2, coal: 1.0, oil: 2.0 }, // A1.4 外交采购价
   growthHospital: [0, 1.05, 1.10, 1.20, 1.30],
   // 粮
@@ -53,8 +53,8 @@ const P = {
   // 俸禄（权威=索引-参数 salaryPerGeneral=13 财/将/回，v18a 调优；×8=104。⚠️ v22~v24 历史盘误用公式算例 32×8=256，v25 已修正）
   salaryPerGeneral: 104, generalsPerCity: 2,
   // 军（B1 v1.2：批次制；1 批 = 8,000 兵；轻 1 回合/批、重 2 回合/批）
-  soldierSalary: 0.05, peaceService: 0.005, warService: 0.10, stressService: 0.02,
-  batchSize: 8000,
+  soldierSalary: 0.05, peaceService: 0.05, warService: 0.10, stressService: 0.02, // 和平自动征募 5%（2026-11-28 院长裁"自动征募你来处理"：对齐文档口径"和平 5%/战时 10%"，代价=兵饷自然公式）
+  batchSize: 8000, // 2026-11-28 院长裁：人头制——批次不再是开工门槛，退化为单回合转换上限（财/回合按人头比例）
   // WarAI 宣战潜力比门槛（11-27 院长裁"上调进攻性"：1.30/1.60→1.02/1.08——八足鼎立 pr 恒 0.98~1.02（实测），倍数门槛均衡局无解；决策主体=U 公式）
   warAdjTh: 1.02, warFarTh: 1.08, warTreasFloor: 20000, // 11-27 财政刹车：国库 <2 万不主动宣战（seed2 F4 战争烧穿负财政的护栏）
   units: {
@@ -106,10 +106,10 @@ const P = {
   warStart: 40, warEvery: 20, maxWarsPerFaction: 1, allyRatio: 0.6, joinWarRatio: 2.0, allyDefense: 1.5, // 11-27：100→40（原与 un.start=100 撞车=战争窗口 0，0 战争根因）
   // 文化输出（文化输出算法 v1 份额收敛式；2026-11-05 院长定稿；院长 11-13 第 4 条：文化胜利=文化入侵全球并维持）
   culture: {
-    convergeR: 0.05,        // 收敛速率 r（balance 留 0.03/0.05/0.08 三档）
+    convergeR: 0.08,        // 收敛速率 r（2026-11-28 院长裁加速文化胜利：0.05→0.08=三档上限；balance 留 0.03/0.05/0.08 三档）
     // ❌ 抵抗系统已删除（2026-11-24 院长令「不要文化抵抗这个概念」）：防守=√Culture_B 本身
     //   原 resistCap(0.5)/resistPub(0.03)/resistTour(0.05)/resistEnt(0.02) 全删；cultureResist() 恒 0
-    gapExp: 0.5, gapCap: 2.0, // 势差乘区 clamp((Ca/Cb)^0.5, 1.0, 2.0)；门槛=攻击方有文化建筑
+    gapExp: 1.0, gapCap: 2.0, // 势差乘区 clamp((Ca/Cb)^1.0, 1.0, 2.0)；门槛=攻击方有文化建筑（2026-11-28 院长裁"加速文化胜利节奏"：0.5→1.0）
     invadeThreshold: 0.6, invadeRelease: 0.5, invadeHold: 5, // 完全入侵 60% 入 / 50% 出 / 持续 5 回
     victoryHold: 10,        // 文化胜利：对所有国完全入侵维持 10 回合
     contactTech: 7,        // AU 联系门槛（双方科技 ≥7 才可跨海文化输出；A1.6 由 10 下调，AU 发育慢）
@@ -2171,7 +2171,7 @@ function cultureTick(t, facs, diplo, ids) {
     let sum = 0;
     for (const k of Object.keys(id)) { if (k !== B && !alive.includes(k)) id[k] = 0; sum += id[k]; }
     if (sum > 0) for (const k of Object.keys(id)) id[k] /= sum;
-    if (id[B] < 0.2) id[B] = 0.2; // 本国认同底线 20%（负反馈纪律）
+    if (id[B] < 0.15) id[B] = 0.15; // 本国认同底线 15%（2026-11-28 院长裁加速文化胜利：20%→15%，原负反馈纪律值随 N3 数值方案下调）
     // ---- 完全入侵计时：≥60% 起算；<50% 解除 ----
     fb.invasionSince = fb.invasionSince || {};
     for (const A of alive) if (A !== B) {
@@ -2231,8 +2231,8 @@ function pickWarTarget(attacker, defenderF, rand) {
 function pickUnit(f) {
   const can = (k) => {
     const u = P.units[k];
-    if (f.units.inf < P.batchSize) return false;
-    if (f.treasury < u.wealth) return false;
+    if (f.units.inf < 1) return false;   // 人头制（2026-11-28）：只要池里有兵即可开工，批次不再是门槛
+    if (f.treasury < u.wealth / P.batchSize) return false;
     if (f.resources.iron < u.iron || f.resources.coal < u.coal || f.resources.oil < u.oil) return false;
     return true;
   };
@@ -2418,20 +2418,26 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       }
       // ==== 征募（普通步兵）====
       const popTotal = f.cities.reduce((a, c) => a + c.P, 0);
-      // v26 服役比例上限（§2.0 院长口径）：政策 pp 偏置按"默认 5% 服役比例"折算成相对乘区
-      // （+2pp=+40% 兵源 / −2pp=−40%）；不直接加 pp——sim 和平期 svcBase=0.5% 与 §2.0 默认 5% 是两套尺度
+      // 服役比例（2026-11-28 统一口径）：和平自动征募 5%=文档 serviceRatioBase；政策 pp 偏置按默认 5% 折算相对乘区
       const svcBase = f.atWar ? (stress ? stressService : P.warService) : P.peaceService;
-      const svcCap = clamp(svcBase * (1 + (mods.serviceCap || 0) / 0.05), 0.002, 0.20);  // @hook:serviceCap 服役比例上限
-      const target = Math.min(popTotal * svcCap * (disarmHit ? 0.5 : 1) * (f.lostCulture ? P.culture.lostRecruit : 1), 2000000);
+      const svcCap = clamp(svcBase * (1 + (mods.serviceCap || 0) / 0.05), 0.002, 0.20);  // @hook:serviceCap 服役比例上限
+      // 兵饷可负担闭环（2026-11-28 征募免费的配套负反馈）：新增兵饷 ≤ 国库正余额/20 回——
+      // 兵饷即征兵的持续价格，国库薄自动刹车（战时国库厚仍可扩军；不发不出饷）
       let total = totalUnits(f);
-      // A1.4 征募费（P0 出口，自定 1 财/兵；v22 兵员 ×8 与国库口径折中）
+      const affordTroops = Math.floor(Math.max(0, f.treasury) / (P.soldierSalary * 20));
+      const target = Math.min(popTotal * svcCap * (disarmHit ? 0.5 : 1) * (f.lostCulture ? P.culture.lostRecruit : 1), 2000000, total + affordTroops);
+      // 征募费（2026-11-28 院长裁：征募不要钱——兵饷等自然公式承担代价；feeUnit>0 才计费防除零）
       if (target > total) {
         const add = target - total;
-        const fee = add * P.recruitFee * (mods.recruit || 1); // v24 政策征募费乘区（兵役登记/紧急动员）
-        const afford = Math.max(0, Math.min(add, Math.floor(Math.max(0, f.treasury) / (P.recruitFee * (mods.recruit || 1)))));
-        f.treasury -= afford * P.recruitFee * (mods.recruit || 1);
-        f.units.inf += afford;
-        if (afford < add) log.push({ t, event: `${f.id} 征募受限：国库不足（需 ${Math.round(fee)}，仅征 ${afford}/${add}）` });
+        const feeUnit = P.recruitFee * (mods.recruit || 1); // v24 政策征募费乘区（兵役登记/紧急动员）
+        if (feeUnit > 0) {
+          const afford = Math.max(0, Math.min(add, Math.floor(Math.max(0, f.treasury) / feeUnit)));
+          f.treasury -= afford * feeUnit;
+          f.units.inf += afford;
+          if (afford < add) log.push({ t, event: `${f.id} 征募受限：国库不足（需 ${Math.round(add * feeUnit)}，仅征 ${afford}/${add}）` });
+        } else {
+          f.units.inf += add;
+        }
       }
       else if (target < total) {
         let cut = total - target;
@@ -2440,30 +2446,23 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
           if (cut <= 0) break;
         }
       }
-      // ==== 兵工厂产出（每城 1 座；Lv1=1 条产线；轻 1 回合/批、重 2 回合/批）====
+      // ==== 兵工厂产出（每城 1 座；2026-11-28 院长裁人头制：财/回合按人头比例，batchSize=单回合转换上限）====
       for (const c of f.cities) {
         if (c.b.arsenal <= 0) continue;
-        if (!c.arsenalJob) {
-          const job = pickUnit(f);
-          if (job) {
-            const u = P.units[job];
-            f.units.inf -= P.batchSize;
-            f.treasury -= u.wealth;
-            f.resources.iron -= u.iron;
-            f.resources.coal -= u.coal;
-            f.resources.oil -= u.oil;
-            c.arsenalJob = job;
-            c.arsenalProgress = 0;
-          }
-        }
-        if (c.arsenalJob) {
-          c.arsenalProgress += 1;
-          if (c.arsenalProgress >= P.units[c.arsenalJob].turns) {
-            f.units[c.arsenalJob] += Math.round(P.batchSize * (mods.arsenal || 1)); // v26 军工优先：批次产出 ×1.15（消耗端不变=转换效率提升，非虚空产出）
-            c.arsenalJob = null;
-            c.arsenalProgress = 0;
-          }
-        }
+        const job = pickUnit(f);   // 选型去批次门槛（pickUnit 内 can() 不再要求 inf≥batchSize）
+        if (!job) continue;
+        const u = P.units[job];
+        const cap = Math.max(1, Math.floor(P.batchSize / u.turns));   // 单回合转换上限（轻 8000 人/回、重 4000 人/回）
+        const perCap = u.wealth / P.batchSize;                        // 财/人头（轻 0.4、重 1.6）
+        const affordable = perCap > 0 ? Math.floor(Math.max(0, f.treasury) / perCap) : Math.floor(f.units.inf);
+        const want = Math.min(Math.floor(f.units.inf), cap, affordable);
+        if (want <= 0) continue;
+        f.units.inf -= want;
+        f.treasury -= want * perCap;
+        f.resources.iron -= u.iron * want / P.batchSize;
+        f.resources.coal -= u.coal * want / P.batchSize;
+        f.resources.oil -= u.oil * want / P.batchSize;
+        f.units[job] += Math.round(want * (mods.arsenal || 1)); // v26 军工优先：转换效率 ×1.15（消耗端不变，非虚空产出）；流式产出
       }
       // ==== 空军生产（A1.4：机场独立队列；轰炸机 2 回/架、无人机 1 回/架）====
       const airBase = f.cities.filter((c) => c.b.airport > 0).length;
@@ -2507,6 +2506,24 @@ function run(turns, seed, stress = false, stressService = P.stressService) {
       const tradeInc = f.tradeIncome || 0; // v27 贸易 v1.0（贸易最小规则 §二）
       f.treasury += taxSum + incomeSum + milIncome + tradeInc - upkeepSum - upkeepPolicy - salary - salaryOfficers - bonusCost - relicCost - policyCost - birthCost;
       f.netIncomeLast = taxSum + incomeSum + milIncome + tradeInc - upkeepSum - upkeepPolicy - salary - salaryOfficers - bonusCost - relicCost - policyCost - birthCost; // v24 建造维护预算基准（v26 含政策支出）
+      // 欠饷裁军（2026-11-28 征募免费的负反馈闭环）：发不出饷 → 按缺口裁军到养得起（兵溃语义；
+      // 进阶兵种先裁=战力损失最大，真实约束）；裁完仍欠（结构性破产）clamp 0 免责
+      if (f.treasury < 0) {
+        const salaryUnit = Math.max(0.01, P.soldierSalary * (disarmHit ? 1.2 : 1) * (mods.salary || 1) * (mods.milCost || 1));
+        const needCut = Math.ceil(-f.treasury / salaryUnit);
+        let remaining = needCut;
+        for (const k of ['tank', 'heli', 'heavy', 'special', 'assault', 'mobile', 'inf']) {
+          if (remaining <= 0) break;
+          const d = Math.min(remaining, f.units[k]); f.units[k] -= d; remaining -= d;
+        }
+        const cutDone = needCut - remaining;
+        if (cutDone > 0) {
+          f.soldiers = totalUnits(f);
+          f.treasury += cutDone * salaryUnit;   // 被裁兵本回不该付饷，回补缺口
+          log.push({ t, event: `${f.id} 欠饷裁军 ${cutDone} 兵（军饷发不出，兵溃）` });
+        }
+        if (f.treasury < 0) f.treasury = 0;     // 裁光仍欠=结构性破产（非征募链支出），破产免责
+      }
       f.financeTrace = { tax: taxSum, income: incomeSum, milIncome, trade: tradeInc, upkeep: upkeepSum + upkeepPolicy, salary, officers: salaryOfficers, bonus: bonusCost, relic: relicCost, policyCost: policyCost + birthCost }; // v26 报告用
       if (process.env.AGW_FT && t % 25 === 0) console.error('[FT]', 't' + t, f.id, 'tre=' + Math.round(f.treasury), 'sol=' + Math.round(f.soldiers), JSON.stringify(f.financeTrace));
       // 学院链科技产出（Lv1/2/3 = 10/16/24）；经济制裁 ×0.7；政策乘区（学术自由/开放社会等）
